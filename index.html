@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>קנדל BI – פתרונות אקסל, Power BI וביקורת פנימית למגזר הציבורי | אור קנדל רו"ח</title>
+  <meta name="description" content="אור קנדל רו"ח, CISA ובודק שכר מוסמך. פתרונות אקסל חכמים, Power BI, VBA ובקרות אוטומטיות למשרדי ממשלה וגופים ציבוריים. ניסיון של מעל 8 שנים. צרו קשר עכשיו." />
+  <meta name="keywords" content="קנדל BI, אור קנדל, אקסל מגזר ציבורי, Power BI ממשלה, ביקורת פנימית נתונים, VBA אוטומציה, רו"ח CISA, בקרות חשבונאיות, כפילויות שכר, ניתוח נתונים ציבורי" />
+  <meta name="author" content="אור קנדל" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://kandelbi.org/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://kandelbi.org/" />
+  <meta property="og:title" content="קנדל BI – פתרונות אקסל ובקרה למגזר הציבורי" />
+  <meta property="og:description" content="אור קנדל רו"ח ו-CISA. ייעול תהליכי עבודה, אוטומציה וניתוח נתונים לגופים ציבוריים ומשרדי ממשלה." />
+  <meta property="og:locale" content="he_IL" />
+  <meta property="og:site_name" content="קנדל BI" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="קנדל BI – פתרונות אקסל ובקרה למגזר הציבורי" />
+  <meta name="twitter:description" content="אור קנדל רו"ח ו-CISA. ייעול תהליכי עבודה, אוטומציה וניתוח נתונים לגופים ציבוריים." />
+
+  <!-- Schema.org structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "קנדל BI",
+    "url": "https://kandelbi.org",
+    "telephone": "050-691-4898",
+    "description": "פתרונות אקסל, Power BI, VBA וביקורת פנימית מבוססת נתונים למגזר הציבורי",
+    "areaServed": "IL",
+    "founder": {
+      "@type": "Person",
+      "name": "אור קנדל",
+      "jobTitle": "רואה חשבון, CISA",
+      "description": "רואה חשבון ומומחה לאוטומציה, ניתוח נתונים ובקרות פיננסיות למגזר הציבורי"
+    },
+    "sameAs": ["https://kandelbi.org"]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Assistant:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0d1f3c;
+      --navy-mid: #1a3561;
+      --blue: #1e6abf;
+      --blue-light: #2d87e8;
+      --accent: #f0a500;
+      --accent-light: #ffc940;
+      --bg: #f5f7fa;
+      --bg-white: #ffffff;
+      --text: #1a1a2e;
+      --text-mid: #3d4f6b;
+      --text-muted: #6b7a99;
+      --border: #dce3ef;
+      --green: #0a7c5e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Assistant', 'Heebo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      direction: rtl;
+      line-height: 1.7;
+      font-size: 16px;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; right: 0; left: 0; z-index: 1000;
+      background: var(--navy);
+      padding: 0 5vw;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+    }
+
+    .logo {
+      font-family: 'Heebo', sans-serif;
+      font-weight: 900;
+      font-size: 1.45rem;
+      color: #fff;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent); }
+
+    nav ul {
+      list-style: none;
+      display: flex; gap: 0.15rem;
+    }
+    nav ul li a {
+      color: rgba(255,255,255,0.82);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 500;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    nav ul li a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+    .nav-cta {
+      background: var(--accent) !important;
+      color: var(--navy) !important;
+      font-weight: 700 !important;
+      padding: 0.45rem 1.1rem !important;
+    }
+    .nav-cta:hover { background: var(--accent-light) !important; }
+
+    .nav-phone {
+      color: var(--accent) !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      letter-spacing: 0.3px;
+    }
+
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+    .hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 2px; transition: 0.3s; }
+
+    /* ─── HERO ─── */
+    #hero {
+      min-height: 100vh;
+      background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 55%, #1a4a8a 100%);
+      display: flex; align-items: center;
+      padding: 100px 5vw 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 15% 80%, rgba(240,165,0,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 85% 20%, rgba(45,135,232,0.12) 0%, transparent 70%);
+    }
+
+    .hero-grid {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+      align-items: center; max-width: 1200px; margin: 0 auto; width: 100%;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(240,165,0,0.15);
+      border: 1px solid rgba(240,165,0,0.35);
+      color: var(--accent-light);
+      font-size: 0.8rem; font-weight: 600;
+      padding: 5px 14px; border-radius: 20px;
+      margin-bottom: 1.2rem; letter-spacing: 0.4px;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    h1 {
+      font-family: 'Heebo', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 1.2rem;
+    }
+    h1 em { color: var(--accent); font-style: normal; }
+
+    .hero-sub {
+      color: rgba(255,255,255,0.75);
+      font-size: 1.05rem;
+      line-height: 1.75;
+      margin-bottom: 2rem;
+    }
+
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .btn-primary {
+      background: var(--accent); color: var(--navy);
+      font-weight: 700; font-size: 1rem;
+      padding: 0.85rem 2rem; border-radius: 8px;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      color: rgba(255,255,255,0.9);
+      font-weight: 600; font-size: 1rem;
+      padding: 0.85rem 2rem; border-radius: 8px;
+      text-decoration: none; cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.08); }
+
+    /* Hero stats */
+    .hero-stats {
+      display: flex; gap: 2rem; margin-top: 2.5rem; padding-top: 2rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Heebo', sans-serif;
+      font-size: 1.9rem; font-weight: 900; color: var(--accent);
+      display: block; line-height: 1;
+    }
+    .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 4px; }
+
+    /* Hero visual panel */
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+    }
+
+    .dashboard-mock {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 100%; max-width: 420px;
+      backdrop-filter: blur(8px);
+    }
+
+    .mock-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 1.2rem;
+    }
+    .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-title { color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-right: auto; }
+
+    .mock-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .mock-kpi {
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .mock-kpi-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+    .mock-kpi-val {
+      font-family: 'Heebo'; font-weight: 900; font-size: 1.4rem; color: #fff; line-height: 1.2;
+    }
+    .mock-kpi-val.gold { color: var(--accent); }
+    .mock-kpi-val.green { color: #3ecf8e; }
+
+    .mock-bar-label { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-bottom: 8px; }
+    .mock-bars { display: flex; flex-direction: column; gap: 7px; }
+    .mock-bar-row { display: flex; align-items: center; gap: 8px; }
+    .mock-bar-name { font-size: 0.7rem; color: rgba(255,255,255,0.55); min-width: 60px; }
+    .mock-bar-track { flex: 1; height: 7px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+    .mock-bar-fill { height: 100%; border-radius: 4px; }
+
+    /* ─── SECTION SHARED ─── */
+    section { padding: 80px 5vw; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+
+    .section-tag {
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--blue); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    h2 {
+      font-family: 'Heebo', sans-serif;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      font-weight: 800; color: var(--navy);
+      line-height: 1.25; margin-bottom: 1rem;
+    }
+    h2 em { color: var(--blue); font-style: normal; }
+
+    .section-intro { font-size: 1.05rem; color: var(--text-mid); max-width: 620px; }
+
+    /* ─── ABOUT ─── */
+    #about { background: var(--bg-white); }
+
+    .about-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 4rem; align-items: center; }
+
+    .about-img-wrap {
+      position: relative;
+    }
+
+    .about-img-placeholder {
+      width: 100%; padding-bottom: 110%;
+      background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 100%);
+      border-radius: 18px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .about-img-placeholder::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 70%, rgba(240,165,0,0.2) 0%, transparent 60%);
+    }
+
+    .about-initials {
+      font-family: 'Heebo'; font-weight: 900;
+      font-size: 5rem; color: rgba(255,255,255,0.9);
+      position: relative; z-index: 1;
+    }
+
+    .about-badge {
+      position: absolute; bottom: -16px; left: 20px;
+      background: var(--accent); color: var(--navy);
+      font-weight: 800; font-size: 0.85rem;
+      padding: 8px 16px; border-radius: 30px;
+      white-space: nowrap;
+    }
+
+    .about-certs {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem;
+    }
+    .cert-tag {
+      background: #eef3fb; color: var(--blue);
+      font-size: 0.78rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px;
+      border: 1px solid #c8d9f2;
+    }
+
+    .about-text { font-size: 0.98rem; color: var(--text-mid); line-height: 1.8; margin-bottom: 1.2rem; }
+
+    /* ─── SERVICES ─── */
+    #services { background: var(--bg); }
+
+    .services-header { margin-bottom: 3rem; }
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+
+    .service-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle, rgba(30,106,191,0.07) 0%, transparent 70%);
+    }
+    .service-card:hover { border-color: var(--blue-light); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(30,106,191,0.1); }
+
+    .service-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: #eef3fb; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.2rem;
+      font-size: 1.5rem;
+    }
+    .service-card h3 {
+      font-family: 'Heebo'; font-size: 1.1rem; font-weight: 800;
+      color: var(--navy); margin-bottom: 0.7rem;
+    }
+    .service-card p { font-size: 0.92rem; color: var(--text-mid); line-height: 1.7; }
+
+    .service-list { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: 6px; }
+    .service-list li {
+      font-size: 0.85rem; color: var(--text-mid);
+      padding-right: 16px; position: relative;
+    }
+    .service-list li::before {
+      content: '✓'; position: absolute; right: 0;
+      color: var(--green); font-weight: 700; font-size: 0.8rem;
+    }
+
+    /* ─── WHY ─── */
+    #why { background: var(--navy); }
+    #why h2 { color: #fff; }
+    #why h2 em { color: var(--accent); }
+    #why .section-tag { color: var(--accent-light); }
+
+    .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+
+    .why-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 1.8rem;
+      transition: all 0.25s;
+    }
+    .why-card:hover { background: rgba(255,255,255,0.09); border-color: rgba(240,165,0,0.35); }
+
+    .why-num {
+      font-family: 'Heebo'; font-weight: 900; font-size: 2.5rem;
+      color: var(--accent); opacity: 0.7; line-height: 1;
+      margin-bottom: 0.6rem;
+    }
+    .why-card h3 { color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .why-card p { color: rgba(255,255,255,0.6); font-size: 0.88rem; line-height: 1.65; }
+
+    /* ─── PROCESS ─── */
+    #process { background: var(--bg-white); }
+
+    .process-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0; margin-top: 3rem; position: relative; }
+
+    .process-step {
+      text-align: center; padding: 2rem 1.5rem;
+      position: relative;
+    }
+    .process-step:not(:last-child)::after {
+      content: '→';
+      position: absolute; left: 0; top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.5rem; color: var(--border);
+      font-family: sans-serif;
+    }
+
+    .step-circle {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--navy-mid) 100%);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      font-family: 'Heebo'; font-weight: 900; font-size: 1.4rem; color: #fff;
+    }
+
+    .process-step h3 { font-size: 0.95rem; font-weight: 700; color: var(--navy); margin-bottom: 0.4rem; }
+    .process-step p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ─── CTA ─── */
+    #cta {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--navy) 100%);
+      text-align: center; padding: 80px 5vw;
+    }
+
+    #cta h2 { color: #fff; margin-bottom: 1rem; }
+    #cta p { color: rgba(255,255,255,0.75); font-size: 1.05rem; max-width: 560px; margin: 0 auto 2.5rem; }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    .btn-white {
+      background: #fff; color: var(--navy);
+      font-weight: 700; font-size: 1rem;
+      padding: 0.9rem 2.2rem; border-radius: 8px;
+      text-decoration: none; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-white:hover { background: var(--accent); transform: translateY(-1px); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: #080f1e; color: rgba(255,255,255,0.6);
+      padding: 48px 5vw 30px;
+    }
+
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+
+    .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2.5rem; }
+
+    .footer-brand .logo { font-size: 1.3rem; margin-bottom: 0.8rem; display: inline-block; }
+    .footer-brand p { font-size: 0.88rem; line-height: 1.7; max-width: 300px; }
+
+    .footer-links h4 { color: #fff; font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
+    .footer-links ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .footer-links ul li a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; }
+    .footer-links ul li a:hover { color: var(--accent); }
+
+    .footer-contact h4 { color: #fff; font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
+    .contact-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .contact-item a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; }
+    .contact-item a:hover { color: var(--accent); }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 1.5rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .footer-bottom p { font-size: 0.8rem; }
+    .footer-bottom a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.8rem; }
+    .footer-bottom a:hover { color: var(--accent); }
+
+    /* ─── MOBILE ─── */
+    @media (max-width: 768px) {
+      nav ul { display: none; flex-direction: column; position: absolute; top: 68px; right: 0; left: 0; background: var(--navy); padding: 1rem 5vw; gap: 0.5rem; }
+      nav ul.open { display: flex; }
+      .hamburger { display: flex; }
+      .nav-phone-desktop { display: none; }
+
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .hero-stats { flex-wrap: wrap; gap: 1.5rem; }
+
+      .about-grid { grid-template-columns: 1fr; }
+      .about-img-wrap { max-width: 300px; margin: 0 auto; }
+
+      .process-step::after { display: none; }
+
+      .footer-top { grid-template-columns: 1fr; gap: 2rem; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+    }
+
+    /* Scroll animations */
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav aria-label="ניווט ראשי">
+  <a href="/" class="logo">קנדל <span>BI</span></a>
+
+  <ul id="nav-menu">
+    <li><a href="#about">אודות</a></li>
+    <li><a href="#services">שירותים</a></li>
+    <li><a href="#why">למה אני?</a></li>
+    <li><a href="#process">תהליך עבודה</a></li>
+    <li><a href="tel:050-691-4898" class="nav-phone">📞 050-691-4898</a></li>
+    <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="#cta" class="nav-cta">צרו קשר</a></li>
+  </ul>
+
+  <div class="hamburger" id="hamburger" aria-label="תפריט" role="button" tabindex="0">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+
+<!-- ═══ HERO ═══ -->
+<section id="hero" aria-label="אזור ראשי">
+  <div class="hero-grid">
+    <div class="hero-content">
+      <div class="hero-badge">רו"ח · CISA · בודק שכר מוסמך</div>
+
+      <h1>
+        <em>אקסל חכם. בקרה מדויקת.</em><br />
+        תוצאות אמיתיות למגזר הציבורי.
+      </h1>
+
+      <p class="hero-sub">
+        אני אור קנדל — מלווה משרדי ממשלה וגופים ציבוריים בשדרוג תהליכי ניתוח הנתונים,
+        איתור חריגים וכפילויות, ובנייה של כלי בקרה אוטומטיים ב-Excel, Power BI ו-VBA.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#cta" class="btn-primary">לשיחת הכרות ← </a>
+        <a href="#services" class="btn-outline">הצגת שירותים</a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-num">8+</span>
+          <span class="stat-label">שנות ניסיון</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">100+</span>
+          <span class="stat-label">פרויקטים</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">3</span>
+          <span class="stat-label">הסמכות מקצועיות</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="dashboard-mock">
+        <div class="mock-header">
+          <div class="mock-dot" style="background:#3ecf8e;"></div>
+          <div class="mock-dot" style="background:#f0a500;"></div>
+          <div class="mock-dot" style="background:#e24b4b;"></div>
+          <span class="mock-title">לוח בקרה תקציבי – Power BI</span>
+        </div>
+
+        <div class="mock-kpis">
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">חריגות שזוהו</div>
+            <div class="mock-kpi-val gold">47</div>
+          </div>
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">חיסכון מוערך</div>
+            <div class="mock-kpi-val green">₪2.3M</div>
+          </div>
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">כפילויות שכר</div>
+            <div class="mock-kpi-val">12</div>
+          </div>
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">אחוז כיסוי</div>
+            <div class="mock-kpi-val gold">94%</div>
+          </div>
+        </div>
+
+        <div class="mock-bar-label">ניתוח לפי יחידה ארגונית</div>
+        <div class="mock-bars">
+          <div class="mock-bar-row">
+            <span class="mock-bar-name">כח אדם</span>
+            <div class="mock-bar-track"><div class="mock-bar-fill" style="width:82%;background:var(--accent);"></div></div>
+          </div>
+          <div class="mock-bar-row">
+            <span class="mock-bar-name">רכש</span>
+            <div class="mock-bar-track"><div class="mock-bar-fill" style="width:64%;background:var(--blue-light);"></div></div>
+          </div>
+          <div class="mock-bar-row">
+            <span class="mock-bar-name">תקציב</span>
+            <div class="mock-bar-track"><div class="mock-bar-fill" style="width:91%;background:#3ecf8e;"></div></div>
+          </div>
+          <div class="mock-bar-row">
+            <span class="mock-bar-name">נסיעות</span>
+            <div class="mock-bar-track"><div class="mock-bar-fill" style="width:38%;background:#c06bf0;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ ABOUT ═══ -->
+<section id="about" aria-labelledby="about-title">
+  <div class="section-inner about-grid">
+    <div class="about-img-wrap fade-in">
+      <div class="about-img-placeholder">
+        <span class="about-initials">א.ק</span>
+      </div>
+      <div class="about-badge">⭐ רו"ח · CISA · 8+ שנים</div>
+    </div>
+
+    <div class="fade-in">
+      <span class="section-tag">מי אני?</span>
+      <h2 id="about-title">אור קנדל — <em>מומחה בקרה ונתונים</em> למגזר הציבורי</h2>
+
+      <div class="about-certs">
+        <span class="cert-tag">רואה חשבון (רו"ח)</span>
+        <span class="cert-tag">CISA – מוסמך ביקורת מערכות מידע</span>
+        <span class="cert-tag">בודק שכר מוסמך</span>
+        <span class="cert-tag">MBA – מנהל עסקים ומערכות מידע</span>
+        <span class="cert-tag">B.Sc חשבונאות ומערכות מידע</span>
+      </div>
+
+      <p class="about-text">
+        בוגר תואר ראשון בחשבונאות ומערכות מידע ותואר שני במנהל עסקים ומערכות מידע.
+        מעל 8 שנים של ניסיון מעשי בליווי גופים ציבוריים — ממשרדי ממשלה ועד רשויות מקומיות —
+        עם הבנה עמוקה של הדקויות, הרגולציה והאחריות שמגיעים עם עבודה במגזר הציבורי.
+      </p>
+
+      <p class="about-text">
+        אני משלב הכשרה חשבונאית קפדנית עם כלים טכנולוגיים מתקדמים ב-Excel, Power BI ו-VBA,
+        כדי לספק לחשבים ומבקרי פנים כלים שפועלים בפועל — לא רק תיאוריה.
+        הגישה שלי: פתרון מדויק, פשוט, יעיל — שהצוות יכול להמשיך להשתמש בו לבד.
+      </p>
+
+      <a href="tel:050-691-4898" class="btn-primary" style="margin-top:0.5rem;">התקשרו: 050-691-4898</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ SERVICES ═══ -->
+<section id="services" aria-labelledby="services-title">
+  <div class="section-inner">
+    <div class="services-header fade-in">
+      <span class="section-tag">מה אני מציע?</span>
+      <h2 id="services-title">שירותים <em>מותאמים אישית</em> לצרכי הארגון</h2>
+      <p class="section-intro">כל פתרון מותאם לצרכים הספציפיים של הגוף — ללא תבניות גנריות.</p>
+    </div>
+
+    <div class="services-grid">
+      <article class="service-card fade-in">
+        <div class="service-icon">📊</div>
+        <h3>אוטומציה ב-Excel ו-VBA</h3>
+        <p>בנייה וייעול של קבצי אקסל לבקרה שוטפת — דוחות אוטומטיים, מאקרו VBA ותהליכים שחוסכים שעות עבודה.</p>
+        <ul class="service-list">
+          <li>דוחות בקרה חודשיים אוטומטיים</li>
+          <li>מאקרואים לעיבוד נתוני שכר</li>
+          <li>איחוד וניקוי מקורות נתונים</li>
+          <li>לוחות בקרה ב-Excel</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">📈</div>
+        <h3>דוחות Power BI</h3>
+        <p>דשבורדים ויזואליים ברמת הנהלה ומבקר פנים — עם חיתוכים, מגמות וריכוז נתונים ממקורות מרובים.</p>
+        <ul class="service-list">
+          <li>דשבורד ביצועים תקציבי</li>
+          <li>ניתוח מגמות שכר ומצבת עובדים</li>
+          <li>דוחות ON GOING לביקורת</li>
+          <li>חיבור למקורות נתונים ממשלתיים</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">🔍</div>
+        <h3>איתור חריגים וכפילויות</h3>
+        <p>ניתוח מבוסס נתונים לגילוי תשלומים חשודים, כפילויות בשכר ואי-התאמות — לפני שהן הופכות לבעיה.</p>
+        <ul class="service-list">
+          <li>כפילויות בתשלומי שכר ותנאים</li>
+          <li>חריגות מסף תקציב מאושר</li>
+          <li>סתירות בין מערכות שונות</li>
+          <li>תשלומים לספקים חשודים</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">🏛️</div>
+        <h3>ביקורת פנימית מבוססת נתונים</h3>
+        <p>תמיכה מלאה למבקרי פנים — מהגדרת מתודולוגיה ועד הגשת ממצאים מגובים בנתונים ובניתוח כמותי.</p>
+        <ul class="service-list">
+          <li>ביקורות שכר ותגמול</li>
+          <li>ביקורות רכש והתקשרויות</li>
+          <li>ניתוח BENFORD לאיתור הונאות</li>
+          <li>תיעוד ממצאים לדוח ביקורת</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">🔗</div>
+        <h3>איחוד ומיזוג מסדי נתונים</h3>
+        <p>חיבור, ניקוי ואיחוד טבלאות ממערכות שונות (SAP, מנות, מערכות ממשלתיות) לתמונה אחת ברורה.</p>
+        <ul class="service-list">
+          <li>קריאת נתונים ממסדי SQL</li>
+          <li>ניקוי ועיבוד עם Power Query</li>
+          <li>מיזוג מקורות ממשלתיים מרובים</li>
+          <li>אחידות ומניעת שגיאות</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">⚡</div>
+        <h3>החייאת קבצי אקסל כבדים</h3>
+        <p>הקובץ שלכם תוקע את המחשב? חישובים שלוקחים דקות? קריסות ושגיאות? אני מאבחן, מנקה ומייעל — או בונה מחדש — כך שהקובץ יעבוד מהר וחלק.</p>
+        <ul class="service-list">
+          <li>אבחון גורם ההאטה</li>
+          <li>אופטימיזציה של נוסחאות ומבנה</li>
+          <li>המרה ל-Power Query / מודל נתונים</li>
+          <li>בנייה מחדש עם ביצועים מלאים</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">🔎</div>
+        <h3>קבלת עבודות — ביקורת וחקירה</h3>
+        <p>מקבל עבודות בכל קשת הביקורת הפנימית והחקירתית, עם דגש על פתרונות טכנולוגיים — ניתוח נתונים, חקירות פיננסיות, איתור הונאות ועוד.</p>
+        <ul class="service-list">
+          <li>ביקורת פנימית מבוססת נתונים</li>
+          <li>חקירות פיננסיות וחשבונאיות</li>
+          <li>איתור הונאות ואי-סדרים</li>
+          <li>חוות דעת מקצועית וליווי הליכים</li>
+        </ul>
+      </article>
+        <p>העברת ידע ובניית יכולות פנימיות — כך שהצוות ימשיך לעבוד עצמאית עם הכלים שנבנו.</p>
+        <ul class="service-list">
+          <li>הדרכות Excel ו-Power BI</li>
+          <li>תיעוד מפורט לכל כלי</li>
+          <li>ליווי שוטף לשאלות</li>
+          <li>עדכון כלים לפי שינויים</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ WHY ═══ -->
+<section id="why" aria-labelledby="why-title">
+  <div class="section-inner">
+    <div class="fade-in">
+      <span class="section-tag">למה אני?</span>
+      <h2 id="why-title">יתרונות <em>ייחודיים</em> שלא תמצאו במקום אחר</h2>
+      <p class="section-intro" style="color:rgba(255,255,255,0.65);">השילוב של עולם החשבונאות עם עולם הטכנולוגיה — מה שהופך את הפתרון לשונה לגמרי.</p>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card fade-in">
+        <div class="why-num">01</div>
+        <h3>רו"ח + CISA + שכר — שילוב נדיר</h3>
+        <p>מעטים משלבים הסמכות מקצועיות בחשבונאות, ביקורת מערכות מידע ובדיקת שכר. אני יודע מה בודקים ומה מחפשים.</p>
+      </div>
+      <div class="why-card fade-in">
+        <div class="why-num">02</div>
+        <h3>מכיר את המגזר הציבורי מבפנים</h3>
+        <p>היכרות מעמיקה עם עבודת חשבויות במשרדי ממשלה, הרגולציה, האילוצים והתהליכים הפנימיים — לא תיאוריה.</p>
+      </div>
+      <div class="why-card fade-in">
+        <div class="why-num">03</div>
+        <h3>פתרון שהצוות יכול להמשיך לבד</h3>
+        <p>כלים שניתן להפעיל וייעוץ מתועד — לא "קופסה שחורה". הצוות שלכם יוצא מחוזק מכל פרויקט.</p>
+      </div>
+      <div class="why-card fade-in">
+        <div class="why-num">04</div>
+        <h3>חיסכון אמיתי בזמן ובכסף</h3>
+        <p>לקוחות מדווחים על חיסכון של עשרות שעות עבודה בחודש, ועל איתור אי-התאמות ששוות סכומים משמעותיים.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ PROCESS ═══ -->
+<section id="process" aria-labelledby="process-title">
+  <div class="section-inner">
+    <div class="fade-in" style="text-align:center; margin-bottom:0;">
+      <span class="section-tag">איך עובדים</span>
+      <h2 id="process-title">תהליך עבודה <em>פשוט וברור</em></h2>
+    </div>
+
+    <div class="process-steps">
+      <div class="process-step fade-in">
+        <div class="step-circle">1</div>
+        <h3>שיחת היכרות</h3>
+        <p>נדבר על הצרכים, האתגרים הנוכחיים והתוצאה הרצויה — ללא עלות וללא התחייבות.</p>
+      </div>
+      <div class="process-step fade-in">
+        <div class="step-circle">2</div>
+        <h3>אבחון וגיבוש פתרון</h3>
+        <p>בחינת הנתונים הקיימים ובניית תכנית עבודה מדויקת עם לוח זמנים ברור.</p>
+      </div>
+      <div class="process-step fade-in">
+        <div class="step-circle">3</div>
+        <h3>בניה ובדיקה</h3>
+        <p>פיתוח הכלים, בדיקות מול נתונים אמיתיים ואיטרציות עד לתוצאה המדויקת.</p>
+      </div>
+      <div class="process-step fade-in">
+        <div class="step-circle">4</div>
+        <h3>מסירה + הדרכה</h3>
+        <p>מסירת הכלים עם תיעוד מלא והדרכת הצוות — כולל תמיכה שוטפת לאחר השקה.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ CTA ═══ -->
+<section id="cta" aria-labelledby="cta-title">
+  <div class="section-inner" style="text-align:center;">
+    <span class="section-tag" style="color:var(--accent-light);">מוכנים להתחיל?</span>
+    <h2 id="cta-title">בואו נדבר על הצרכים שלכם</h2>
+    <p>בין אם אתם צריכים קובץ אקסל חכם, בקרות אוטומטיות, דוחות Power BI או ניתוח חריגים —
+    אני כאן לספק פתרון מדויק ויעיל. שיחת היכרות — ללא התחייבות.</p>
+
+    <div class="cta-actions">
+      <a href="tel:050-691-4898" class="btn-white"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .92h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2z"/></svg> 050-691-4898</a>
+      <a href="mailto:info@kandelbi.org" class="btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.4);">✉️ שלחו מייל</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="/" class="logo">קנדל <span>BI</span></a>
+        <p style="margin-top:0.8rem;">פתרונות אקסל, Power BI וביקורת מבוססת נתונים למגזר הציבורי. אור קנדל — רו"ח, CISA ובודק שכר מוסמך.</p>
+      </div>
+
+      <div class="footer-links">
+        <h4>ניווט</h4>
+        <ul>
+          <li><a href="#about">אודות</a></li>
+          <li><a href="#services">שירותים</a></li>
+          <li><a href="#why">למה אני?</a></li>
+          <li><a href="#process">תהליך עבודה</a></li>
+          <li><a href="terms.html">תנאי שימוש</a></li>
+          <li><a href="#cta">צרו קשר</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>יצירת קשר</h4>
+        <div class="contact-item">
+          <span>📞</span>
+          <a href="tel:050-691-4898">050-691-4898</a>
+        </div>
+        <div class="contact-item">
+          <span>✉️</span>
+          <a href="mailto:info@kandelbi.org">info@kandelbi.org</a>
+        </div>
+        <div class="contact-item">
+          <span>🌐</span>
+          <a href="https://kandelbi.org">kandelbi.org</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2025 קנדל BI — אור קנדל. כל הזכויות שמורות.</p>
+      <a href="https://kandelbi.org">kandelbi.org</a>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+  // Mobile menu
+  const hamburger = document.getElementById('hamburger');
+  const navMenu = document.getElementById('nav-menu');
+  hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+
+  // Scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      navMenu.classList.remove('open');
+    });
+  });
+</script>
+</body>
+</html>

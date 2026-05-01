@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>השוואת רשימות — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}
+.back-link:hover{color:#fff}
+main{max-width:1000px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+
+/* INSTRUCTIONS */
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover,.upload-box.drag{border-color:var(--blue);background:#eef3fb}
+.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:1.8rem;margin-bottom:6px}
+.ub-text{font-weight:700;font-size:0.88rem}
+.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+
+.slider-wrap{display:flex;align-items:center;gap:12px}
+.slider-wrap input[type=range]{flex:1}
+.slider-val{font-weight:900;color:var(--blue);min-width:40px;text-align:center}
+
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:var(--navy2)}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+
+/* RESULTS */
+.summary-bar{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.sum-item{flex:1;min-width:120px;background:var(--bg);border-radius:10px;padding:12px 16px;text-align:center;border:1px solid var(--border)}
+.sum-val{font-weight:900;font-size:1.6rem;color:var(--navy);display:block;line-height:1}
+.sum-lbl{font-size:0.75rem;color:var(--muted);margin-top:3px}
+.sum-item.match .sum-val{color:var(--green)}
+.sum-item.partial .sum-val{color:var(--orange)}
+.sum-item.nomatch .sum-val{color:var(--red)}
+
+.filter-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.ftab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.ftab:hover{border-color:var(--blue);color:var(--blue)}
+.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:400px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.83rem}
+th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
+.b-match{background:#edf7f3;color:var(--green)}
+.b-partial{background:#fff3e0;color:var(--orange)}
+.b-none{background:#fef2f2;color:var(--red)}
+.score-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:3px}
+.score-fill{height:100%;border-radius:3px}
+
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">🔀 השוואת רשימות עם התאמה חלקית</div>
+<div class="tool-sub">מצא התאמות בין שתי רשימות גם כשאין זהות מלאה — שמות שגויים, קיצורים, שגיאות כתיב</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה שני קבצי אקסל (או CSV) — רשימה א' ורשימה ב'</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>בחר את עמודת השם/המזהה בכל רשימה (לדוגמה: "שם עובד", "ת.ז.", "שם ספק")</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>הגדר סף התאמה — 100% = זהות מלאה, 70% = שגיאות כתיב קלות, 50% = שמות חלקיים</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>לחץ "השוואה" וקבל טבלת תוצאות הניתנת לייצוא לאקסל</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 העלאת קבצים</div>
+  <div class="grid2">
+    <div>
+      <div style="font-weight:700;margin-bottom:8px;color:var(--blue)">רשימה א'</div>
+      <div class="upload-box" id="dz-a" onclick="document.getElementById('fi-a').click()">
+        <div class="ub-icon">📋</div>
+        <div class="ub-text">העלה רשימה ראשונה</div>
+        <div class="ub-sub">xlsx / xls / csv</div>
+      </div>
+      <input type="file" id="fi-a" accept=".xlsx,.xls,.csv" hidden/>
+      <div class="form-group" style="margin-top:0.8rem">
+        <label>עמודה להשוואה:</label>
+        <select id="col-a"><option>— טען קובץ —</option></select>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700;margin-bottom:8px;color:var(--orange)">רשימה ב'</div>
+      <div class="upload-box" id="dz-b" onclick="document.getElementById('fi-b').click()">
+        <div class="ub-icon">📋</div>
+        <div class="ub-text">העלה רשימה שנייה</div>
+        <div class="ub-sub">xlsx / xls / csv</div>
+      </div>
+      <input type="file" id="fi-b" accept=".xlsx,.xls,.csv" hidden/>
+      <div class="form-group" style="margin-top:0.8rem">
+        <label>עמודה להשוואה:</label>
+        <select id="col-b"><option>— טען קובץ —</option></select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">⚙️ הגדרות השוואה</div>
+  <div class="form-group">
+    <label>סף התאמה מינימלי: <strong id="thresh-val">75</strong>%</label>
+    <div class="slider-wrap">
+      <span style="font-size:0.8rem;color:var(--muted)">50%</span>
+      <input type="range" id="threshold" min="50" max="100" value="75" oninput="document.getElementById('thresh-val').textContent=this.value"/>
+      <span style="font-size:0.8rem;color:var(--muted)">100%</span>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>שיטת השוואה:</label>
+    <select id="method">
+      <option value="contains">כלול (האם ב' כלול בא' או להיפך)</option>
+      <option value="levenshtein" selected>דמיון טקסט (Levenshtein — מתאים לשמות)</option>
+      <option value="exact">זהות מלאה בלבד</option>
+    </select>
+  </div>
+  <button class="btn-primary" id="btn-compare" disabled onclick="runComparison()">🔍 הרץ השוואה</button>
+</div>
+
+<div class="card hidden" id="results-card">
+  <div class="card-title">📊 תוצאות השוואה</div>
+  <div class="summary-bar">
+    <div class="sum-item match"><span class="sum-val" id="cnt-match">0</span><span class="sum-lbl">התאמה מלאה</span></div>
+    <div class="sum-item partial"><span class="sum-val" id="cnt-partial">0</span><span class="sum-lbl">התאמה חלקית</span></div>
+    <div class="sum-item nomatch"><span class="sum-val" id="cnt-none">0</span><span class="sum-lbl">ללא התאמה</span></div>
+  </div>
+  <div class="filter-tabs">
+    <button class="ftab active" onclick="filterResults('all',this)">הכל</button>
+    <button class="ftab" onclick="filterResults('match',this)">התאמה מלאה</button>
+    <button class="ftab" onclick="filterResults('partial',this)">התאמה חלקית</button>
+    <button class="ftab" onclick="filterResults('none',this)">ללא התאמה</button>
+  </div>
+  <div class="result-table-wrap">
+    <table id="result-table">
+      <thead><tr><th>רשימה א'</th><th>הכי קרוב ברשימה ב'</th><th>ציון</th><th>סטטוס</th></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:0.8rem;flex-wrap:wrap">
+    <button class="btn-accent" onclick="exportResults()">⬇ ייצא לאקסל</button>
+  </div>
+</div>
+</main>
+
+<script>
+let dataA=[], dataB=[], allResults=[];
+
+function loadFile(inputId, dzId, colSelId, dataArr) {
+  const input = document.getElementById(inputId);
+  input.addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const headers = rows[0]||[];
+      const data = rows.slice(1).filter(r=>r.some(c=>c!==''));
+
+      if (dataArr===dataA) dataA={headers,data};
+      else dataB={headers,data};
+
+      const sel = document.getElementById(colSelId);
+      sel.innerHTML = headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+
+      const dz = document.getElementById(dzId);
+      dz.classList.add('loaded');
+      dz.querySelector('.ub-icon').textContent='✅';
+      dz.querySelector('.ub-text').textContent=file.name;
+
+      checkReady();
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+loadFile('fi-a','dz-a','col-a',dataA);
+loadFile('fi-b','dz-b','col-b',dataB);
+document.getElementById('dz-a').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dz-a').classList.add('drag')});
+document.getElementById('dz-b').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dz-b').classList.add('drag')});
+
+function checkReady(){
+  const ok = dataA.data && dataB.data;
+  document.getElementById('btn-compare').disabled=!ok;
+}
+
+// Levenshtein distance
+function lev(a,b){
+  a=String(a).toLowerCase().trim(); b=String(b).toLowerCase().trim();
+  if(a===b)return 1;
+  if(!a||!b)return 0;
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return 1-dp[m][n]/Math.max(m,n);
+}
+
+function containsSim(a,b){
+  a=String(a).toLowerCase().trim(); b=String(b).toLowerCase().trim();
+  if(a===b)return 1;
+  if(a.includes(b)||b.includes(a))return 0.9;
+  return lev(a,b);
+}
+
+function runComparison(){
+  const colA=parseInt(document.getElementById('col-a').value);
+  const colB=parseInt(document.getElementById('col-b').value);
+  const thresh=parseInt(document.getElementById('threshold').value)/100;
+  const method=document.getElementById('method').value;
+  const simFn = method==='exact'?(a,b)=>a.trim()===b.trim()?1:0 : method==='contains'?containsSim:lev;
+
+  const listB=dataB.data.map(r=>String(r[colB]||''));
+  allResults=[];
+
+  dataA.data.forEach(rowA=>{
+    const valA=String(rowA[colA]||'');
+    let bestScore=0, bestMatch='';
+    listB.forEach(vb=>{
+      const s=simFn(valA,vb);
+      if(s>bestScore){bestScore=s;bestMatch=vb;}
+    });
+    const pct=Math.round(bestScore*100);
+    const status=pct===100?'match':pct>=thresh*100?'partial':'none';
+    allResults.push({valA,bestMatch,pct,status,rowA});
+  });
+
+  const match=allResults.filter(r=>r.status==='match').length;
+  const partial=allResults.filter(r=>r.status==='partial').length;
+  const none=allResults.filter(r=>r.status==='none').length;
+  document.getElementById('cnt-match').textContent=match;
+  document.getElementById('cnt-partial').textContent=partial;
+  document.getElementById('cnt-none').textContent=none;
+
+  renderResults(allResults);
+  document.getElementById('results-card').classList.remove('hidden');
+}
+
+function renderResults(data){
+  const tbody=document.getElementById('result-body');
+  tbody.innerHTML=data.map(r=>{
+    const cls=r.status==='match'?'b-match':r.status==='partial'?'b-partial':'b-none';
+    const lbl=r.status==='match'?'התאמה מלאה':r.status==='partial'?'התאמה חלקית':'ללא התאמה';
+    const color=r.status==='match'?'#0a7c5e':r.status==='partial'?'#e67e22':'#d93025';
+    return `<tr>
+      <td>${r.valA}</td>
+      <td>${r.bestMatch}</td>
+      <td><strong>${r.pct}%</strong><div class="score-bar"><div class="score-fill" style="width:${r.pct}%;background:${color}"></div></div></td>
+      <td><span class="badge ${cls}">${lbl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterResults(type,btn){
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderResults(type==='all'?allResults:allResults.filter(r=>r.status===type));
+}
+
+function exportResults(){
+  const rows=[['רשימה א\'','הכי קרוב ברשימה ב\'','ציון %','סטטוס'],...allResults.map(r=>[r.valA,r.bestMatch,r.pct,r.status==='match'?'התאמה מלאה':r.status==='partial'?'התאמה חלקית':'ללא התאמה'])];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'תוצאות');
+  XLSX.writeFile(wb,'השוואת_רשימות.xlsx');
+}
+</script>
+</body>
+</html>

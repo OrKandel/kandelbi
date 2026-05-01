@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>מפצל וממיין אקסל — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--shadow:0 4px 24px rgba(13,31,60,0.10);
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;}
+
+/* HEADER */
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none;}
+.logo span{color:var(--accent);}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none;display:flex;align-items:center;gap:6px;}
+.back-link:hover{color:#fff;}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem;}
+
+.tool-title{font-size:clamp(1.5rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.4rem;}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:2rem;}
+
+/* STEPS */
+.steps{display:flex;gap:0;margin-bottom:2.5rem;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.step{flex:1;padding:12px 16px;background:var(--white);font-size:0.82rem;font-weight:600;color:var(--muted);text-align:center;border-left:1px solid var(--border);transition:all 0.2s;}
+.step:last-child{border-left:none;}
+.step.active{background:var(--navy);color:#fff;}
+.step.done{background:var(--green);color:#fff;}
+.step-num{display:block;font-size:1rem;font-weight:900;margin-bottom:2px;}
+
+/* CARD */
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:2rem;margin-bottom:1.5rem;box-shadow:var(--shadow);}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem;display:flex;align-items:center;gap:8px;}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--blue);background:#eef3fb;}
+.drop-zone.loaded{border-color:var(--green);background:var(--white);}
+.drop-icon{font-size:2.5rem;margin-bottom:0.8rem;display:block;}
+.drop-text{font-weight:700;color:var(--navy);font-size:1rem;}
+.drop-sub{font-size:0.82rem;color:var(--muted);margin-top:4px;}
+#file-input{display:none;}
+
+/* FILE INFO */
+.file-info{display:none;align-items:center;gap:12px;padding:12px 16px;background:#edf7f3;border-radius:10px;margin-top:1rem;}
+.file-info.show{display:flex;}
+.fi-icon{font-size:1.5rem;}
+.fi-name{font-weight:700;font-size:0.92rem;color:var(--green);}
+.fi-size{font-size:0.78rem;color:var(--muted);}
+
+/* COLUMNS */
+.cols-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;}
+.cols-actions{display:flex;gap:8px;}
+.btn-sm{padding:5px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);color:var(--text-mid);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.btn-sm:hover{border-color:var(--blue);color:var(--blue);}
+.btn-sm.del{border-color:#fca5a5;color:var(--red);}
+.btn-sm.del:hover{background:#fef2f2;}
+
+.cols-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px;}
+.col-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s;font-size:0.85rem;}
+.col-item:hover{border-color:var(--blue);}
+.col-item.checked{background:#eef3fb;border-color:var(--blue);}
+.col-item.date-col{background:#fff8ed;border-color:var(--accent);}
+.col-check{width:16px;height:16px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.col-item.checked .col-check{background:var(--blue);border-color:var(--blue);color:#fff;}
+.col-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.col-type{font-size:0.7rem;color:var(--muted);flex-shrink:0;}
+
+/* SPLIT OPTIONS */
+.split-tabs{display:flex;gap:0;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.2rem;}
+.split-tab{flex:1;padding:10px;border:none;background:var(--bg);font-family:inherit;font-weight:600;font-size:0.88rem;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.split-tab.active{background:var(--navy);color:#fff;}
+
+.split-panel{display:none;}
+.split-panel.show{display:block;}
+
+.form-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem;}
+.form-group{flex:1;min-width:180px;}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none;background:var(--white);}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue);}
+
+/* PREVIEW */
+.preview-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;}
+td{padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg);}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;}
+.badge-rows{background:#eef3fb;color:var(--blue);}
+.badge-size{background:#edf7f3;color:var(--green);}
+
+/* PROGRESS */
+.progress-wrap{display:none;margin-top:1rem;}
+.progress-wrap.show{display:block;}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));border-radius:4px;transition:width 0.3s;width:0%;}
+.progress-text{font-size:0.82rem;color:var(--muted);}
+
+/* RESULTS */
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;margin-top:1rem;}
+.result-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.2rem;display:flex;flex-direction:column;gap:10px;}
+.rc-name{font-weight:700;font-size:0.9rem;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-stats{display:flex;gap:6px;flex-wrap:wrap;}
+.rc-dl{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;font-family:inherit;width:100%;justify-content:center;transition:all 0.2s;}
+.rc-dl:hover{background:#086b50;}
+
+/* BUTTONS */
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary:hover{background:var(--navy2);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s;}
+.btn-accent:hover{background:var(--accent-light,#ffc940);}
+
+.btn-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:1.5rem;}
+
+/* ALERT */
+.alert{padding:12px 16px;border-radius:10px;font-size:0.88rem;font-weight:600;margin-bottom:1rem;display:none;}
+.alert.show{display:block;}
+.alert-warn{background:#fff8ed;border:1px solid #f5d48a;color:#b87400;}
+.alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue);}
+
+/* STAT BAR */
+.stat-bar{display:flex;gap:1.5rem;flex-wrap:wrap;padding:1rem 1.2rem;background:var(--bg);border-radius:10px;margin-bottom:1.2rem;}
+.stat-item{text-align:center;}
+.stat-val{font-family:'Heebo';font-weight:900;font-size:1.4rem;color:var(--navy);display:block;line-height:1;}
+.stat-lbl{font-size:0.75rem;color:var(--muted);margin-top:3px;}
+
+/* SECTION HIDDEN */
+.section{display:none;}
+.section.show{display:block;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+
+<main>
+  <div class="tool-title">✂️ מפצל וממעיל קבצי אקסל</div>
+  <div class="tool-sub">טען קובץ כבד, בחר עמודות, חתוך לפי תאריך או ערך — וקבל קבצים קטנים וניתנים לעבודה</div>
+
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step active" id="step1"><span class="step-num">1</span>טעינת קובץ</div>
+    <div class="step" id="step2"><span class="step-num">2</span>בחירת עמודות</div>
+    <div class="step" id="step3"><span class="step-num">3</span>הגדרת חיתוך</div>
+    <div class="step" id="step4"><span class="step-num">4</span>הורדה</div>
+  </div>
+
+  <!-- STEP 1: טעינה -->
+  <div class="section show" id="sec1">
+    <div class="card">
+      <div class="card-title">📂 טעינת קובץ אקסל</div>
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <span class="drop-icon">📊</span>
+        <div class="drop-text">לחץ לבחירת קובץ או גרור לכאן</div>
+        <div class="drop-sub">תומך ב-.xlsx / .xls / .csv · עד 100MB</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
+      <div class="file-info" id="file-info">
+        <span class="fi-icon">✅</span>
+        <div><div class="fi-name" id="fi-name"></div><div class="fi-size" id="fi-size"></div></div>
+      </div>
+    </div>
+
+    <div class="card section" id="file-stats-card">
+      <div class="card-title">📊 סטטיסטיקת הקובץ</div>
+      <div class="stat-bar">
+        <div class="stat-item"><span class="stat-val" id="st-rows">—</span><span class="stat-lbl">שורות נתונים</span></div>
+        <div class="stat-item"><span class="stat-val" id="st-cols">—</span><span class="stat-lbl">עמודות</span></div>
+        <div class="stat-item"><span class="stat-val" id="st-size">—</span><span class="stat-lbl">גודל קובץ</span></div>
+        <div class="stat-item"><span class="stat-val" id="st-sheets">—</span><span class="stat-lbl">גיליונות</span></div>
+      </div>
+      <div class="form-group" id="sheet-select-wrap" style="display:none;margin-bottom:0;">
+        <label>בחר גיליון לעיבוד:</label>
+        <select id="sheet-select" onchange="loadSheet()"></select>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-next1" disabled onclick="goStep(2)">המשך לבחירת עמודות ←</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: בחירת עמודות -->
+  <div class="section" id="sec2">
+    <div class="card">
+      <div class="card-title">🗂️ בחירת עמודות לשמירה</div>
+      <div class="alert alert-info show">סמן את העמודות שתרצה לכלול בקובץ הפלט. עמודות לא מסומנות — יימחקו.</div>
+      <div class="cols-header">
+        <span style="font-size:0.85rem;color:var(--muted);">נמצאו <strong id="col-count">0</strong> עמודות</span>
+        <div class="cols-actions">
+          <button class="btn-sm" onclick="selectAll(true)">בחר הכל</button>
+          <button class="btn-sm del" onclick="selectAll(false)">נקה הכל</button>
+        </div>
+      </div>
+      <div class="cols-grid" id="cols-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👁️ תצוגה מקדימה (5 שורות ראשונות)</div>
+      <div class="preview-table-wrap" id="preview-wrap"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-sm" onclick="goStep(1)">← חזרה</button>
+      <button class="btn-primary" onclick="goStep(3)">המשך להגדרת חיתוך ←</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: חיתוך -->
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="card-title">✂️ הגדרת חיתוך לקבצים קטנים</div>
+
+      <div class="split-tabs">
+        <button class="split-tab active" onclick="setSplitMode('none',this)">ללא חיתוך (קובץ אחד)</button>
+        <button class="split-tab" onclick="setSplitMode('date',this)">לפי טווח תאריכים</button>
+        <button class="split-tab" onclick="setSplitMode('col',this)">לפי ערך בעמודה</button>
+        <button class="split-tab" onclick="setSplitMode('rows',this)">לפי מספר שורות</button>
+      </div>
+
+      <!-- ללא חיתוך -->
+      <div class="split-panel show" id="panel-none">
+        <div class="alert alert-info show">הקובץ יאוחד עם העמודות שנבחרו בלבד, ללא פיצול.</div>
+      </div>
+
+      <!-- לפי תאריך -->
+      <div class="split-panel" id="panel-date">
+        <div class="form-row">
+          <div class="form-group">
+            <label>עמודת תאריך:</label>
+            <select id="date-col"></select>
+          </div>
+          <div class="form-group">
+            <label>פיצול לפי:</label>
+            <select id="date-period">
+              <option value="custom">טווח מותאם (מ-תאריך עד תאריך)</option>
+              <option value="month">לפי חודש (קובץ לכל חודש)</option>
+              <option value="quarter">לפי רבעון</option>
+              <option value="year">לפי שנה</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" id="custom-dates">
+          <div class="form-group">
+            <label>מתאריך:</label>
+            <input type="date" id="date-from" />
+          </div>
+          <div class="form-group">
+            <label>עד תאריך:</label>
+            <input type="date" id="date-to" />
+          </div>
+        </div>
+      </div>
+
+      <!-- לפי עמודה -->
+      <div class="split-panel" id="panel-col">
+        <div class="form-row">
+          <div class="form-group">
+            <label>עמודה לפיצול:</label>
+            <select id="split-col"></select>
+          </div>
+          <div class="form-group">
+            <label>ערכים ייחודיים (לתצוגה):</label>
+            <select id="split-col-vals" size="4" style="height:90px;"></select>
+          </div>
+        </div>
+        <div class="alert alert-info show">כל ערך ייחודי יהפוך לקובץ נפרד. לדוגמה: פיצול לפי "מחלקה" ייצור קובץ לכל מחלקה.</div>
+      </div>
+
+      <!-- לפי שורות -->
+      <div class="split-panel" id="panel-rows">
+        <div class="form-row">
+          <div class="form-group">
+            <label>מספר שורות לכל קובץ:</label>
+            <input type="number" id="rows-per-file" value="10000" min="100" max="500000" />
+          </div>
+          <div class="form-group">
+            <label>מספר קבצים משוער:</label>
+            <input type="text" id="est-files" readonly style="background:var(--bg);color:var(--muted);" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-sm" onclick="goStep(2)">← חזרה</button>
+      <button class="btn-primary" onclick="processFile()">⚙️ עיבוד והכנת קבצים</button>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">מעבד...</div>
+    </div>
+  </div>
+
+  <!-- STEP 4: הורדה -->
+  <div class="section" id="sec4">
+    <div class="card">
+      <div class="card-title">✅ הקבצים מוכנים להורדה</div>
+      <div class="alert alert-info show" id="result-summary"></div>
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-accent" onclick="downloadAll()">⬇ הורד את כל הקבצים</button>
+      <button class="btn-sm" onclick="reset()">🔄 התחל מחדש</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
+
+// ══ DRAG & DROP ══
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e=>{e.preventDefault(); dz.classList.add('drag');});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+dz.addEventListener('drop', e=>{e.preventDefault(); dz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]);});
+document.getElementById('file-input').addEventListener('change', e=>handleFile(e.target.files[0]));
+
+function handleFile(file) {
+  if (!file) return;
+  const maxMB = 100;
+  if (file.size > maxMB*1024*1024) { alert(`הקובץ גדול מ-${maxMB}MB. נסה קובץ קטן יותר.`); return; }
+
+  document.getElementById('fi-name').textContent = file.name;
+  document.getElementById('fi-size').textContent = formatSize(file.size);
+  document.getElementById('file-info').classList.add('show');
+  dz.classList.add('loaded');
+  dz.querySelector('.drop-icon').textContent = '✅';
+  dz.querySelector('.drop-text').textContent = file.name;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    wb = XLSX.read(data, {type:'array', cellDates:true});
+
+    // גיליונות
+    const sheets = wb.SheetNames;
+    document.getElementById('st-sheets').textContent = sheets.length;
+    document.getElementById('st-size').textContent = formatSize(file.size);
+
+    if (sheets.length > 1) {
+      document.getElementById('sheet-select-wrap').style.display = '';
+      const sel = document.getElementById('sheet-select');
+      sel.innerHTML = sheets.map(s=>`<option>${s}</option>`).join('');
+    }
+
+    loadSheet();
+    document.getElementById('file-stats-card').classList.add('show');
+    document.getElementById('btn-next1').disabled = false;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSheet() {
+  const sheetName = document.getElementById('sheet-select').value || wb.SheetNames[0];
+  ws = wb.Sheets[sheetName];
+  allData = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
+
+  // נקה שורות ריקות בתחילה
+  while (allData.length && allData[0].every(c=>!c)) allData.shift();
+
+  headers = allData[0] || [];
+  const dataRows = allData.slice(1).filter(r=>r.some(c=>c!==''));
+
+  document.getElementById('st-rows').textContent = dataRows.length.toLocaleString('he');
+  document.getElementById('st-cols').textContent = headers.length;
+
+  allData = [headers, ...dataRows];
+}
+
+// ══ STEP NAVIGATION ══
+function goStep(n) {
+  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('show',i===n-1));
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.toggle('active',i===n-1);
+    s.classList.toggle('done',i<n-1);
+  });
+  if (n===2) buildColumnsUI();
+  if (n===3) buildSplitUI();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══ COLUMNS UI ══
+function buildColumnsUI() {
+  selectedCols = new Set(headers.map((_,i)=>i));
+  document.getElementById('col-count').textContent = headers.length;
+
+  const grid = document.getElementById('cols-grid');
+  grid.innerHTML = headers.map((h,i)=>{
+    const isDate = isDateCol(i);
+    return `<div class="col-item checked ${isDate?'date-col':''}" id="ci-${i}" onclick="toggleCol(${i})">
+      <div class="col-check">✓</div>
+      <span class="col-name" title="${h}">${h||'(ריק)'}</span>
+      <span class="col-type">${isDate?'📅':''}</span>
+    </div>`;
+  }).join('');
+
+  buildPreview();
+}
+
+function isDateCol(colIdx) {
+  const vals = allData.slice(1,6).map(r=>r[colIdx]).filter(Boolean);
+  return vals.some(v=>typeof v==='string'&&/\d{1,4}[-\/]\d{1,2}[-\/]\d{1,4}/.test(v));
+}
+
+function toggleCol(i) {
+  if (selectedCols.has(i)) selectedCols.delete(i);
+  else selectedCols.add(i);
+  const el = document.getElementById('ci-'+i);
+  el.classList.toggle('checked', selectedCols.has(i));
+  el.querySelector('.col-check').textContent = selectedCols.has(i) ? '✓' : '';
+  buildPreview();
+}
+
+function selectAll(v) {
+  headers.forEach((_,i)=>{
+    if (v) selectedCols.add(i); else selectedCols.delete(i);
+    const el = document.getElementById('ci-'+i);
+    if (el) { el.classList.toggle('checked',v); el.querySelector('.col-check').textContent=v?'✓':''; }
+  });
+  buildPreview();
+}
+
+function buildPreview() {
+  const cols = [...selectedCols].sort((a,b)=>a-b);
+  const preview = allData.slice(0,6);
+  let html = '<table><thead><tr>'+cols.map(i=>`<th>${headers[i]||''}</th>`).join('')+'</tr></thead><tbody>';
+  html += preview.slice(1).map(r=>'<tr>'+cols.map(i=>`<td>${r[i]??''}</td>`).join('')+'</tr>').join('');
+  html += '</tbody></table>';
+  document.getElementById('preview-wrap').innerHTML = html;
+}
+
+// ══ SPLIT UI ══
+function buildSplitUI() {
+  // מילוי עמודות תאריך
+  const dateCols = document.getElementById('date-col');
+  const splitCol = document.getElementById('split-col');
+  const opts = [...selectedCols].sort((a,b)=>a-b).map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
+  dateCols.innerHTML = opts;
+  splitCol.innerHTML = opts;
+  splitCol.addEventListener('change', updateSplitVals);
+  updateSplitVals();
+
+  // שורות לקובץ — עדכון אומדן
+  document.getElementById('rows-per-file').addEventListener('input', updateEstFiles);
+  updateEstFiles();
+
+  // תאריך period
+  document.getElementById('date-period').addEventListener('change', function(){
+    document.getElementById('custom-dates').style.display = this.value==='custom' ? '' : 'none';
+  });
+}
+
+function updateSplitVals() {
+  const colIdx = parseInt(document.getElementById('split-col').value);
+  const vals = [...new Set(allData.slice(1).map(r=>r[colIdx]).filter(v=>v!==''))].slice(0,50);
+  document.getElementById('split-col-vals').innerHTML = vals.map(v=>`<option>${v}</option>`).join('');
+}
+
+function updateEstFiles() {
+  const rows = allData.length-1;
+  const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
+  document.getElementById('est-files').value = Math.ceil(rows/perFile)+' קבצים';
+}
+
+function setSplitMode(mode, btn) {
+  splitMode = mode;
+  document.querySelectorAll('.split-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.split-panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('panel-'+mode).classList.add('show');
+}
+
+// ══ PROCESS ══
+async function processFile() {
+  outputFiles = [];
+  const cols = [...selectedCols].sort((a,b)=>a-b);
+  const dataRows = allData.slice(1);
+
+  setProgress(10,'מסנן עמודות...');
+
+  // סינון עמודות
+  const filtered = dataRows.map(r=>cols.map(i=>r[i]));
+  const filteredHeaders = cols.map(i=>headers[i]);
+
+  setProgress(30,'מחלק לקבצים...');
+
+  if (splitMode==='none') {
+    outputFiles.push({name:'ממועל', data:[filteredHeaders,...filtered]});
+
+  } else if (splitMode==='rows') {
+    const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
+    for (let i=0; i<filtered.length; i+=perFile) {
+      outputFiles.push({name:`חלק_${Math.floor(i/perFile)+1}`, data:[filteredHeaders,...filtered.slice(i,i+perFile)]});
+    }
+
+  } else if (splitMode==='col') {
+    const colIdx = parseInt(document.getElementById('split-col').value);
+    const localIdx = cols.indexOf(colIdx);
+    const groups = {};
+    filtered.forEach(r=>{
+      const key = r[localIdx]||'(ריק)';
+      if (!groups[key]) groups[key]=[];
+      groups[key].push(r);
+    });
+    Object.entries(groups).forEach(([key,rows])=>{
+      outputFiles.push({name:sanitize(key), data:[filteredHeaders,...rows]});
+    });
+
+  } else if (splitMode==='date') {
+    const colIdx = parseInt(document.getElementById('date-col').value);
+    const localIdx = cols.indexOf(colIdx);
+    const period = document.getElementById('date-period').value;
+
+    if (period==='custom') {
+      const from = new Date(document.getElementById('date-from').value);
+      const to   = new Date(document.getElementById('date-to').value);
+      to.setHours(23,59,59);
+      const inRange = filtered.filter(r=>{
+        const d=new Date(r[localIdx]); return d>=from&&d<=to;
+      });
+      outputFiles.push({name:'טווח_תאריכים', data:[filteredHeaders,...inRange]});
+    } else {
+      const groups={};
+      filtered.forEach(r=>{
+        const d=new Date(r[localIdx]);
+        if (isNaN(d)) return;
+        let key;
+        if (period==='month') key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        else if (period==='quarter') key=`${d.getFullYear()}-Q${Math.ceil((d.getMonth()+1)/3)}`;
+        else key=String(d.getFullYear());
+        if (!groups[key]) groups[key]=[];
+        groups[key].push(r);
+      });
+      Object.entries(groups).sort().forEach(([key,rows])=>{
+        outputFiles.push({name:key, data:[filteredHeaders,...rows]});
+      });
+    }
+  }
+
+  setProgress(80,'יוצר קבצי אקסל...');
+  await new Promise(r=>setTimeout(r,50));
+
+  // בניית blob לכל קובץ
+  outputFiles.forEach(f=>{
+    const newWb = XLSX.utils.book_new();
+    const newWs = XLSX.utils.aoa_to_sheet(f.data);
+    XLSX.utils.book_append_sheet(newWb, newWs, 'נתונים');
+    f.blob = XLSX.write(newWb, {bookType:'xlsx', type:'array'});
+    f.rows = f.data.length-1;
+    f.sizeMB = (f.blob.byteLength/1024/1024).toFixed(1);
+  });
+
+  setProgress(100,'מוכן!');
+  setTimeout(()=>{
+    document.getElementById('progress-wrap').classList.remove('show');
+    showResults();
+  },400);
+}
+
+function setProgress(pct, txt) {
+  document.getElementById('progress-wrap').classList.add('show');
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = txt;
+}
+
+function showResults() {
+  document.getElementById('result-summary').textContent =
+    `נוצרו ${outputFiles.length} קבצים עם סה"כ ${outputFiles.reduce((s,f)=>s+f.rows,0).toLocaleString('he')} שורות`;
+
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = outputFiles.map((f,i)=>`
+    <div class="result-card">
+      <div class="rc-name">📊 ${f.name}.xlsx</div>
+      <div class="rc-stats">
+        <span class="badge badge-rows">${f.rows.toLocaleString('he')} שורות</span>
+        <span class="badge badge-size">${f.sizeMB} MB</span>
+      </div>
+      <button class="rc-dl" onclick="downloadOne(${i})">⬇ הורדה</button>
+    </div>`).join('');
+
+  goStep(4);
+}
+
+function downloadOne(i) {
+  const f = outputFiles[i];
+  const blob = new Blob([f.blob], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=f.name+'.xlsx'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadAll() {
+  outputFiles.forEach((_,i)=>{ setTimeout(()=>downloadOne(i), i*300); });
+}
+
+function reset() {
+  wb=ws=allData=headers=selectedCols=null; outputFiles=[];
+  document.getElementById('file-input').value='';
+  dz.classList.remove('loaded','drag');
+  dz.querySelector('.drop-icon').textContent='📊';
+  dz.querySelector('.drop-text').textContent='לחץ לבחירת קובץ או גרור לכאן';
+  document.getElementById('file-info').classList.remove('show');
+  document.getElementById('file-stats-card').classList.remove('show');
+  document.getElementById('btn-next1').disabled=true;
+  goStep(1);
+}
+
+function formatSize(b) {
+  if (b>1024*1024) return (b/1024/1024).toFixed(1)+' MB';
+  return (b/1024).toFixed(0)+' KB';
+}
+function sanitize(s) { return String(s).replace(/[\\/:*?"<>|]/g,'_').substring(0,30); }
+</script>
+</body>
+</html>

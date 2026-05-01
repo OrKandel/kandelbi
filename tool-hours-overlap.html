@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>זיהוי חפיפה בדיווחי שעות — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}
+.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:2rem;margin-bottom:6px}
+.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:650px){.grid3,.grid2{grid-template-columns:1fr}}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none}
+.form-group select:focus{border-color:var(--blue)}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+.summary-bar{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.sum-item{flex:1;min-width:100px;background:var(--bg);border-radius:10px;padding:12px 16px;text-align:center;border:1px solid var(--border)}
+.sum-val{font-weight:900;font-size:1.6rem;color:var(--navy);display:block;line-height:1}
+.sum-lbl{font-size:0.72rem;color:var(--muted);margin-top:3px}
+.sum-item.danger .sum-val{color:var(--red)}
+.sum-item.warn .sum-val{color:var(--orange)}
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:450px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
+.b-full{background:#fef2f2;color:var(--red)}
+.b-partial{background:#fff3e0;color:var(--orange)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">⏰ זיהוי חפיפה בדיווחי שעות</div>
+<div class="tool-sub">זיהוי אוטומטי של עובדים שדיווחו שעות חופפות באותו תאריך</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה קובץ דיווחי שעות — כל שורה = דיווח שעות של עובד</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>בחר את עמודות: שם/ת.ז. עובד, תאריך, שעת כניסה, שעת יציאה</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>הכלי מזהה אוטומטית כל מקרה שבו לאותו עובד יש שתי שורות עם שעות חופפות באותו יום</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>קבל דוח ממצאים הניתן לייצוא — כולל פירוט השורות הבעייתיות ומשך החפיפה</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 טעינת קובץ דיווחי שעות</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📋</div>
+    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+</div>
+
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרת עמודות</div>
+  <div class="grid2">
+    <div class="form-group"><label>עמודת מזהה עובד (שם / ת.ז.):</label><select id="col-emp"></select></div>
+    <div class="form-group"><label>עמודת תאריך:</label><select id="col-date"></select></div>
+    <div class="form-group"><label>עמודת שעת כניסה / התחלה:</label><select id="col-start"></select></div>
+    <div class="form-group"><label>עמודת שעת יציאה / סיום:</label><select id="col-end"></select></div>
+  </div>
+  <button class="btn-primary" onclick="runAnalysis()">🔍 זהה חפיפות</button>
+</div>
+
+<div class="card hidden" id="results-card">
+  <div class="card-title">⚠️ ממצאי חפיפה</div>
+  <div class="summary-bar">
+    <div class="sum-item danger"><span class="sum-val" id="cnt-workers">0</span><span class="sum-lbl">עובדים עם חפיפה</span></div>
+    <div class="sum-item danger"><span class="sum-val" id="cnt-cases">0</span><span class="sum-lbl">מקרי חפיפה</span></div>
+    <div class="sum-item warn"><span class="sum-val" id="cnt-total">0</span><span class="sum-lbl">שורות שנבדקו</span></div>
+  </div>
+  <div class="result-table-wrap">
+    <table>
+      <thead><tr><th>מזהה עובד</th><th>תאריך</th><th>שורה 1: שעות</th><th>שורה 2: שעות</th><th>משך חפיפה</th><th>סוג</th></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:1rem"><button class="btn-accent" onclick="exportResults()">⬇ ייצא ממצאים לאקסל</button></div>
+</div>
+</main>
+
+<script>
+let rawData=[], headers=[], findings=[];
+
+document.getElementById('fi').addEventListener('change', e=>loadFile(e.target.files[0]));
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
+
+function loadFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    headers=rows[0]||[];
+    rawData=rows.slice(1).filter(r=>r.some(c=>c!==''));
+    dz.classList.add('loaded');
+    dz.querySelector('.ub-icon').textContent='✅';
+    dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.length+' שורות)';
+    const opts=headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+    ['col-emp','col-date','col-start','col-end'].forEach(id=>document.getElementById(id).innerHTML=opts);
+    // ניחוש אוטומטי
+    autoGuess();
+    document.getElementById('config-card').classList.remove('hidden');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function autoGuess(){
+  const guesses={
+    'col-emp':['שם','עובד','ת.ז','מזהה','id','name','employee'],
+    'col-date':['תאריך','date','יום'],
+    'col-start':['כניסה','התחלה','start','from','משעה','שעת כניסה'],
+    'col-end':['יציאה','סיום','end','to','עד שעה','שעת יציאה']
+  };
+  Object.entries(guesses).forEach(([selId,kws])=>{
+    const idx=headers.findIndex(h=>kws.some(k=>String(h).toLowerCase().includes(k)));
+    if(idx>=0) document.getElementById(selId).value=idx;
+  });
+}
+
+function parseTime(v){
+  if(!v&&v!==0)return null;
+  if(typeof v==='number') return v*24*60; // Excel time fraction
+  const s=String(v).trim();
+  const m=s.match(/(\d{1,2}):(\d{2})/);
+  if(m) return parseInt(m[1])*60+parseInt(m[2]);
+  return null;
+}
+
+function runAnalysis(){
+  const ci=parseInt(document.getElementById('col-emp').value);
+  const cd=parseInt(document.getElementById('col-date').value);
+  const cs=parseInt(document.getElementById('col-start').value);
+  const ce=parseInt(document.getElementById('col-end').value);
+  findings=[];
+
+  // קיבוץ לפי עובד+תאריך
+  const groups={};
+  rawData.forEach((row,idx)=>{
+    const key=`${row[ci]}||${row[cd]}`;
+    if(!groups[key]) groups[key]=[];
+    groups[key].push({row,idx,start:parseTime(row[cs]),end:parseTime(row[ce])});
+  });
+
+  Object.values(groups).forEach(entries=>{
+    if(entries.length<2) return;
+    for(let i=0;i<entries.length;i++){
+      for(let j=i+1;j<entries.length;j++){
+        const a=entries[i], b=entries[j];
+        if(a.start===null||a.end===null||b.start===null||b.end===null) continue;
+        const overlapStart=Math.max(a.start,b.start);
+        const overlapEnd=Math.min(a.end,b.end);
+        if(overlapEnd>overlapStart){
+          const mins=overlapEnd-overlapStart;
+          findings.push({
+            emp:a.row[ci], date:a.row[cd],
+            s1:`${fmtMin(a.start)}–${fmtMin(a.end)}`,
+            s2:`${fmtMin(b.start)}–${fmtMin(b.end)}`,
+            overlap:mins,
+            full:a.start<=b.start&&a.end>=b.end||b.start<=a.start&&b.end>=a.end
+          });
+        }
+      }
+    }
+  });
+
+  const workers=new Set(findings.map(f=>f.emp)).size;
+  document.getElementById('cnt-workers').textContent=workers;
+  document.getElementById('cnt-cases').textContent=findings.length;
+  document.getElementById('cnt-total').textContent=rawData.length;
+
+  const tbody=document.getElementById('result-body');
+  tbody.innerHTML=findings.map(f=>`<tr>
+    <td><strong>${f.emp}</strong></td>
+    <td>${f.date}</td>
+    <td>${f.s1}</td>
+    <td>${f.s2}</td>
+    <td>${fmtMin(f.overlap)} דק'</td>
+    <td><span class="badge ${f.full?'b-full':'b-partial'}">${f.full?'חפיפה מלאה':'חפיפה חלקית'}</span></td>
+  </tr>`).join('');
+
+  document.getElementById('results-card').classList.remove('hidden');
+}
+
+function fmtMin(m){
+  if(m===null)return '--';
+  const h=Math.floor(m/60), mm=String(m%60).padStart(2,'0');
+  return h+':'+mm;
+}
+
+function exportResults(){
+  const rows=[['מזהה עובד','תאריך','שורה 1: שעות','שורה 2: שעות','משך חפיפה (דקות)','סוג חפיפה'],
+    ...findings.map(f=>[f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'חפיפה מלאה':'חפיפה חלקית'])];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'חפיפות שעות');
+  XLSX.writeFile(wb,'חפיפות_שעות.xlsx');
+}
+</script>
+</body>
+</html>

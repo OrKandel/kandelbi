@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>זמן בין אירועים — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:2rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+.summary-bar{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.sum-item{flex:1;min-width:120px;background:var(--bg);border-radius:10px;padding:12px 16px;text-align:center;border:1px solid var(--border)}
+.sum-val{font-weight:900;font-size:1.4rem;color:var(--navy);display:block;line-height:1}
+.sum-lbl{font-size:0.72rem;color:var(--muted);margin-top:3px}
+.filter-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.ftab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.ftab:hover{border-color:var(--blue);color:var(--blue)}.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:450px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
+.b-fast{background:#edf7f3;color:var(--green)}.b-normal{background:#eef3fb;color:var(--blue)}.b-slow{background:#fff3e0;color:var(--orange)}.b-very-slow{background:#fef2f2;color:var(--red)}
+.time-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:3px;max-width:120px}
+.time-fill{height:100%;border-radius:3px;background:var(--blue)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">⏱️ זמן בין אירועים לאותו עובד</div>
+<div class="tool-sub">חישוב אוטומטי של הזמן שהושקע בכל משימה — לפי רצף הפעולות של כל עובד במערכת</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה פלט מהמערכת התפעולית — קובץ לוג / יומן פעולות (כל שורה = פעולה עם חותמת זמן)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>בחר עמודות: מזהה עובד, חותמת זמן, ואופציונלית — סוג פעולה / מזהה עסקה</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>הכלי ממיין לפי עובד ותאריך ומחשב את הזמן שעבר בין כל שורה לקודמת של אותו עובד</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>סמן סף זמן מינימלי ומקסימלי לחיפוש חריגות — לדוגמה: פחות מ-30 שניות לעסקה = חשוד</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 טעינת קובץ לוג / פעולות</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📋</div>
+    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+</div>
+
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרת עמודות</div>
+  <div class="grid2">
+    <div class="form-group"><label>עמודת מזהה עובד / משתמש:</label><select id="col-emp"></select></div>
+    <div class="form-group"><label>עמודת חותמת זמן (תאריך + שעה):</label><select id="col-ts"></select></div>
+    <div class="form-group"><label>עמודת סוג פעולה (אופציונלי):</label><select id="col-action"><option value="-1">— לא רלוונטי —</option></select></div>
+    <div class="form-group"><label>עמודת מזהה עסקה (אופציונלי):</label><select id="col-tx"><option value="-1">— לא רלוונטי —</option></select></div>
+  </div>
+  <div class="card" style="background:var(--bg);border:1px solid var(--border);padding:1rem;margin-top:0.5rem">
+    <div style="font-weight:700;margin-bottom:0.8rem;font-size:0.9rem">🚩 סימון חריגות זמן</div>
+    <div class="grid2">
+      <div class="form-group"><label>זמן קצר מדי — חשוד (שניות):</label><input type="number" id="thresh-fast" value="30" min="0"/></div>
+      <div class="form-group"><label>זמן ארוך מדי — חשוד (דקות):</label><input type="number" id="thresh-slow" value="60" min="0"/></div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="runAnalysis()">⏱️ חשב זמנים</button>
+</div>
+
+<div class="card hidden" id="results-card">
+  <div class="card-title">📊 ניתוח זמנים</div>
+  <div class="summary-bar">
+    <div class="sum-item"><span class="sum-val" id="cnt-rows">0</span><span class="sum-lbl">שורות</span></div>
+    <div class="sum-item"><span class="sum-val" id="cnt-emp">0</span><span class="sum-lbl">עובדים</span></div>
+    <div class="sum-item"><span class="sum-val" id="avg-time">—</span><span class="sum-lbl">זמן ממוצע</span></div>
+    <div class="sum-item"><span class="sum-val" id="cnt-fast" style="color:var(--red)">0</span><span class="sum-lbl">מהירים מדי</span></div>
+    <div class="sum-item"><span class="sum-val" id="cnt-slow" style="color:var(--orange)">0</span><span class="sum-lbl">איטיים מדי</span></div>
+  </div>
+  <div class="filter-tabs">
+    <button class="ftab active" onclick="filterR('all',this)">הכל</button>
+    <button class="ftab" onclick="filterR('fast',this)">מהיר מדי ⚡</button>
+    <button class="ftab" onclick="filterR('slow',this)">איטי מדי 🐢</button>
+    <button class="ftab" onclick="filterR('normal',this)">תקין</button>
+  </div>
+  <div class="result-table-wrap">
+    <table>
+      <thead><tr><th>עובד</th><th>חותמת זמן</th><th>זמן מהשורה הקודמת</th><th>פעולה</th><th>מזהה עסקה</th><th>סטטוס</th></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:1rem"><button class="btn-accent" onclick="exportResults()">⬇ ייצא לאקסל</button></div>
+</div>
+</main>
+
+<script>
+let rawData=[], headers=[], allResults=[];
+
+document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
+
+function loadFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    rawData=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+    headers=rawData[0]||[];
+    rawData=rawData.slice(1).filter(r=>r.some(c=>c!==''));
+    dz.classList.add('loaded');
+    dz.querySelector('.ub-icon').textContent='✅';
+    dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.length+' שורות)';
+    const opts=headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+    ['col-emp','col-ts','col-action','col-tx'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.innerHTML=(id==='col-action'||id==='col-tx'?'<option value="-1">— לא רלוונטי —</option>':'')+opts;
+    });
+    autoGuess();
+    document.getElementById('config-card').classList.remove('hidden');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function autoGuess(){
+  const g={'col-emp':['עובד','שם','מזהה','user','employee','id'],
+    'col-ts':['זמן','תאריך','timestamp','datetime','date','שעה']};
+  Object.entries(g).forEach(([sel,kws])=>{
+    const i=headers.findIndex(h=>kws.some(k=>String(h).toLowerCase().includes(k)));
+    if(i>=0) document.getElementById(sel).value=i;
+  });
+}
+
+function parseDateTime(v){
+  if(!v) return null;
+  const d=new Date(v);
+  if(!isNaN(d)) return d;
+  // Excel serial
+  if(typeof v==='number'){
+    const ms=(v-25569)*86400000;
+    return new Date(ms);
+  }
+  return null;
+}
+
+function fmtDuration(ms){
+  if(ms===null) return '—';
+  const sec=Math.round(ms/1000);
+  if(sec<60) return sec+'ש\'';
+  if(sec<3600) return Math.floor(sec/60)+'ד\' '+String(sec%60).padStart(2,'0')+'ש\'';
+  return Math.floor(sec/3600)+'ש\' '+Math.floor((sec%3600)/60)+'ד\'';
+}
+
+function runAnalysis(){
+  const ci=parseInt(document.getElementById('col-emp').value);
+  const ct=parseInt(document.getElementById('col-ts').value);
+  const ca=parseInt(document.getElementById('col-action').value);
+  const cx=parseInt(document.getElementById('col-tx').value);
+  const thFast=parseInt(document.getElementById('thresh-fast').value)*1000;
+  const thSlow=parseInt(document.getElementById('thresh-slow').value)*60*1000;
+
+  // קיבוץ לפי עובד וממיין לפי זמן
+  const groups={};
+  rawData.forEach((row,idx)=>{
+    const emp=row[ci]||'(לא ידוע)';
+    if(!groups[emp]) groups[emp]=[];
+    groups[emp].push({row,idx,ts:parseDateTime(row[ct])});
+  });
+
+  allResults=[];
+  Object.entries(groups).forEach(([emp,entries])=>{
+    entries.sort((a,b)=>(a.ts||0)-(b.ts||0));
+    entries.forEach((e,i)=>{
+      const prev=entries[i-1];
+      const diff=prev&&e.ts&&prev.ts?e.ts-prev.ts:null;
+      let status='first';
+      if(diff!==null){
+        if(diff<thFast) status='fast';
+        else if(diff>thSlow) status='slow';
+        else status='normal';
+      }
+      allResults.push({emp,ts:e.row[ct],diff,status,action:ca>=0?e.row[ca]:'',tx:cx>=0?e.row[cx]:''});
+    });
+  });
+
+  const withDiff=allResults.filter(r=>r.diff!==null);
+  const avgMs=withDiff.length?withDiff.reduce((s,r)=>s+r.diff,0)/withDiff.length:0;
+  document.getElementById('cnt-rows').textContent=allResults.length;
+  document.getElementById('cnt-emp').textContent=Object.keys(groups).length;
+  document.getElementById('avg-time').textContent=fmtDuration(avgMs);
+  document.getElementById('cnt-fast').textContent=allResults.filter(r=>r.status==='fast').length;
+  document.getElementById('cnt-slow').textContent=allResults.filter(r=>r.status==='slow').length;
+
+  renderResults(allResults);
+  document.getElementById('results-card').classList.remove('hidden');
+}
+
+function renderResults(data){
+  const maxDiff=Math.max(...data.filter(r=>r.diff).map(r=>r.diff),1);
+  document.getElementById('result-body').innerHTML=data.map(r=>{
+    const badgeCls=r.status==='fast'?'b-fast':r.status==='slow'?'b-very-slow':r.status==='first'?'b-normal':'b-normal';
+    const badgeTxt=r.status==='fast'?'⚡ מהיר מדי':r.status==='slow'?'🐢 איטי מדי':r.status==='first'?'ראשון':'✓ תקין';
+    const pct=r.diff?Math.min(100,r.diff/maxDiff*100):0;
+    return `<tr>
+      <td><strong>${r.emp}</strong></td>
+      <td>${r.ts||''}</td>
+      <td>${fmtDuration(r.diff)}<div class="time-bar"><div class="time-fill" style="width:${pct}%"></div></div></td>
+      <td>${r.action}</td>
+      <td>${r.tx}</td>
+      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterR(type,btn){
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderResults(type==='all'?allResults:allResults.filter(r=>r.status===type));
+}
+
+function exportResults(){
+  const rows=[['עובד','חותמת זמן','זמן מהפעולה הקודמת','פעולה','מזהה עסקה','סטטוס'],
+    ...allResults.map(r=>[r.emp,r.ts,fmtDuration(r.diff),r.action,r.tx,
+      r.status==='fast'?'מהיר מדי':r.status==='slow'?'איטי מדי':r.status==='first'?'ראשון':'תקין'])];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'זמני עיבוד');
+  XLSX.writeFile(wb,'זמן_בין_אירועים.xlsx');
+}
+</script>
+</body>
+</html>

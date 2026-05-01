@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>דשבורד פילוח דינמי — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:1100px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:2rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+.config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none}
+.form-group select:focus{border-color:var(--blue)}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+.btn-sm{padding:6px 14px;border-radius:7px;border:1.5px solid var(--border);background:var(--white);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* KPI BAR */
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.2rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.8rem;color:var(--navy);display:block;line-height:1;font-family:'Heebo'}
+.kpi-lbl{font-size:0.75rem;color:var(--muted);margin-top:4px}
+.kpi.highlight{background:var(--navy);border-color:var(--navy)}.kpi.highlight .kpi-val,.kpi.highlight .kpi-lbl{color:#fff}
+.kpi.highlight .kpi-lbl{color:rgba(255,255,255,0.7)}
+
+/* CHART */
+.chart-wrap{margin-bottom:1.5rem}
+.chart-title{font-weight:700;font-size:0.9rem;color:var(--navy);margin-bottom:0.8rem}
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:0.82rem;color:var(--text);min-width:130px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:28px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:6px;transition:width 0.5s ease;display:flex;align-items:center;padding-right:8px}
+.bar-val{font-size:0.78rem;font-weight:700;color:#fff;white-space:nowrap}
+.bar-pct{font-size:0.75rem;color:var(--muted);min-width:40px}
+
+/* TABLE */
+.pivot-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.83rem}
+th{background:var(--navy);color:#fff;padding:9px 14px;text-align:right;font-weight:700;white-space:nowrap}
+th.sortable{cursor:pointer}.th.sortable:hover{background:var(--navy2)}
+td{padding:8px 14px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+tr:last-child td{border-bottom:none;font-weight:700;background:#f8fafc}
+.num{text-align:left;font-family:'Heebo';font-weight:700}
+.pct-cell{color:var(--muted);font-size:0.8rem}
+
+.hidden{display:none}
+.flex-row{display:flex;gap:0.8rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">📊 דשבורד פילוח דינמי</div>
+<div class="tool-sub">פלח כל נתון לפי כל עמודה — ראה סיכומים, אחוזים וגרפים בלחיצה אחת</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה קובץ אקסל עם הנתונים שברצונך לנתח</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>בחר עמודת פילוח ראשית (לדוגמה: מחלקה, ספק, עיר) ועמודת סכום (לדוגמה: סכום, כמות)</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>אופציונלי: הוסף פילוח משני לפירוט נוסף, או סנן לפי ערך ספציפי</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>הדשבורד מציג KPI, גרף עמודות ותאור פירוט — ניתן לייצוא לאקסל</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 טעינת קובץ נתונים</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📊</div>
+    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+</div>
+
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרות פילוח</div>
+  <div class="config-grid">
+    <div class="form-group">
+      <label>📂 פילוח ראשי (לפי מה לחתוך):</label>
+      <select id="col-group1" onchange="runPivot()"></select>
+    </div>
+    <div class="form-group">
+      <label>💰 עמודת סכום / ספירה:</label>
+      <select id="col-value" onchange="runPivot()"></select>
+    </div>
+    <div class="form-group">
+      <label>📋 פילוח משני (אופציונלי):</label>
+      <select id="col-group2" onchange="runPivot()"><option value="-1">— ללא פילוח משני —</option></select>
+    </div>
+    <div class="form-group">
+      <label>🔢 פעולת חישוב:</label>
+      <select id="agg-func" onchange="runPivot()">
+        <option value="sum">סכום</option>
+        <option value="count">ספירה</option>
+        <option value="avg">ממוצע</option>
+        <option value="max">מקסימום</option>
+        <option value="min">מינימום</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>🔍 סינון (חיפוש חופשי בכל העמודות):</label>
+    <input type="text" id="filter-text" placeholder="הקלד לסינון..." oninput="runPivot()"/>
+  </div>
+</div>
+
+<div class="hidden" id="dashboard">
+  <div class="kpi-bar" id="kpi-bar"></div>
+
+  <div class="card">
+    <div class="flex-row">
+      <div class="chart-title" id="chart-title">פילוח לפי —</div>
+      <button class="btn-sm" onclick="toggleSort()">⇅ מיין</button>
+      <button class="btn-accent" onclick="exportPivot()">⬇ ייצא לאקסל</button>
+    </div>
+    <div class="chart-wrap"><div class="bar-chart" id="bar-chart"></div></div>
+    <div class="pivot-table-wrap">
+      <table>
+        <thead><tr id="pivot-head"></tr></thead>
+        <tbody id="pivot-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</main>
+
+<script>
+let rawData=[],headers=[],pivotData=[],sortAsc=false;
+const COLORS=['#1e6abf','#0a7c5e','#e67e22','#8e44ad','#d93025','#2980b9','#27ae60','#f39c12'];
+
+document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
+
+function loadFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    headers=rows[0]||[];
+    rawData=rows.slice(1).filter(r=>r.some(c=>c!==''));
+    dz.classList.add('loaded');
+    dz.querySelector('.ub-icon').textContent='✅';
+    dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.length.toLocaleString('he')+' שורות)';
+
+    const opts=headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+    const optsOpt='<option value="-1">— ללא פילוח משני —</option>'+opts;
+    document.getElementById('col-group1').innerHTML=opts;
+    document.getElementById('col-value').innerHTML=opts;
+    document.getElementById('col-group2').innerHTML=optsOpt;
+
+    // ניחוש: עמודה מספרית לסכום
+    const numIdx=headers.findIndex((_,i)=>rawData.slice(0,5).every(r=>!isNaN(parseFloat(r[i]))));
+    if(numIdx>=0) document.getElementById('col-value').value=numIdx;
+
+    document.getElementById('config-card').classList.remove('hidden');
+    runPivot();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function getFiltered(){
+  const q=document.getElementById('filter-text').value.trim().toLowerCase();
+  if(!q) return rawData;
+  return rawData.filter(r=>r.some(c=>String(c).toLowerCase().includes(q)));
+}
+
+function aggregate(vals, func){
+  const nums=vals.map(v=>parseFloat(String(v).replace(/,/g,''))).filter(v=>!isNaN(v));
+  if(!nums.length) return 0;
+  if(func==='sum') return nums.reduce((a,b)=>a+b,0);
+  if(func==='count') return vals.length;
+  if(func==='avg') return nums.reduce((a,b)=>a+b,0)/nums.length;
+  if(func==='max') return Math.max(...nums);
+  if(func==='min') return Math.min(...nums);
+  return 0;
+}
+
+function fmt(v,func){
+  if(func==='count') return Math.round(v).toLocaleString('he');
+  if(Math.abs(v)>=1000000) return (v/1000000).toFixed(1)+'M';
+  if(Math.abs(v)>=1000) return (v/1000).toFixed(1)+'K';
+  return v.toFixed(func==='avg'?1:0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+}
+
+function runPivot(){
+  const g1=parseInt(document.getElementById('col-group1').value);
+  const g2=parseInt(document.getElementById('col-group2').value);
+  const cv=parseInt(document.getElementById('col-value').value);
+  const func=document.getElementById('agg-func').value;
+  const data=getFiltered();
+
+  // קיבוץ
+  const groups={};
+  data.forEach(row=>{
+    const k1=String(row[g1]||'(ריק)');
+    const k2=g2>=0?String(row[g2]||'(ריק)'):'_';
+    if(!groups[k1]) groups[k1]={};
+    if(!groups[k1][k2]) groups[k1][k2]=[];
+    groups[k1][k2].push(row[cv]);
+  });
+
+  // חישוב
+  pivotData=Object.entries(groups).map(([k1,sub])=>{
+    const subVals=Object.entries(sub).map(([k2,vals])=>({k2,val:aggregate(vals,func),count:vals.length}));
+    const total=g2>=0?subVals.reduce((s,r)=>s+r.val,0):aggregate(Object.values(sub).flat(),func);
+    return {k1,total,count:Object.values(sub).flat().length,sub:subVals};
+  });
+
+  if(sortAsc) pivotData.sort((a,b)=>a.total-b.total);
+  else pivotData.sort((a,b)=>b.total-a.total);
+
+  const grandTotal=pivotData.reduce((s,r)=>s+r.total,0);
+  const maxVal=pivotData[0]?.total||1;
+
+  // KPIs
+  const funcLabel={'sum':'סה"כ','count':'ספירה','avg':'ממוצע','max':'מקסימום','min':'מינימום'};
+  document.getElementById('kpi-bar').innerHTML=`
+    <div class="kpi highlight"><span class="kpi-val">${fmt(grandTotal,func)}</span><span class="kpi-lbl">${funcLabel[func]} כולל</span></div>
+    <div class="kpi"><span class="kpi-val">${data.length.toLocaleString('he')}</span><span class="kpi-lbl">שורות (אחרי סינון)</span></div>
+    <div class="kpi"><span class="kpi-val">${pivotData.length}</span><span class="kpi-lbl">קבוצות (${headers[g1]})</span></div>
+    <div class="kpi"><span class="kpi-val">${fmt(maxVal,func)}</span><span class="kpi-lbl">הכי גבוה: ${pivotData[0]?.k1||''}</span></div>
+  `;
+
+  // גרף
+  document.getElementById('chart-title').textContent=`פילוח לפי ${headers[g1]} — ${funcLabel[func]} ${headers[cv]}`;
+  document.getElementById('bar-chart').innerHTML=pivotData.slice(0,15).map((r,i)=>{
+    const pct=grandTotal?Math.round(r.total/grandTotal*100):0;
+    const w=maxVal?Math.round(r.total/maxVal*100):0;
+    return `<div class="bar-row">
+      <div class="bar-label" title="${r.k1}">${r.k1}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${COLORS[i%COLORS.length]}">
+        <span class="bar-val">${fmt(r.total,func)}</span></div></div>
+      <div class="bar-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  // טבלה
+  const hasG2=g2>=0;
+  if(hasG2){
+    const subKeys=[...new Set(pivotData.flatMap(r=>r.sub.map(s=>s.k2)))].sort();
+    document.getElementById('pivot-head').innerHTML=`<th>${headers[g1]}</th>`+subKeys.map(k=>`<th class="num">${k}</th>`).join('')+`<th class="num">סה"כ</th><th class="num">%</th>`;
+    document.getElementById('pivot-body').innerHTML=pivotData.map(r=>{
+      const pct=grandTotal?Math.round(r.total/grandTotal*100):0;
+      const cells=subKeys.map(k=>{const s=r.sub.find(x=>x.k2===k);return `<td class="num">${s?fmt(s.val,func):'—'}</td>`;}).join('');
+      return `<tr><td>${r.k1}</td>${cells}<td class="num">${fmt(r.total,func)}</td><td class="num pct-cell">${pct}%</td></tr>`;
+    }).join('')+`<tr><td><strong>סה"כ</strong></td>`+subKeys.map(k=>{
+      const s=pivotData.flatMap(r=>r.sub).filter(x=>x.k2===k);
+      return `<td class="num">${fmt(aggregate(s.map(x=>x.val),'sum'),func)}</td>`;
+    }).join('')+`<td class="num">${fmt(grandTotal,func)}</td><td class="num">100%</td></tr>`;
+  } else {
+    document.getElementById('pivot-head').innerHTML=`<th>${headers[g1]}</th><th class="num">${funcLabel[func]} ${headers[cv]}</th><th class="num">ספירת שורות</th><th class="num">%</th>`;
+    document.getElementById('pivot-body').innerHTML=pivotData.map(r=>{
+      const pct=grandTotal?Math.round(r.total/grandTotal*100):0;
+      return `<tr><td>${r.k1}</td><td class="num">${fmt(r.total,func)}</td><td class="num">${r.count.toLocaleString('he')}</td><td class="num pct-cell">${pct}%</td></tr>`;
+    }).join('')+`<tr><td><strong>סה"כ</strong></td><td class="num">${fmt(grandTotal,func)}</td><td class="num">${data.length.toLocaleString('he')}</td><td class="num">100%</td></tr>`;
+  }
+
+  document.getElementById('dashboard').classList.remove('hidden');
+}
+
+function toggleSort(){sortAsc=!sortAsc;runPivot();}
+
+function exportPivot(){
+  const g1=parseInt(document.getElementById('col-group1').value);
+  const cv=parseInt(document.getElementById('col-value').value);
+  const func=document.getElementById('agg-func').value;
+  const grandTotal=pivotData.reduce((s,r)=>s+r.total,0);
+  const rows=[[headers[g1],'ערך','ספירה','%'],...pivotData.map(r=>[r.k1,r.total,r.count,grandTotal?Math.round(r.total/grandTotal*100):0])];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'פילוח');
+  XLSX.writeFile(wb,'דשבורד_פילוח.xlsx');
+}
+</script>
+</body>
+</html>

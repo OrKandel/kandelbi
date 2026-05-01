@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>כלים להורדה – קנדל BI | אקסל, בקרה וביקורת פנימית</title>
+  <meta name="description" content="כלים מקצועיים להורדה: קבצי אקסל לבקרה, צ'אטבוטים לביקורת פנימית ועוד." />
+  <link rel="canonical" href="https://kandelbi.org/tools.html" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Assistant:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --navy:#0d1f3c;--navy-mid:#1a3561;--blue:#1e6abf;--blue-light:#2d87e8;
+      --accent:#f0a500;--accent-light:#ffc940;--bg:#f5f7fa;--bg-white:#ffffff;
+      --text:#1a1a2e;--text-mid:#3d4f6b;--text-muted:#6b7a99;--border:#dce3ef;
+      --green:#0a7c5e;--green-bg:#edf7f3;--orange-bg:#fff8ed;--blue-bg:#eef3fb;--red:#e24b4b;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Assistant','Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;line-height:1.7;font-size:16px}
+    nav{position:fixed;top:0;right:0;left:0;z-index:1000;background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:68px;box-shadow:0 2px 20px rgba(0,0,0,0.25)}
+    .logo{font-family:'Heebo';font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none}
+    .logo span{color:var(--accent)}
+    nav ul{list-style:none;display:flex;gap:0.15rem}
+    nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.92rem;font-weight:500;padding:0.5rem 0.9rem;border-radius:6px;transition:all 0.2s;cursor:pointer}
+    nav ul li a:hover,nav ul li a.active{color:#fff;background:rgba(255,255,255,0.1)}
+    .nav-cta{background:var(--accent) !important;color:var(--navy) !important;font-weight:700 !important}
+    .nav-user{color:var(--accent) !important;font-weight:700 !important}
+    .user-bar{background:var(--green-bg);border-bottom:1px solid #b2ddd0;padding:10px 5vw;display:none;align-items:center;justify-content:space-between}
+    .user-bar.show{display:flex}
+    .user-bar span{font-size:0.88rem;color:var(--green);font-weight:600}
+    .btn-logout{background:none;border:1px solid var(--green);color:var(--green);font-size:0.8rem;font-weight:600;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit}
+    .page-hero{background:linear-gradient(145deg,var(--navy) 0%,var(--navy-mid) 100%);padding:120px 5vw 60px;text-align:center}
+    .page-hero h1{font-family:'Heebo';font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;color:#fff;margin-bottom:0.8rem}
+    .page-hero h1 em{color:var(--accent);font-style:normal}
+    .page-hero p{color:rgba(255,255,255,0.7);font-size:1.05rem;max-width:560px;margin:0 auto}
+    .tier-legend{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;padding:1.5rem 5vw;background:var(--bg-white);border-bottom:1px solid var(--border)}
+    .tier-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:0.82rem;font-weight:700}
+    .tier-member{background:var(--blue-bg);color:var(--blue);border:1px solid #c8d9f2}
+    .tier-premium{background:var(--orange-bg);color:#b87400;border:1px solid #f5d48a}
+    .filters-bar{max-width:1200px;margin:0 auto;padding:2rem 5vw 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+    .filter-tabs{display:flex;gap:0.5rem;flex-wrap:wrap}
+    .filter-tab{padding:7px 18px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-white);color:var(--text-mid);font-size:0.88rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+    .filter-tab:hover{border-color:var(--blue);color:var(--blue)}
+    .filter-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .search-box{display:flex;align-items:center;gap:8px;background:var(--bg-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 14px}
+    .search-box input{border:none;outline:none;font-size:0.9rem;font-family:inherit;background:transparent;width:200px;direction:rtl}
+    .tools-grid{max-width:1200px;margin:1.5rem auto 4rem;padding:0 5vw;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.5rem}
+    .tool-card{background:var(--bg-white);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all 0.25s;display:flex;flex-direction:column;position:relative}
+    .tool-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(13,31,60,0.1);border-color:var(--blue-light)}
+    .card-top{padding:1.5rem 1.5rem 1rem;display:flex;align-items:flex-start;gap:1rem}
+    .card-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+    .icon-excel{background:#e8f5ee}.icon-bot{background:#eef3fb}
+    .card-meta{flex:1}
+    .card-title{font-family:'Heebo';font-weight:800;font-size:1rem;color:var(--navy);margin-bottom:4px;line-height:1.3}
+    .card-sub{font-size:0.8rem;color:var(--text-muted)}
+    .card-tier{position:absolute;top:14px;left:14px}
+    .card-body{padding:0 1.5rem 1rem;flex:1}
+    .card-desc{font-size:0.9rem;color:var(--text-mid);line-height:1.65}
+    .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.8rem}
+    .tag{background:var(--bg);color:var(--text-muted);font-size:0.75rem;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid var(--border)}
+    .card-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .card-price{font-family:'Heebo';font-weight:900;font-size:1.1rem;color:var(--navy)}
+    .card-price small{font-size:0.75rem;color:var(--text-muted);font-weight:400}
+    .btn-dl{padding:8px 18px;border-radius:8px;border:none;font-size:0.88rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;font-family:inherit}
+    .btn-member{background:var(--blue);color:#fff}.btn-member:hover{background:#1558a0}
+    .btn-premium{background:var(--accent);color:var(--navy)}.btn-premium:hover{background:var(--accent-light)}
+    .card-locked .card-body{opacity:0.6}
+    .tools-grid .tool-card{display:flex !important}
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(13,31,60,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--bg-white);border-radius:20px;padding:2.5rem;max-width:460px;width:100%;position:relative;text-align:center;max-height:90vh;overflow-y:auto}
+    .modal-close{position:absolute;top:16px;left:16px;background:var(--bg);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+    .modal-icon{font-size:2.5rem;margin-bottom:0.8rem}
+    .modal h2{font-family:'Heebo';font-weight:800;font-size:1.4rem;color:var(--navy);margin-bottom:0.5rem}
+    .modal-desc{font-size:0.92rem;color:var(--text-mid);margin-bottom:1.5rem}
+    .form-field{margin-bottom:0.9rem;text-align:right}
+    .form-field label{display:block;font-size:0.85rem;font-weight:600;color:var(--text-mid);margin-bottom:5px}
+    .form-field input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.95rem;font-family:inherit;outline:none;transition:border-color 0.2s;direction:rtl}
+    .form-field input:focus{border-color:var(--blue)}
+    .form-field input.err{border-color:var(--red) !important}
+    .ferr{color:var(--red);font-size:0.78rem;margin-top:3px}
+    .form-tabs{display:flex;margin-bottom:1.5rem;border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+    .form-tab{flex:1;padding:9px;border:none;background:var(--bg);color:var(--text-mid);font-weight:600;font-size:0.88rem;cursor:pointer;font-family:inherit;transition:all 0.2s}
+    .form-tab.active{background:var(--navy);color:#fff}
+    .terms-row{display:flex;align-items:flex-start;gap:8px;text-align:right;margin-bottom:1rem;font-size:0.82rem;color:var(--text-mid)}
+    .terms-row input{width:16px;height:16px;margin-top:3px;flex-shrink:0;cursor:pointer}
+    .terms-row a{color:var(--blue)}
+    .btn-sub{width:100%;padding:12px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;margin-top:0.3rem}
+    .btn-sub.green{background:var(--green);color:#fff}.btn-sub.green:hover{background:#086b50}
+    .btn-sub.gold{background:var(--accent);color:var(--navy)}.btn-sub.gold:hover{background:var(--accent-light)}
+    .modal-note{font-size:0.78rem;color:var(--text-muted);margin-top:0.8rem}
+    .modal-switch{font-size:0.83rem;color:var(--text-muted);margin-top:0.8rem}
+    .modal-switch a{color:var(--blue);cursor:pointer;text-decoration:underline}
+    .cta-strip{background:linear-gradient(135deg,var(--blue) 0%,var(--navy) 100%);text-align:center;padding:60px 5vw}
+    .cta-strip h2{font-family:'Heebo';font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:0.8rem}
+    .cta-strip p{color:rgba(255,255,255,0.7);max-width:500px;margin:0 auto 1.8rem}
+    .btn-white{background:#fff;color:var(--navy);font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:1rem;transition:all 0.2s;display:inline-block}
+    .btn-white:hover{background:var(--accent)}
+    footer{background:#080f1e;color:rgba(255,255,255,0.5);padding:30px 5vw;text-align:center;font-size:0.85rem}
+    footer a{color:rgba(255,255,255,0.4);text-decoration:none}
+    @media(max-width:600px){.tools-grid{grid-template-columns:1fr}.search-box input{width:130px}}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="index.html#services">שירותים</a></li>
+    <li><a href="tools.html" class="active">כלים להורדה</a></li>
+    <li><a href="index.html#cta" class="nav-cta">צרו קשר</a></li>
+    <li><a id="nav-auth-btn" class="nav-user" onclick="openAuthModal('login')">כניסה / הרשמה</a></li>
+  </ul>
+</nav>
+
+<div class="user-bar" id="user-bar">
+  <span>שלום, <strong id="user-name-display"></strong> 👋</span>
+  <button class="btn-logout" onclick="logout()">יציאה מהחשבון</button>
+</div>
+
+<div class="page-hero">
+  <h1>כלים <em>מקצועיים</em> להורדה</h1>
+  <p>קבצי אקסל, צ'אטבוטים וכלי web — מוכנים לעבודה, מותאמים למגזר הציבורי</p>
+</div>
+
+<div class="tier-legend">
+  <span class="tier-badge tier-member">👤 מנוי חינמי — הרשמה עם מייל וטלפון</span>
+  <span class="tier-badge tier-premium">⭐ פרימיום — תשלום מאובטח דרך UPAY</span>
+</div>
+
+<div class="filters-bar">
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterCards('all',this)">הכל</button>
+    <button class="filter-tab" onclick="filterCards('member',this)">מנוי חינמי</button>
+    <button class="filter-tab" onclick="filterCards('premium',this)">פרימיום</button>
+    <button class="filter-tab" onclick="filterCards('excel',this)">אקסל / כלי</button>
+    <button class="filter-tab" onclick="filterCards('bot',this)">צ'אטבוט</button>
+  </div>
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" placeholder="חיפוש כלי..." oninput="searchCards(this.value)" />
+  </div>
+</div>
+
+<div class="tools-grid" id="tools-grid">
+
+  <!-- ═══ כלי 1: מפצל אקסל ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="מפצל וממעיל קבצי אקסל">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">✂️</div>
+      <div class="card-meta"><div class="card-title">מפצל וממעיל קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">קובץ אקסל כבד שתוקע את המחשב? בחר עמודות רלוונטיות, חתוך לפי תאריך, מחלקה או מספר שורות — וקבל קבצים קטנים וניתנים לעבודה.</p>
+      <div class="card-tags"><span class="tag">ביצועים</span><span class="tag">פיצול</span><span class="tag">ניקוי</span><span class="tag">תאריכים</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','מפצל וממעיל קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 2: השוואת רשימות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="השוואת רשימות התאמה חלקית">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">🔀</div>
+      <div class="card-meta"><div class="card-title">השוואת רשימות — התאמה חלקית</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מצא התאמות בין שתי רשימות גם כשאין זהות מלאה — שמות שגויים, קיצורים, שגיאות כתיב. מציג ציון התאמה לכל שורה וייצוא לאקסל.</p>
+      <div class="card-tags"><span class="tag">השוואה</span><span class="tag">שמות</span><span class="tag">fuzzy</span><span class="tag">ספקים</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','השוואת רשימות','tool-list-compare.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 3: חפיפת שעות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="זיהוי חפיפה בדיווחי שעות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">⏰</div>
+      <div class="card-meta"><div class="card-title">זיהוי חפיפה בדיווחי שעות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">זיהוי אוטומטי של עובדים שדיווחו שעות חופפות באותו תאריך — חפיפה מלאה או חלקית, עם פירוט מלא ומשך החפיפה בדקות.</p>
+      <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">ביקורת שכר</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','זיהוי חפיפה בדיווחי שעות','tool-hours-overlap.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 4: זמן בין אירועים ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="זמן בין אירועים לאותו עובד">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">⏱️</div>
+      <div class="card-meta"><div class="card-title">זמן בין אירועים — ניתוח רצף</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">העלה פלט ממערכת תפעולית וקבל חישוב אוטומטי של הזמן שהושקע בכל פעולה — איתור עסקאות מהירות או איטיות מדי.</p>
+      <div class="card-tags"><span class="tag">לוג</span><span class="tag">זמני עיבוד</span><span class="tag">חריגות</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','זמן בין אירועים','tool-time-between.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 5: דשבורד פילוח ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="דשבורד פילוח דינמי">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📊</div>
+      <div class="card-meta"><div class="card-title">דשבורד פילוח דינמי</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">פלח כל קובץ נתונים לפי כל עמודה — בחר שדה פילוח ראשי ומשני, סכום/ספירה/ממוצע. גרף עמודות, KPI וטבלת פירוט בלחיצה אחת.</p>
+      <div class="card-tags"><span class="tag">דשבורד</span><span class="tag">פילוח</span><span class="tag">pivot</span><span class="tag">גרף</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','דשבורד פילוח דינמי','tool-dashboard.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 6: ניתוח Benford (פרימיום) ═══ -->
+  <div class="tool-card" data-tier="premium" data-type="excel" data-title="ניתוח Benford לאיתור חריגות">
+    <span class="card-tier"><span class="tier-badge tier-premium">⭐ פרימיום</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">🔍</div>
+      <div class="card-meta"><div class="card-title">ניתוח Benford לאיתור חריגות</div><div class="card-sub">קובץ אקסל מתקדם + VBA</div></div>
+    </div>
+    <div class="card-body card-locked">
+      <p class="card-desc">כלי מקצועי לניתוח חלוקת ספרות ראשונות לפי חוק בנפורד — לאיתור עסקאות חשודות והונאות בנתונים פיננסיים.</p>
+      <div class="card-tags"><span class="tag">Benford</span><span class="tag">חקירה</span><span class="tag">VBA</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">₪149</div>
+      <button class="btn-dl btn-premium" onclick="handleDL('premium','ניתוח Benford לאיתור חריגות',149)">⭐ רכישה</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 7: צ'אטבוט שכר (פרימיום) ═══ -->
+  <div class="tool-card" data-tier="premium" data-type="bot" data-title="צ'אטבוט חקירה פיננסית">
+    <span class="card-tier"><span class="tier-badge tier-premium">⭐ פרימיום</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-bot">🤖</div>
+      <div class="card-meta"><div class="card-title">צ'אטבוט חקירה פיננסית מתקדמת</div><div class="card-sub">צ'אטבוט · AI מותאם ביקורת</div></div>
+    </div>
+    <div class="card-body card-locked">
+      <p class="card-desc">צ'אטבוט AI מתקדם לחקירות פיננסיות — מזהה דפוסי הונאה, מציע שאלות חקירה ומנתח תשובות בזמן אמת.</p>
+      <div class="card-tags"><span class="tag">AI</span><span class="tag">חקירה</span><span class="tag">מתקדם</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">₪199</div>
+      <button class="btn-dl btn-premium" onclick="handleDL('premium',&quot;צ'אטבוט חקירה פיננסית&quot;,199)">⭐ רכישה</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ MODAL: הרשמה/כניסה ══ -->
+<div class="modal-overlay" id="modal-auth">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-auth')">✕</button>
+    <div class="form-tabs">
+      <button class="form-tab active" id="tab-reg" onclick="switchTab('reg')">הרשמה חדשה</button>
+      <button class="form-tab" id="tab-login" onclick="switchTab('login')">כניסה</button>
+    </div>
+    <div id="panel-reg">
+      <div class="modal-icon">👤</div>
+      <h2>הרשמה חינמית</h2>
+      <p class="modal-desc" id="reg-desc">גישה לכל הכלים החינמיים</p>
+      <div class="form-field"><label>שם מלא <span style="color:var(--red)">*</span></label><input type="text" id="r-name" placeholder="ישראל ישראלי"/></div>
+      <div class="form-field"><label>שם המשרד / הגוף <span style="color:var(--red)">*</span></label><input type="text" id="r-office" placeholder="משרד הבריאות / עיריית תל אביב"/></div>
+      <div class="form-field"><label>כתובת מייל <span style="color:var(--red)">*</span></label><input type="email" id="r-email" placeholder="name@example.com"/></div>
+      <div class="form-field"><label>טלפון <span style="color:var(--red)">*</span></label><input type="tel" id="r-phone" placeholder="050-1234567" maxlength="11"/></div>
+      <div class="form-field"><label>סיסמה <span style="color:var(--red)">*</span></label><input type="password" id="r-pass" placeholder="לפחות 8 תווים"/></div>
+      <div class="form-field"><label>אימות סיסמה <span style="color:var(--red)">*</span></label><input type="password" id="r-pass2" placeholder="הקלד שוב את הסיסמה"/></div>
+      <div class="terms-row"><input type="checkbox" id="r-terms"/><label for="r-terms">קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank">תנאי השימוש</a></label></div>
+      <button class="btn-sub green" onclick="doRegister()">✓ הרשמה</button>
+      <p class="modal-switch">כבר רשום? <a onclick="switchTab('login')">כניסה לחשבון</a></p>
+    </div>
+    <div id="panel-login" style="display:none">
+      <div class="modal-icon">🔑</div>
+      <h2>כניסה לחשבון</h2>
+      <p class="modal-desc" id="login-desc">הכנס פרטים להמשך</p>
+      <div class="form-field"><label>כתובת מייל</label><input type="email" id="l-email" placeholder="name@example.com"/></div>
+      <div class="form-field"><label>סיסמה</label><input type="password" id="l-pass" placeholder="הסיסמה שלך"/></div>
+      <button class="btn-sub green" onclick="doLogin()">כניסה ←</button>
+      <p class="modal-switch">עדיין לא רשום? <a onclick="switchTab('reg')">הרשמה חינמית</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: רכישה פרימיום ══ -->
+<div class="modal-overlay" id="modal-prem">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-prem')">✕</button>
+    <div class="modal-icon">⭐</div>
+    <h2 id="prem-title">רכישת כלי</h2>
+    <p class="modal-desc">תשלום מאובטח דרך UPAY · הקובץ יישלח למייל לאחר אישור התשלום</p>
+    <div class="form-field"><label>שם מלא <span style="color:var(--red)">*</span></label><input type="text" id="p-name" placeholder="ישראל ישראלי"/></div>
+    <div class="form-field"><label>שם המשרד / הגוף <span style="color:var(--red)">*</span></label><input type="text" id="p-office" placeholder="משרד הבריאות"/></div>
+    <div class="form-field"><label>כתובת מייל <span style="color:var(--red)">*</span></label><input type="email" id="p-email" placeholder="name@example.com"/></div>
+    <div class="form-field"><label>טלפון <span style="color:var(--red)">*</span></label><input type="tel" id="p-phone" placeholder="050-1234567" maxlength="11"/></div>
+    <div class="terms-row"><input type="checkbox" id="p-terms"/><label for="p-terms">קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank">תנאי השימוש</a></label></div>
+    <button class="btn-sub gold" onclick="doPremium()">💳 המשך לתשלום מאובטח (UPAY)</button>
+    <p class="modal-note">🔒 תשלום מאובטח · לאחר אישור התשלום הקובץ נשלח למייל תוך שעה</p>
+  </div>
+</div>
+
+<!-- ══ MODAL: הצלחה ══ -->
+<div class="modal-overlay" id="modal-ok">
+  <div class="modal">
+    <div class="modal-icon">✅</div>
+    <h2>בוצע!</h2>
+    <p class="modal-desc" id="ok-msg"></p>
+    <button class="btn-sub green" onclick="closeModal('modal-ok')">סגור</button>
+  </div>
+</div>
+
+<!-- Netlify Forms -->
+<form name="member-register" netlify hidden>
+  <input type="text" name="name"/><input type="text" name="office"/>
+  <input type="email" name="email"/><input type="tel" name="phone"/>
+</form>
+<form name="premium-purchase" netlify hidden>
+  <input type="text" name="name"/><input type="text" name="office"/>
+  <input type="email" name="email"/><input type="tel" name="phone"/>
+  <input type="text" name="tool"/>
+</form>
+
+<div class="cta-strip">
+  <h2>צריכים כלי מותאם אישית?</h2>
+  <p>לא מצאתם מה שחיפשתם? אני בונה כלים מותאמים לצרכי הארגון שלכם.</p>
+  <a href="index.html#cta" class="btn-white">דברו איתי ←</a>
+</div>
+
+<footer>
+  <p>© 2025 קנדל BI — אור קנדל רו"ח · <a href="index.html">kandelbi.org</a> · <a href="terms.html">תנאי שימוש</a></p>
+</footer>
+
+<script>
+const UK="kbi_users",SK="kbi_session";
+// Cookie + localStorage + memory fallback
+let _mu={},_ms=null;
+
+function setCookie(n,v,days){const d=new Date();d.setTime(d.getTime()+(days||365)*864e5);document.cookie=n+'='+encodeURIComponent(v)+';expires='+d.toUTCString()+';path=/;SameSite=Lax'}
+function getCookie(n){const m=document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)');return m?decodeURIComponent(m.pop()):null}
+function delCookie(n){document.cookie=n+'=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'}
+
+function _save(k,v){try{localStorage.setItem(k,v)}catch(e){}try{setCookie(k,v)}catch(e){}}
+function _load(k){try{const v=localStorage.getItem(k);if(v)return v}catch(e){}try{const v=getCookie(k);if(v)return v}catch(e){}return null}
+function _del(k){try{localStorage.removeItem(k)}catch(e){}try{delCookie(k)}catch(e){}}
+
+const getUsers=()=>{try{return JSON.parse(_load(UK)||'{}')}catch(e){return _mu}};
+const saveUsers=u=>{_save(UK,JSON.stringify(u));_mu=u};
+const getSession=()=>{try{return JSON.parse(_load(SK)||'null')}catch(e){return _ms}};
+const saveSession=s=>{_save(SK,JSON.stringify(s));_ms=s};
+const clearSess=()=>{_del(SK);_ms=null};
+
+const validEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const validPhone=v=>/^0\d{8,9}$/.test(v.replace(/[-\s]/g,''));
+const validPass=v=>v.length>=8;
+
+function setErr(id,msg){const el=document.getElementById(id);el.classList.add('err');let e=el.parentNode.querySelector('.ferr');if(!e){e=document.createElement('div');e.className='ferr';el.parentNode.appendChild(e)}e.textContent=msg}
+function clrErr(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('err');const e=el.parentNode.querySelector('.ferr');if(e)e.remove()}
+function clrAll(ids){ids.forEach(clrErr)}
+
+function updateUI(){
+  const s=getSession();
+  const bar=document.getElementById('user-bar');
+  const btn=document.getElementById('nav-auth-btn');
+  if(s){bar.classList.add('show');document.getElementById('user-name-display').textContent=s.name;btn.textContent=s.name.split(' ')[0];btn.onclick=logout}
+  else{bar.classList.remove('show');btn.textContent='כניסה / הרשמה';btn.onclick=()=>openAuthModal('login')}
+}
+
+function logout(){clearSess();updateUI();showOK('יצאת מהחשבון בהצלחה.')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function showOK(msg){document.getElementById('ok-msg').textContent=msg;document.getElementById('modal-ok').classList.add('open')}
+
+function openAuthModal(tab,tool){
+  if(tool){document.getElementById('reg-desc').textContent=`כדי לפתוח "${tool}" — הירשם חינם`;document.getElementById('login-desc').textContent=`כדי לפתוח "${tool}" — הכנס לחשבון`}
+  switchTab(tab||'login');
+  document.getElementById('modal-auth').classList.add('open');
+}
+
+function switchTab(t){
+  document.getElementById('panel-reg').style.display=t==='reg'?'':'none';
+  document.getElementById('panel-login').style.display=t==='login'?'':'none';
+  document.getElementById('tab-reg').classList.toggle('active',t==='reg');
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+}
+
+function doRegister(){
+  const ids=['r-name','r-office','r-email','r-phone','r-pass','r-pass2'];
+  clrAll(ids);
+  const name=document.getElementById('r-name').value.trim();
+  const office=document.getElementById('r-office').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const phone=document.getElementById('r-phone').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const pass2=document.getElementById('r-pass2').value;
+  const terms=document.getElementById('r-terms').checked;
+  let ok=true;
+  if(!name){setErr('r-name','שדה חובה');ok=false}
+  if(!office){setErr('r-office','שדה חובה');ok=false}
+  if(!validEmail(email)){setErr('r-email',email?'מייל לא תקין':'שדה חובה');ok=false}
+  if(!validPhone(phone)){setErr('r-phone',phone?'מספר לא תקין (לדוגמה: 050-1234567)':'שדה חובה');ok=false}
+  if(!validPass(pass)){setErr('r-pass','סיסמה חייבת להכיל לפחות 8 תווים');ok=false}
+  if(pass!==pass2){setErr('r-pass2','הסיסמאות אינן תואמות');ok=false}
+  if(!terms){alert('יש לאשר את תנאי השימוש');ok=false}
+  if(!ok)return;
+  const users=getUsers();
+  if(users[email]){setErr('r-email','מייל זה כבר רשום — נסה להיכנס');return}
+  users[email]={name,office,email,phone,pass:btoa(unescape(encodeURIComponent(pass))),tier:'member'};
+  saveUsers(users);
+  saveSession({name,email,office,tier:'member'});
+  fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({'form-name':'member-register',name,office,email,phone}).toString()});
+  closeModal('modal-auth');
+  updateUI();
+  const pt=sessionStorage.getItem('pt');
+  const ptUrl=sessionStorage.getItem('pt_url');
+  sessionStorage.removeItem('pt');sessionStorage.removeItem('pt_url');
+  if(ptUrl){window.location.href=ptUrl}
+  else showOK(pt?`נרשמת בהצלחה! הקובץ "${pt}" נשלח למייל שלך תוך שעה.`:`ברוך הבא ${name}! יש לך גישה לכל הכלים החינמיים.`);
+}
+
+function doLogin(){
+  clrAll(['l-email','l-pass']);
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  let ok=true;
+  if(!validEmail(email)){setErr('l-email',email?'מייל לא תקין':'שדה חובה');ok=false}
+  if(!pass){setErr('l-pass','שדה חובה');ok=false}
+  if(!ok)return;
+  const users=getUsers();
+  const user=users[email];
+  let passOk=false;
+  try{passOk=user&&decodeURIComponent(escape(atob(user.pass)))===pass}catch(e){passOk=user&&atob(user.pass)===pass}
+  if(!user||!passOk){setErr('l-email','מייל או סיסמה שגויים');return}
+  saveSession({name:user.name,email:user.email,office:user.office,tier:user.tier});
+  closeModal('modal-auth');
+  updateUI();
+  const pt=sessionStorage.getItem('pt');
+  const ptUrl=sessionStorage.getItem('pt_url');
+  sessionStorage.removeItem('pt');sessionStorage.removeItem('pt_url');
+  if(ptUrl){window.location.href=ptUrl}
+  else showOK(pt?`ברוך הבא ${user.name}! הקובץ "${pt}" נשלח למייל שלך תוך שעה.`:`ברוך הבא, ${user.name}!`);
+}
+
+function handleDL(tier,tool,webUrlOrPrice){
+  if(tier==='member'){
+    if(getSession()){
+      if(webUrlOrPrice&&webUrlOrPrice.endsWith('.html')){window.location.href=webUrlOrPrice}
+      else showOK(`הקובץ "${tool}" נשלח למייל שלך. בדוק גם תיקיית ספאם.`);
+    }else{
+      sessionStorage.setItem('pt',tool);
+      sessionStorage.setItem('pt_url',webUrlOrPrice&&webUrlOrPrice.endsWith('.html')?webUrlOrPrice:'');
+      openAuthModal('reg',tool);
+    }
+  }else{
+    if(!getSession()){sessionStorage.setItem('pt',tool);sessionStorage.setItem('pt_url','');openAuthModal('login',tool);return}
+    document.getElementById('prem-title').textContent=`רכישת "${tool}" — ₪${webUrlOrPrice}`;
+    const s=getSession();
+    document.getElementById('p-name').value=s.name||'';
+    document.getElementById('p-email').value=s.email||'';
+    document.getElementById('p-office').value=s.office||'';
+    document.getElementById('p-phone').value='';
+    document.getElementById('modal-prem').classList.add('open');
+  }
+}
+
+function doPremium(){
+  clrAll(['p-name','p-office','p-email','p-phone']);
+  const name=document.getElementById('p-name').value.trim();
+  const office=document.getElementById('p-office').value.trim();
+  const email=document.getElementById('p-email').value.trim();
+  const phone=document.getElementById('p-phone').value.trim();
+  const terms=document.getElementById('p-terms').checked;
+  let ok=true;
+  if(!name){setErr('p-name','שדה חובה');ok=false}
+  if(!office){setErr('p-office','שדה חובה');ok=false}
+  if(!validEmail(email)){setErr('p-email',email?'מייל לא תקין':'שדה חובה');ok=false}
+  if(!validPhone(phone)){setErr('p-phone',phone?'מספר לא תקין (לדוגמה: 050-1234567)':'שדה חובה');ok=false}
+  if(!terms){alert('יש לאשר את תנאי השימוש');ok=false}
+  if(!ok)return;
+  fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({'form-name':'premium-purchase',name,office,email,phone,'tool':document.getElementById('prem-title').textContent}).toString()});
+  closeModal('modal-prem');
+  setTimeout(()=>window.open('https://app.upay.co.il/API6/s.php?m=RlJva3B6Q0ZwcGFHYjU4M2c1OVJFUT09','_blank'),300);
+  showOK('מועברים לדף התשלום המאובטח (UPAY). לאחר אישור התשלום תקבלו את הקובץ למייל תוך שעה.');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+document.querySelectorAll('input[type="tel"]').forEach(el=>{
+  el.addEventListener('keypress',e=>{if(!/[\d\-]/.test(e.key))e.preventDefault()});
+  el.addEventListener('input',()=>{el.value=el.value.replace(/[^\d\-]/g,'')});
+});
+document.querySelectorAll('.modal input').forEach(el=>{
+  el.addEventListener('input',()=>{el.classList.remove('err');const e=el.parentNode.querySelector('.ferr');if(e)e.remove()});
+});
+
+function filterCards(t,btn){
+  if(btn){
+    document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  document.querySelectorAll('.tool-card').forEach(c=>{
+    const show=(t==='all'||c.dataset.tier===t||c.dataset.type===t);
+    c.style.setProperty('display', show ? 'flex' : 'none', 'important');
+  });
+}
+function searchCards(q){
+  const r=q.trim().toLowerCase();
+  document.querySelectorAll('.tool-card').forEach(c=>{
+    const show=(!r||c.dataset.title.toLowerCase().includes(r)||c.querySelector('.card-desc').textContent.toLowerCase().includes(r));
+    c.style.setProperty('display', show ? 'flex' : 'none', 'important');
+  });
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  updateUI();
+  document.querySelectorAll('.tool-card').forEach(c=>c.style.setProperty('display','flex','important'));
+});
+</script>
+</body>
+</html>
