@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ניתוח מכרז AI — קנדל BI</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--orange:#e67e22;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;display:flex;flex-direction:column}
+
+header{background:var(--navy);padding:12px 4vw;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-weight:900;font-size:1.15rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.82rem;text-decoration:none}.back-link:hover{color:#fff}
+.hbadge{background:rgba(240,165,0,0.2);border:1px solid rgba(240,165,0,0.35);color:var(--accent);font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px}
+
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:300px;background:var(--white);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+.ssec{padding:1rem;border-bottom:1px solid var(--border)}
+.stitle{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.6rem}
+
+/* API */
+.api-row{display:flex;gap:5px}
+.api-inp{flex:1;padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;outline:none;direction:ltr}
+.api-inp:focus{border-color:var(--blue)}.api-inp.ok{border-color:var(--green);background:#edf7f3}
+.btn-save{padding:7px 10px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* UPLOAD */
+.upbox{border:2px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upbox:hover{border-color:var(--blue);background:#eef3fb}
+.upbox.loaded{border-color:var(--green);background:#edf7f3}
+.upbox.error{border-color:var(--red);background:#fef2f2}
+.upbox.checking{border-color:var(--orange);background:#fff8ed;cursor:wait}
+.ubi{font-size:1.4rem;margin-bottom:3px}.ubt{font-size:0.8rem;font-weight:700}.ubs{font-size:0.7rem;color:var(--muted);margin-top:2px}
+
+/* TYPE TABS */
+.ttabs{display:flex;gap:5px}
+.ttab{flex:1;padding:7px;border:1.5px solid var(--border);border-radius:7px;background:var(--bg);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:center}
+.ttab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* QUICK */
+.qbtn{width:100%;text-align:right;padding:7px 10px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.78rem;cursor:pointer;transition:all 0.2s;margin-bottom:5px;color:var(--text);display:flex;align-items:center;gap:7px}
+.qbtn:hover{border-color:var(--blue);background:#eef3fb;color:var(--blue)}
+.qbtn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* CHAT */
+.status-bar{padding:5px 1.2rem;background:var(--bg);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.sdot.ready{background:var(--green)}.sdot.busy{background:var(--accent);animation:pulse 1s infinite}.sdot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.msgs{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:0.9rem;background:#f8fafc}
+.msg{max-width:88%;display:flex;flex-direction:column;gap:3px;animation:fadeUp 0.25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-start}
+.msg.bot{align-self:flex-end}
+.bubble{padding:10px 14px;border-radius:14px;font-size:0.87rem;line-height:1.7}
+.msg.user .bubble{background:var(--navy);color:#fff;border-bottom-right-radius:3px}
+.msg.bot .bubble{background:var(--white);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px;box-shadow:0 2px 12px rgba(13,31,60,0.07)}
+.msg.bot.warn .bubble{background:#fff8ed;border-color:#f5d48a}
+.msg.bot.err .bubble{background:#fef2f2;border-color:#fca5a5}
+.mtime{font-size:0.67rem;color:var(--muted);padding:0 3px}
+
+/* Markdown */
+.bubble h2{font-size:0.95rem;font-weight:800;color:var(--navy);margin:0.7rem 0 0.3rem;border-bottom:2px solid var(--accent);padding-bottom:3px}
+.bubble h3{font-size:0.88rem;font-weight:700;color:var(--navy2);margin:0.5rem 0 0.2rem}
+.bubble ul,.bubble ol{padding-right:1.1rem;margin:0.3rem 0}
+.bubble li{margin-bottom:3px;font-size:0.85rem}
+.bubble li::marker{color:var(--accent);font-weight:700}
+.bubble strong{color:var(--navy)}
+.bubble hr{border:none;border-top:1px solid var(--border);margin:0.6rem 0}
+.bubble .tag{display:inline-block;background:var(--navy);color:#fff;font-size:0.68rem;font-weight:700;padding:1px 7px;border-radius:8px;margin-bottom:5px}
+.bubble .warn-tag{background:#fff3e0;color:var(--orange);border:1px solid #f5d48a;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:5px}
+
+/* Typing */
+.typing{display:flex;align-items:center;gap:5px;padding:9px 13px;background:var(--white);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:3px;width:fit-content;align-self:flex-end}
+.tdot{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:typing 1.2s infinite}
+.tdot:nth-child(2){animation-delay:0.2s}.tdot:nth-child(3){animation-delay:0.4s}
+@keyframes typing{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+
+/* Welcome */
+.welcome{text-align:center;padding:2.5rem 1.5rem;color:var(--muted)}
+.welcome-icon{font-size:2.5rem;margin-bottom:0.6rem}
+.welcome h2{font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:0.4rem}
+.welcome p{font-size:0.83rem;line-height:1.7}
+.welcome-steps{text-align:right;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-top:1rem;display:flex;flex-direction:column;gap:7px}
+.wstep{display:flex;align-items:center;gap:8px;font-size:0.82rem}
+.wnum{background:var(--navy);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:900;flex-shrink:0}
+
+/* Input */
+.input-area{padding:0.8rem 1.2rem;background:var(--white);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.inp-ta{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:0.88rem;outline:none;resize:none;min-height:40px;max-height:100px;direction:rtl;line-height:1.5;transition:border-color 0.2s}
+.inp-ta:focus{border-color:var(--blue)}
+.btn-send{padding:9px 16px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-family:inherit;font-weight:700;font-size:0.87rem;cursor:pointer;transition:all 0.2s;flex-shrink:0}
+.btn-send:hover{background:var(--navy2)}.btn-send:disabled{opacity:0.4;cursor:not-allowed}
+.btn-clr{padding:9px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;cursor:pointer;font-size:0.9rem;transition:all 0.2s}
+.btn-clr:hover{border-color:var(--red);background:#fef2f2}
+
+/* Export */
+.btn-exp{width:100%;padding:8px;background:var(--accent);color:var(--navy);border:none;border-radius:7px;font-family:inherit;font-weight:700;font-size:0.78rem;cursor:pointer;margin-top:4px}
+.btn-exp:hover{background:#ffc940}
+
+@media(max-width:680px){
+  .sidebar{width:100%;max-height:42vh;border-left:none;border-bottom:1px solid var(--border)}
+  .app{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="tools.html" class="back-link">← חזרה</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <span class="hbadge">🤖 ניתוח מכרזים AI</span>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+
+
+    <div class="ssec">
+      <div class="stitle">📄 העלאת מכרז PDF</div>
+      <div class="upbox" id="upbox" onclick="document.getElementById('pdf-inp').click()">
+        <div class="ubi">📑</div>
+        <div class="ubt">לחץ להעלאת PDF</div>
+        <div class="ubs">עד 20MB · רק מכרזים פומביים</div>
+      </div>
+      <input type="file" id="pdf-inp" accept=".pdf" hidden/>
+    </div>
+
+    <div class="ssec">
+      <div class="stitle">📋 סוג מכרז</div>
+      <div class="ttabs">
+        <button class="ttab active" onclick="setType('hours',this)">⏰ שעות</button>
+        <button class="ttab" onclick="setType('outputs',this)">📦 תפוקות</button>
+      </div>
+      <div id="type-hint" style="font-size:0.7rem;color:var(--muted);margin-top:5px">בדיקת דוחות שעות, חפיפות ותעריפים לפי רמה</div>
+    </div>
+
+    <div class="ssec">
+      <div class="stitle">⚡ שאלות מהירות</div>
+      <button class="qbtn" id="q1" onclick="sendQ(this,'צור צ\'ק ליסט מפורט לבדיקת תקינות הזכייה — עמידה בתנאי הסף, אסמכתאות, השכלה וניסיון הצוות')" disabled>
+        <span>✅</span>צ'ק ליסט — בדיקת זכייה
+      </button>
+      <button class="qbtn" id="q2" onclick="sendQ(this,'מה המסמכים שיש לדרוש עם כל חשבונית? פרט לפי סוג המכרז')" disabled>
+        <span>📋</span>מסמכים לחשבונית
+      </button>
+      <button class="qbtn" id="q3" onclick="sendQ(this,'מה לבדוק בדוחות השעות? חפיפות, תעריפים לפי רמה, סבירות, שבתות וחגים')" disabled>
+        <span>⏰</span>בדיקת דוחות שעות
+      </button>
+      <button class="qbtn" id="q4" onclick="sendQ(this,'אילו דגלים אדומים ובעיות אפשריות יש במכרז זה שכדאי לשים לב אליהן?')" disabled>
+        <span>🚩</span>דגלים אדומים
+      </button>
+      <button class="qbtn" id="q5" onclick="sendQ(this,'בנה תוכנית ביקורת מלאה להתקשרות השוטפת כולל לוח זמנים לבדיקות')" disabled>
+        <span>📊</span>תוכנית ביקורת מלאה
+      </button>
+      <button class="qbtn" id="q6" onclick="sendQ(this,'צור רשימת אסמכתאות לבדיקת ניסיון הצוות המוצע — מה לדרוש ואיך לאמת')" disabled>
+        <span>👥</span>אסמכתאות צוות
+      </button>
+    </div>
+
+    <div class="ssec">
+      <div class="stitle">💾 ייצוא</div>
+      <button class="btn-exp" onclick="exportChat()">⬇ ייצא שיחה לקובץ טקסט</button>
+    </div>
+
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-wrap">
+    <div class="status-bar">
+      <div class="sdot" id="sdot"></div>
+      <span id="stext">העלה מכרז PDF כדי להתחיל</span>
+    </div>
+
+    <div class="msgs" id="msgs">
+      <div class="welcome">
+        <div class="welcome-icon">⚖️</div>
+        <h2>ניתוח מכרזים חכם</h2>
+        <p>העלה PDF של מכרז פומבי וקבל צ'ק ליסטים מפורטים — לבדיקת הזכייה ולהתקשרות השוטפת</p>
+        <div class="welcome-steps">
+          <div class="wstep"><div class="wnum">1</div><span>העלה PDF של המכרז הפומבי</span></div>
+          <div class="wstep"><div class="wnum">2</div><span>בחר סוג מכרז — שעות או תפוקות</span></div>
+          <div class="wstep"><div class="wnum">3</div><span>הצ'אט יאמת שזה מכרז ויתחיל לנתח</span></div>
+          <div class="wstep"><div class="wnum">4</div><span>קבל צ'ק ליסטים ושאל כל שאלה</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <button class="btn-clr" onclick="clearChat()" title="נקה שיחה">🗑️</button>
+      <textarea class="inp-ta" id="user-inp" placeholder="שאל שאלה על המכרז..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+      <button class="btn-send" id="btn-send" onclick="send()" disabled>שלח ←</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+const PROXY_URL = 'https://gemini-proxy.orkandel11.workers.dev/';
+const GEMINI_MODEL = 'gemini-1.5-flash';
+let pdfBase64 = null;
+let tenderType = 'hours';
+let history = [];
+let busy = false;
+let tenderVerified = false;
+
+// ── SYSTEM PROMPT ──
+const SYSTEM = `אתה מומחה לביקורת פנימית ומכרזים במגזר הציבורי בישראל. 
+אתה מנתח מכרזים פומביים ומייצר צ'ק ליסטים מקצועיים לשני שלבים:
+
+**שלב 1 — בדיקת תקינות הזכייה:**
+- עמידה בתנאי סף (כספיים, ניסיון, רישיונות)
+- אסמכתאות השכלה וניסיון הצוות המוצע
+- מסמכים משפטיים (אישור ניהול ספרים, ביטוחים, ערבויות)
+- בדיקת ניגודי עניינים
+- תקינות ההצעה הכספית
+
+**שלב 2 — התקשרות שוטפת:**
+עבור מכרז לפי שעות:
+- דוחות שעות חודשיים + השוואה לצוות שהוגש
+- בדיקת חפיפות בשעות (אותו עובד, שני מקומות)
+- תעריפים לפי רמת עובד
+- סבירות שעות (שבתות, חגים, שעות ברצף)
+- ביצוע מדגם מבוסס סיכונים
+
+עבור מכרז לפי תפוקות:
+- דוח תפוקות חודשי
+- בדיקת סבירות ועקביות תפוקות
+- זיהוי סוגי תפוקה חדשים שנוספו
+- השוואה בין חודשים
+- מדגם מבוסס סיכונים
+
+ענה תמיד בעברית, בצורה מובנית עם כותרות, רשימות ותיוגים ברורים.
+השתמש ב-## לכותרות ראשיות, ב-### לכותרות משניות, וב-**טקסט** להדגשות.`;
+
+// ── INIT ──
+setStatus('ready', 'העלה מכרז כדי להתחיל');
+
+
+
+// ── PDF ──
+document.getElementById('pdf-inp').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { alert('הקובץ גדול מ-20MB'); return; }
+
+
+  setUpbox('checking', '🔍', 'בודק אם זה מכרז...', 'אנא המתן');
+  setStatus('busy', 'מאמת שהמסמך הוא מכרז פומבי...');
+
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const b64 = ev.target.result.split(',')[1];
+
+    // ── VALIDATION: קרא רק 2 עמודות ראשונות לאימות ──
+    try {
+      const isValid = await validateIsTender(b64);
+      if (!isValid.ok) {
+        setUpbox('error', '❌', 'המסמך אינו מכרז', isValid.reason);
+        setStatus('error', 'המסמך נדחה — ' + isValid.reason);
+        addMsg('bot err', `❌ **המסמך שהועלה אינו מכרז פומבי**\n\n${isValid.reason}\n\nאנא העלה מסמך מכרז תקני.`);
+        pdfBase64 = null;
+        tenderVerified = false;
+        checkReady();
+        return;
+      }
+
+      // תקין — שמור ונתח
+      pdfBase64 = b64;
+      tenderVerified = true;
+      setUpbox('loaded', '✅', file.name, `${(file.size/1024).toFixed(0)} KB · ${isValid.type}`);
+      setStatus('ready', 'מכרז אומת — מוכן לניתוח');
+      checkReady();
+
+      // ניתוח ראשוני אוטומטי
+      const autoQ = `נתח את המכרז וצור שני צ'ק ליסטים מפורטים:
+1. **שלב הזכייה** — בדיקת תקינות, תנאי סף, אסמכתאות
+2. **התקשרות שוטפת** — מסמכים לחשבונית ובדיקות שוטפות (המכרז הוא ${tenderType === 'hours' ? 'לפי שעות' : 'לפי תפוקות'})`;
+      await callGemini(autoQ, true);
+
+    } catch (err) {
+      setUpbox('error', '⚠️', 'שגיאה באימות', err.message);
+      setStatus('error', 'שגיאת API: ' + err.message);
+    }
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── VALIDATE IS TENDER ──
+async function validateIsTender(b64) {
+  const prompt = `בדוק את המסמך הזה. האם זהו מכרז פומבי / בקשה להצעות מחיר / RFP / מכרז ממשלתי / עירוני?
+  
+ענה ONLY בפורמט JSON כזה בדיוק:
+{"ok": true/false, "reason": "הסבר קצר", "type": "סוג המסמך"}
+
+אם זה לא מכרז — ציין מה זה כן (חשבונית, דוח, חוזה וכד').
+אל תקרא יותר מ-3 עמודות ראשונות לצורך האימות.`;
+
+  const res = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: GEMINI_MODEL,
+      payload: {
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: 'application/pdf', data: b64 } },
+            { text: prompt }
+          ]
+        }],
+        generationConfig: { maxOutputTokens: 200, temperature: 0 }
+      }
+    })
+  });
+
+  if (!res.ok) throw new Error(`API Error ${res.status}`);
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{"ok":false,"reason":"לא ניתן לאמת","type":"לא ידוע"}';
+
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch {
+    return { ok: false, reason: 'לא ניתן לאמת את סוג המסמך', type: 'לא ידוע' };
+  }
+}
+
+// ── TENDER TYPE ──
+function setType(t, btn) {
+  tenderType = t;
+  document.querySelectorAll('.ttab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('type-hint').textContent = t === 'hours'
+    ? 'בדיקת דוחות שעות, חפיפות ותעריפים לפי רמה'
+    : 'בדיקת תפוקות, סבירות, עקביות ומדגם סיכונים';
+}
+
+// ── SEND ──
+async function send() {
+  const txt = document.getElementById('user-inp').value.trim();
+  if (!txt || busy) return;
+  document.getElementById('user-inp').value = '';
+  await callGemini(txt, false);
+}
+
+function sendQ(btn, q) {
+  if (busy) return;
+  callGemini(q, false);
+}
+
+async function callGemini(userText, isAuto) {
+  if (!apiKey) { alert('הכנס מפתח API'); return; }
+  if (!pdfBase64) { alert('העלה מכרז קודם'); return; }
+  if (busy) return;
+
+  busy = true;
+  setBtns(false);
+  setStatus('busy', 'מנתח...');
+
+  if (!isAuto) addMsg('user', userText);
+  showTyping();
+
+  // בנה history
+  const contents = [];
+
+  // הוסף PDF בהודעה הראשונה תמיד
+  const firstParts = [
+    { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
+    { text: `${SYSTEM}\n\nסוג המכרז: ${tenderType === 'hours' ? 'לפי שעות' : 'לפי תפוקות'}\n\n${userText}` }
+  ];
+  contents.push({ role: 'user', parts: firstParts });
+
+  // הוסף היסטוריה אם יש
+  if (history.length > 0) {
+    contents.length = 0;
+    contents.push({ role: 'user', parts: [{ inline_data: { mime_type: 'application/pdf', data: pdfBase64 } }, { text: SYSTEM }] });
+    contents.push({ role: 'model', parts: [{ text: 'הבנתי. אני מוכן לנתח את המכרז.' }] });
+    history.forEach(h => contents.push(h));
+    contents.push({ role: 'user', parts: [{ text: userText }] });
+  }
+
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: GEMINI_MODEL,
+        payload: {
+          contents,
+          generationConfig: { maxOutputTokens: 4000, temperature: 0.3 }
+        }
+      })
+    });
+
+    hideTyping();
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `שגיאת API ${res.status}`);
+    }
+
+    const data = await res.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'לא התקבלה תשובה';
+
+    // שמור בהיסטוריה
+    history.push({ role: 'user', parts: [{ text: userText }] });
+    history.push({ role: 'model', parts: [{ text: reply }] });
+
+    addMsg('bot', reply);
+    setStatus('ready', 'מוכן');
+
+  } catch (err) {
+    hideTyping();
+    addMsg('bot err', `⚠️ **שגיאה:** ${err.message}\n\nוודא שהמפתח תקין ויש לך גישה ל-Gemini API.`);
+    setStatus('error', 'שגיאה: ' + err.message);
+  }
+
+  busy = false;
+  setBtns(true);
+}
+
+// ── UI HELPERS ──
+function addMsg(type, text) {
+  const msgs = document.getElementById('msgs');
+  const welcome = msgs.querySelector('.welcome');
+  if (welcome) welcome.remove();
+
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  const time = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  div.innerHTML = `<div class="bubble">${md(text)}</div><div class="mtime">${time}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function md(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`)
+    .replace(/^---$/gm,'<hr/>')
+    .replace(/\n/g,'<br/>');
+}
+
+let typingEl = null;
+function showTyping() {
+  typingEl = document.createElement('div');
+  typingEl.className = 'typing';
+  typingEl.innerHTML = '<div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>';
+  document.getElementById('msgs').appendChild(typingEl);
+  document.getElementById('msgs').scrollTop = 99999;
+}
+function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null; } }
+
+function setStatus(state, text) {
+  document.getElementById('sdot').className = 'sdot ' + (state === 'ready' ? 'ready' : state === 'busy' ? 'busy' : 'error');
+  document.getElementById('stext').textContent = text;
+}
+
+function setUpbox(cls, icon, title, sub) {
+  const b = document.getElementById('upbox');
+  b.className = 'upbox ' + cls;
+  b.innerHTML = `<div class="ubi">${icon}</div><div class="ubt">${title}</div><div class="ubs">${sub}</div>`;
+  if (cls !== 'checking') b.onclick = () => document.getElementById('pdf-inp').click();
+}
+
+function checkReady() {
+  const ok = !!(pdfBase64 && tenderVerified);
+  document.getElementById('btn-send').disabled = !ok;
+  document.querySelectorAll('.qbtn').forEach(b => b.disabled = !ok);
+}
+
+function setBtns(enabled) {
+  document.getElementById('btn-send').disabled = !enabled || !pdfBase64;
+  document.querySelectorAll('.qbtn').forEach(b => b.disabled = !enabled || !pdfBase64);
+}
+
+function clearChat() {
+  history = [];
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML = `<div class="welcome">
+    <div class="welcome-icon">⚖️</div>
+    <h2>ניתוח מכרזים חכם</h2>
+    <p>שאל שאלה חדשה או לחץ על אחת השאלות המהירות</p>
+  </div>`;
+}
+
+function exportChat() {
+  const msgs = document.querySelectorAll('.msg');
+  if (!msgs.length) { alert('אין שיחה לייצוא'); return; }
+  let txt = `ניתוח מכרז — קנדל BI\n${new Date().toLocaleDateString('he-IL')}\n${'='.repeat(40)}\n\n`;
+  msgs.forEach(m => {
+    const isUser = m.classList.contains('user');
+    const bubble = m.querySelector('.bubble');
+    const time = m.querySelector('.mtime')?.textContent || '';
+    txt += `[${isUser ? 'מבקר' : 'AI'} ${time}]\n${bubble?.innerText || ''}\n\n${'─'.repeat(30)}\n\n`;
+  });
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
+  a.download = `ניתוח_מכרז_${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.txt`;
+  a.click();
+}
+
+// ── DRAG & DROP ──
+document.getElementById('upbox').addEventListener('dragover', e => { e.preventDefault(); document.getElementById('upbox').style.borderColor='var(--blue)'; });
+document.getElementById('upbox').addEventListener('dragleave', () => { document.getElementById('upbox').style.borderColor=''; });
+document.getElementById('upbox').addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('pdf-inp').files = dt.files;
+    document.getElementById('pdf-inp').dispatchEvent(new Event('change'));
+  }
+});
+
+// Auto-resize textarea
+document.getElementById('user-inp').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+</script>
+</body>
+</html>
