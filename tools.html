@@ -125,15 +125,13 @@
 </div>
 
 <div class="tier-legend">
-  <span class="tier-badge tier-member">👤 מנוי חינמי — הרשמה עם מייל וטלפון</span>
-  <span class="tier-badge tier-premium">⭐ פרימיום — תשלום מאובטח דרך UPAY</span>
+  <span class="tier-badge tier-member">👤 כל הכלים חינמיים — הרשמה עם מייל וטלפון</span>
 </div>
 
 <div class="filters-bar">
   <div class="filter-tabs">
     <button class="filter-tab active" onclick="filterCards('all',this)">הכל</button>
     <button class="filter-tab" onclick="filterCards('member',this)">מנוי חינמי</button>
-    <button class="filter-tab" onclick="filterCards('premium',this)">פרימיום</button>
     <button class="filter-tab" onclick="filterCards('excel',this)">אקסל / כלי</button>
     <button class="filter-tab" onclick="filterCards('bot',this)">צ'אטבוט</button>
   </div>
@@ -265,36 +263,36 @@
   </div>
 
   <!-- ═══ כלי 8: ניתוח Benford (פרימיום) ═══ -->
-  <div class="tool-card" data-tier="premium" data-type="excel" data-title="ניתוח Benford לאיתור חריגות">
-    <span class="card-tier"><span class="tier-badge tier-premium">⭐ פרימיום</span></span>
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="ניתוח Benford לאיתור חריגות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
       <div class="card-icon icon-excel">🔍</div>
       <div class="card-meta"><div class="card-title">ניתוח Benford לאיתור חריגות</div><div class="card-sub">קובץ אקסל מתקדם + VBA</div></div>
     </div>
-    <div class="card-body card-locked">
+    <div class="card-body">
       <p class="card-desc">כלי מקצועי לניתוח חלוקת ספרות ראשונות לפי חוק בנפורד — לאיתור עסקאות חשודות והונאות בנתונים פיננסיים.</p>
       <div class="card-tags"><span class="tag">Benford</span><span class="tag">חקירה</span><span class="tag">VBA</span></div>
     </div>
     <div class="card-footer">
-      <div class="card-price">₪149</div>
-      <button class="btn-dl btn-premium" onclick="handleDL('premium','/ניתוח Benford לאיתור חריגות',149)">⭐ רכישה</button>
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-premium" onclick="handleDL('member','ניתוח Benford לאיתור חריגות','tool-reconcile.html')">🔓 פתיחת הכלי</button>
     </div>
   </div>
 
   <!-- ═══ כלי 7: צ'אטבוט שכר (פרימיום) ═══ -->
-  <div class="tool-card" data-tier="premium" data-type="bot" data-title="צ'אטבוט חקירה פיננסית">
-    <span class="card-tier"><span class="tier-badge tier-premium">⭐ פרימיום</span></span>
+  <div class="tool-card" data-tier="member" data-type="bot" data-title="צ'אטבוט חקירה פיננסית">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
       <div class="card-icon icon-bot">🤖</div>
       <div class="card-meta"><div class="card-title">צ'אטבוט חקירה פיננסית מתקדמת</div><div class="card-sub">צ'אטבוט · AI מותאם ביקורת</div></div>
     </div>
-    <div class="card-body card-locked">
+    <div class="card-body">
       <p class="card-desc">צ'אטבוט AI מתקדם לחקירות פיננסיות — מזהה דפוסי הונאה, מציע שאלות חקירה ומנתח תשובות בזמן אמת.</p>
       <div class="card-tags"><span class="tag">AI</span><span class="tag">חקירה</span><span class="tag">מתקדם</span></div>
     </div>
     <div class="card-footer">
-      <div class="card-price">₪199</div>
-      <button class="btn-dl btn-premium" onclick="handleDL('premium',&quot;צ'אטבוט חקירה פיננסית&quot;,199)">⭐ רכישה</button>
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','צ'אטבוט חקירה פיננסית','tool-tender-chat.html')">🔓 פתיחת הכלי</button>
     </div>
   </div>
 
