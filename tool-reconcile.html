@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>השוואת פירוט מול סיכום — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--orange:#e67e22;--shadow:0 4px 24px rgba(13,31,60,0.10);
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:1100px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:650px){.grid2{grid-template-columns:1fr}}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.8rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:1.8rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none;background:var(--white)}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+
+/* Conditions builder */
+.conditions-wrap{background:var(--bg);border-radius:10px;padding:1rem;border:1px solid var(--border)}
+.condition-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.condition-row select,.condition-row input{flex:1;min-width:120px;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.85rem;outline:none;background:var(--white)}
+.condition-row select:focus,.condition-row input:focus{border-color:var(--blue)}
+.btn-remove{background:none;border:1px solid #fca5a5;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.78rem;font-weight:600;font-family:inherit;flex-shrink:0}
+.btn-add-cond{background:var(--bg);border:1.5px dashed var(--border);color:var(--blue);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:0.85rem;font-weight:600;font-family:inherit;width:100%;margin-top:4px;transition:all 0.2s}
+.btn-add-cond:hover{border-color:var(--blue);background:#eef3fb}
+
+/* Group-by tags */
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag-item{display:flex;align-items:center;gap:4px;background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue);border-radius:20px;padding:4px 10px;font-size:0.8rem;font-weight:600}
+.tag-x{cursor:pointer;font-size:0.9rem;color:var(--muted);margin-right:2px}
+.tag-x:hover{color:var(--red)}
+.add-group-row{display:flex;gap:8px;margin-top:8px}
+.add-group-row select{flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.85rem;outline:none}
+.btn-add-group{background:var(--blue);color:#fff;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:0.85rem;font-weight:700;font-family:inherit;flex-shrink:0}
+
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+
+/* KPIs */
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.6rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.72rem;color:var(--muted);margin-top:3px}
+.kpi.ok .kpi-val{color:var(--green)}.kpi.err .kpi-val{color:var(--red)}.kpi.warn .kpi-val{color:var(--orange)}
+
+/* Filter tabs */
+.filter-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.ftab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.ftab:hover{border-color:var(--blue);color:var(--blue)}.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* Results table */
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:500px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{background:var(--navy);color:#fff;padding:9px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:8px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
+.b-ok{background:#edf7f3;color:var(--green)}
+.b-diff{background:#fef2f2;color:var(--red)}
+.b-missing{background:#fff3e0;color:var(--orange)}
+.b-extra{background:#f3e8ff;color:#7c3aed}
+.num{text-align:left;font-family:'Heebo';font-weight:600}
+.diff-pos{color:var(--red);font-weight:700}
+.diff-neg{color:var(--orange);font-weight:700}
+.diff-ok{color:var(--green);font-weight:700}
+.hidden{display:none}
+.alert{padding:12px 16px;border-radius:10px;font-size:0.88rem;font-weight:600;margin-bottom:1rem}
+.alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">⚖️ השוואת פירוט מול סיכום</div>
+<div class="tool-sub">בדיקת התאמה בין חשבון/סיכום לפירוט — לפי קריטריונים מרובים</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה טבלת <strong>פירוט</strong> (שורות מפורטות שעברו בדיקה) וטבלת <strong>סיכום</strong> (החשבון/סיכום שהתקבל מהספק)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>בחר <strong>עמודת סכום</strong> בכל טבלה — זה הסכום שיושווה</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>הגדר <strong>לפי מה לקבץ</strong> — לדוגמה: "שירות" + "ספק" יחשב סיכום נפרד לכל שירות+ספק</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>הוסף <strong>תנאי סינון</strong> אופציונליים — לדוגמה: רק שורות שאושרו, רק חודש מסוים</span></div>
+    <div class="inst-step"><div class="inst-num">5</div><span>קבל דוח: אילו שורות תואמות, אילו שונות, מה חסר ומה עודף</span></div>
+  </div>
+</div>
+
+<!-- העלאת קבצים -->
+<div class="card">
+  <div class="card-title">📂 העלאת קבצים</div>
+  <div class="grid2">
+    <div>
+      <div style="font-weight:700;margin-bottom:8px;color:var(--blue)">📋 טבלת פירוט</div>
+      <div class="upload-box" id="dz-detail" onclick="document.getElementById('fi-detail').click()">
+        <div class="ub-icon">📋</div>
+        <div class="ub-text">העלה טבלת פירוט</div>
+        <div class="ub-sub">xlsx / xls / csv — השורות המפורטות שעברו בדיקה</div>
+      </div>
+      <input type="file" id="fi-detail" accept=".xlsx,.xls,.csv" hidden/>
+    </div>
+    <div>
+      <div style="font-weight:700;margin-bottom:8px;color:var(--orange)">📄 טבלת סיכום</div>
+      <div class="upload-box" id="dz-summary" onclick="document.getElementById('fi-summary').click()">
+        <div class="ub-icon">📄</div>
+        <div class="ub-text">העלה טבלת סיכום</div>
+        <div class="ub-sub">xlsx / xls / csv — החשבון/סיכום שהתקבל מהספק</div>
+      </div>
+      <input type="file" id="fi-summary" accept=".xlsx,.xls,.csv" hidden/>
+    </div>
+  </div>
+</div>
+
+<!-- הגדרות -->
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרות השוואה</div>
+
+  <div class="grid2" style="margin-bottom:1.2rem">
+    <div class="form-group">
+      <label>💰 עמודת סכום בפירוט:</label>
+      <select id="detail-amount"></select>
+    </div>
+    <div class="form-group">
+      <label>💰 עמודת סכום בסיכום:</label>
+      <select id="summary-amount"></select>
+    </div>
+  </div>
+
+  <!-- קיבוץ -->
+  <div style="margin-bottom:1.2rem">
+    <label style="font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">🗂️ קבץ לפי (עמודות שלפיהן יחושב סיכום נפרד):</label>
+    <div class="conditions-wrap">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px">הוסף עמודות לקיבוץ — לדוגמה: "שירות", "ספק", "חודש"</div>
+      <div class="tags-wrap" id="group-tags"></div>
+      <div class="add-group-row">
+        <select id="add-group-detail" style="flex:1">
+          <option value="">— בחר עמודה מהפירוט —</option>
+        </select>
+        <select id="add-group-summary" style="flex:1">
+          <option value="">— עמודה מקבילה בסיכום —</option>
+        </select>
+        <button class="btn-add-group" onclick="addGroup()">+ הוסף</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- תנאים -->
+  <div style="margin-bottom:1.5rem">
+    <label style="font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">🔍 תנאי סינון על הפירוט (אופציונלי):</label>
+    <div class="conditions-wrap">
+      <div id="conditions-list"></div>
+      <button class="btn-add-cond" onclick="addCondition()">+ הוסף תנאי סינון</button>
+    </div>
+  </div>
+
+  <div class="form-group" style="max-width:200px">
+    <label>סף סטייה מקסימלי (₪):</label>
+    <input type="number" id="tolerance" value="0.01" step="0.01" min="0" placeholder="0.01"/>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">הפרש קטן מסף זה ייחשב כהתאמה</div>
+  </div>
+
+  <button class="btn-primary" id="btn-run" onclick="runComparison()">⚖️ הרץ השוואה</button>
+</div>
+
+<!-- תוצאות -->
+<div class="card hidden" id="results-card">
+  <div class="card-title">📊 תוצאות ההשוואה</div>
+  <div class="kpi-bar" id="kpi-bar"></div>
+  <div class="filter-tabs">
+    <button class="ftab active" onclick="filterResults('all',this)">הכל</button>
+    <button class="ftab" onclick="filterResults('ok',this)">✅ התאמה</button>
+    <button class="ftab" onclick="filterResults('diff',this)">⚠️ הפרש</button>
+    <button class="ftab" onclick="filterResults('missing',this)">🔸 חסר בסיכום</button>
+    <button class="ftab" onclick="filterResults('extra',this)">🔹 עודף בסיכום</button>
+  </div>
+  <div class="result-table-wrap">
+    <table>
+      <thead><tr id="result-head"></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:0.8rem;flex-wrap:wrap">
+    <button class="btn-accent" onclick="exportResults()">⬇ ייצא לאקסל</button>
+    <button class="btn-primary" style="background:#6b7a99" onclick="resetTool()">🔄 התחל מחדש</button>
+  </div>
+</div>
+</main>
+
+<script>
+let detailData={headers:[],rows:[]};
+let summaryData={headers:[],rows:[]};
+let groupCols=[]; // [{detailCol, summaryCol, label}]
+let conditionCount=0;
+let allResults=[];
+const tolerance=()=>parseFloat(document.getElementById('tolerance').value)||0.01;
+
+// ── LOAD FILES ──
+function loadFile(inputId, dzId, dataObj, colorClass, callback){
+  document.getElementById(inputId).addEventListener('change', e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',raw:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      while(rows.length&&rows[0].every(c=>!c)) rows.shift();
+      dataObj.headers=rows[0]||[];
+      dataObj.rows=rows.slice(1).filter(r=>r.some(c=>c!==''));
+      const dz=document.getElementById(dzId);
+      dz.classList.add('loaded');
+      dz.querySelector('.ub-icon').textContent='✅';
+      dz.querySelector('.ub-text').textContent=file.name+' ('+dataObj.rows.length.toLocaleString('he')+' שורות)';
+      callback();
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+loadFile('fi-detail','dz-detail',detailData,'blue',checkReady);
+loadFile('fi-summary','dz-summary',summaryData,'orange',checkReady);
+
+function checkReady(){
+  if(!detailData.headers.length||!summaryData.headers.length) return;
+  buildConfig();
+  document.getElementById('config-card').classList.remove('hidden');
+}
+
+function buildConfig(){
+  const dOpts=detailData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const sOpts=summaryData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
+
+  document.getElementById('detail-amount').innerHTML=dOpts;
+  document.getElementById('summary-amount').innerHTML=sOpts;
+  document.getElementById('add-group-detail').innerHTML='<option value="">— בחר עמודה מהפירוט —</option>'+dOpts;
+  document.getElementById('add-group-summary').innerHTML='<option value="">— עמודה מקבילה בסיכום —</option>'+sOpts;
+
+  // ניחוש אוטומטי לעמודת סכום
+  const amountKws=['סכום','amount','סה"כ','total','מחיר','price','שכר'];
+  const dAmt=detailData.headers.findIndex(h=>amountKws.some(k=>String(h).toLowerCase().includes(k)));
+  const sAmt=summaryData.headers.findIndex(h=>amountKws.some(k=>String(h).toLowerCase().includes(k)));
+  if(dAmt>=0) document.getElementById('detail-amount').value=dAmt;
+  if(sAmt>=0) document.getElementById('summary-amount').value=sAmt;
+}
+
+// ── GROUP COLS ──
+function addGroup(){
+  const dSel=document.getElementById('add-group-detail');
+  const sSel=document.getElementById('add-group-summary');
+  const di=dSel.value, si=sSel.value;
+  if(!di||!si){alert('בחר עמודה מכל טבלה');return;}
+  const label=detailData.headers[di]+(detailData.headers[di]!==summaryData.headers[si]?' / '+summaryData.headers[si]:'');
+  groupCols.push({di:parseInt(di),si:parseInt(si),label});
+  renderGroupTags();
+  dSel.value=''; sSel.value='';
+}
+
+function removeGroup(i){groupCols.splice(i,1);renderGroupTags();}
+
+function renderGroupTags(){
+  document.getElementById('group-tags').innerHTML=groupCols.map((g,i)=>`
+    <div class="tag-item"><span>${g.label}</span><span class="tag-x" onclick="removeGroup(${i})">✕</span></div>
+  `).join('');
+}
+
+// ── CONDITIONS ──
+function addCondition(){
+  const id=++conditionCount;
+  const opts=detailData.headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+  const div=document.createElement('div');
+  div.className='condition-row'; div.id='cond-'+id;
+  div.innerHTML=`
+    <select id="cond-col-${id}">${opts}</select>
+    <select id="cond-op-${id}">
+      <option value="eq">שווה ל</option>
+      <option value="neq">לא שווה ל</option>
+      <option value="contains">מכיל</option>
+      <option value="gt">גדול מ</option>
+      <option value="lt">קטן מ</option>
+      <option value="notempty">אינו ריק</option>
+    </select>
+    <input type="text" id="cond-val-${id}" placeholder="ערך..." />
+    <button class="btn-remove" onclick="document.getElementById('cond-${id}').remove()">הסר</button>
+  `;
+  document.getElementById('conditions-list').appendChild(div);
+}
+
+function applyConditions(rows){
+  const conds=[];
+  document.querySelectorAll('.condition-row').forEach(row=>{
+    const id=row.id.replace('cond-','');
+    const col=parseInt(document.getElementById('cond-col-'+id).value);
+    const op=document.getElementById('cond-op-'+id).value;
+    const val=document.getElementById('cond-val-'+id)?.value||'';
+    conds.push({col,op,val});
+  });
+  return rows.filter(r=>conds.every(c=>{
+    const cell=String(r[c.col]||'').trim();
+    if(c.op==='eq') return cell===c.val;
+    if(c.op==='neq') return cell!==c.val;
+    if(c.op==='contains') return cell.includes(c.val);
+    if(c.op==='gt') return parseFloat(cell)>parseFloat(c.val);
+    if(c.op==='lt') return parseFloat(cell)<parseFloat(c.val);
+    if(c.op==='notempty') return cell!=='';
+    return true;
+  }));
+}
+
+// ── PARSE NUMBER ──
+function parseNum(v){
+  if(v===''||v===null||v===undefined) return 0;
+  const n=parseFloat(String(v).replace(/[,₪\s]/g,''));
+  return isNaN(n)?0:n;
+}
+
+function fmtNum(v){
+  if(v===null||v===undefined) return '—';
+  return parseNum(v).toLocaleString('he',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ── RUN ──
+function runComparison(){
+  if(groupCols.length===0){alert('יש להוסיף לפחות עמודת קיבוץ אחת');return;}
+  const dAmtIdx=parseInt(document.getElementById('detail-amount').value);
+  const sAmtIdx=parseInt(document.getElementById('summary-amount').value);
+  const tol=tolerance();
+
+  // סנן פירוט לפי תנאים
+  const filteredDetail=applyConditions(detailData.rows);
+
+  // קבץ פירוט
+  const detailGroups={};
+  filteredDetail.forEach(row=>{
+    const key=groupCols.map(g=>String(row[g.di]||'').trim()).join('||');
+    if(!detailGroups[key]) detailGroups[key]={sum:0,count:0,keyVals:groupCols.map(g=>String(row[g.di]||'').trim())};
+    detailGroups[key].sum+=parseNum(row[dAmtIdx]);
+    detailGroups[key].count++;
+  });
+
+  // קבץ סיכום
+  const summaryGroups={};
+  summaryData.rows.forEach(row=>{
+    const key=groupCols.map(g=>String(row[g.si]||'').trim()).join('||');
+    if(!summaryGroups[key]) summaryGroups[key]={sum:0,count:0,keyVals:groupCols.map(g=>String(row[g.si]||'').trim())};
+    summaryGroups[key].sum+=parseNum(row[sAmtIdx]);
+    summaryGroups[key].count++;
+  });
+
+  // השווה
+  allResults=[];
+  const allKeys=new Set([...Object.keys(detailGroups),...Object.keys(summaryGroups)]);
+
+  allKeys.forEach(key=>{
+    const d=detailGroups[key];
+    const s=summaryGroups[key];
+    const keyVals=d?.keyVals||s?.keyVals||[];
+    const detailSum=d?.sum||null;
+    const summarySum=s?.sum||null;
+    const diff=detailSum!==null&&summarySum!==null?summarySum-detailSum:null;
+
+    let status;
+    if(detailSum===null) status='extra';
+    else if(summarySum===null) status='missing';
+    else if(Math.abs(diff)<=tol) status='ok';
+    else status='diff';
+
+    allResults.push({keyVals,detailSum,summarySum,diff,status,detailCount:d?.count||0,summaryCount:s?.count||0});
+  });
+
+  // מיון: שגיאות קודם
+  const order={diff:0,missing:1,extra:2,ok:3};
+  allResults.sort((a,b)=>order[a.status]-order[b.status]);
+
+  renderResults(allResults);
+  document.getElementById('results-card').classList.remove('hidden');
+  document.getElementById('results-card').scrollIntoView({behavior:'smooth'});
+}
+
+function renderResults(data){
+  const cnt={all:data.length,ok:0,diff:0,missing:0,extra:0};
+  data.forEach(r=>cnt[r.status]++);
+
+  // KPIs
+  const totalDetailSum=allResults.filter(r=>r.detailSum!==null).reduce((s,r)=>s+r.detailSum,0);
+  const totalSummarySum=allResults.filter(r=>r.summarySum!==null).reduce((s,r)=>s+r.summarySum,0);
+  const totalDiff=totalSummarySum-totalDetailSum;
+
+  document.getElementById('kpi-bar').innerHTML=`
+    <div class="kpi ${cnt.diff===0&&cnt.missing===0&&cnt.extra===0?'ok':'err'}">
+      <span class="kpi-val">${cnt.ok}/${cnt.all}</span><span class="kpi-lbl">שורות תואמות</span>
+    </div>
+    <div class="kpi ${cnt.diff>0?'err':'ok'}">
+      <span class="kpi-val">${cnt.diff}</span><span class="kpi-lbl">הפרשים</span>
+    </div>
+    <div class="kpi ${cnt.missing>0?'warn':'ok'}">
+      <span class="kpi-val">${cnt.missing}</span><span class="kpi-lbl">חסר בסיכום</span>
+    </div>
+    <div class="kpi ${cnt.extra>0?'warn':'ok'}">
+      <span class="kpi-val">${cnt.extra}</span><span class="kpi-lbl">עודף בסיכום</span>
+    </div>
+    <div class="kpi ${Math.abs(totalDiff)<=tolerance()?'ok':'err'}">
+      <span class="kpi-val">${fmtNum(totalDiff)}</span><span class="kpi-lbl">סה"כ הפרש ₪</span>
+    </div>
+  `;
+
+  // Headers
+  const groupHeaders=groupCols.map(g=>`<th>${g.label}</th>`).join('');
+  document.getElementById('result-head').innerHTML=
+    `${groupHeaders}<th class="num">סכום פירוט ₪</th><th class="num">סכום סיכום ₪</th><th class="num">הפרש ₪</th><th>סטטוס</th>`;
+
+  // Rows
+  document.getElementById('result-body').innerHTML=data.map(r=>{
+    const keyCells=r.keyVals.map(v=>`<td>${v||'(ריק)'}</td>`).join('');
+    const diff=r.diff;
+    const diffClass=diff===null?'':(diff>0?'diff-pos':diff<0?'diff-neg':'diff-ok');
+    const badgeCls=r.status==='ok'?'b-ok':r.status==='diff'?'b-diff':r.status==='missing'?'b-missing':'b-extra';
+    const badgeTxt=r.status==='ok'?'✅ התאמה':r.status==='diff'?'⚠️ הפרש':r.status==='missing'?'🔸 חסר בסיכום':'🔹 עודף בסיכום';
+    return `<tr data-status="${r.status}">
+      ${keyCells}
+      <td class="num">${r.detailSum!==null?fmtNum(r.detailSum):'—'}</td>
+      <td class="num">${r.summarySum!==null?fmtNum(r.summarySum):'—'}</td>
+      <td class="num ${diffClass}">${diff!==null?(diff>0?'+':'')+fmtNum(diff):'—'}</td>
+      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterResults(status,btn){
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered=status==='all'?allResults:allResults.filter(r=>r.status===status);
+  renderResults(filtered);
+}
+
+function exportResults(){
+  const groupHeaders=groupCols.map(g=>g.label);
+  const header=[...groupHeaders,'סכום פירוט ₪','סכום סיכום ₪','הפרש ₪','סטטוס'];
+  const rows=allResults.map(r=>[
+    ...r.keyVals,
+    r.detailSum??'',
+    r.summarySum??'',
+    r.diff??'',
+    r.status==='ok'?'התאמה':r.status==='diff'?'הפרש':r.status==='missing'?'חסר בסיכום':'עודף בסיכום'
+  ]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([header,...rows]),'השוואה');
+  XLSX.writeFile(wb,'השוואת_פירוט_סיכום.xlsx');
+}
+
+function resetTool(){
+  detailData={headers:[],rows:[]};
+  summaryData={headers:[],rows:[]};
+  groupCols=[];
+  allResults=[];
+  document.getElementById('fi-detail').value='';
+  document.getElementById('fi-summary').value='';
+  ['dz-detail','dz-summary'].forEach(id=>{
+    const dz=document.getElementById(id);
+    dz.classList.remove('loaded');
+    dz.querySelector('.ub-icon').textContent=id.includes('detail')?'📋':'📄';
+    dz.querySelector('.ub-text').textContent=id.includes('detail')?'העלה טבלת פירוט':'העלה טבלת סיכום';
+  });
+  document.getElementById('conditions-list').innerHTML='';
+  document.getElementById('group-tags').innerHTML='';
+  document.getElementById('config-card').classList.add('hidden');
+  document.getElementById('results-card').classList.add('hidden');
+}
+</script>
+</body>
+</html>
