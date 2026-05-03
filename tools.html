@@ -104,12 +104,12 @@
 <body>
 
 <nav>
-  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></button>
   <ul>
-    <li><a href="index.html">בית</a></li>
-    <li><a href="index.html#services">שירותים</a></li>
-    <li><a href="tools.html" class="active">כלים להורדה</a></li>
-    <li><a href="index.html#cta" class="nav-cta">צרו קשר</a></li>
+    <li><a href="index.html">בית</button></li>
+    <li><a href="index.html#services">שירותים</button></li>
+    <li><a href="tools.html" class="active">כלים להורדה</button></li>
+    <li><a href="index.html#cta" class="nav-cta">צרו קשר</button></li>
     <li><a id="nav-auth-btn" class="nav-user" onclick="openAuthModal('login')">כניסה / הרשמה</a></li>
   </ul>
 </nav>
@@ -158,7 +158,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','מפצל וממעיל קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','כלי','/tool-excel-splitter')">🔓 פתיחת הכלי</a>
     </div>
   </div>
 
@@ -175,7 +175,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','השוואת רשימות','tool-list-compare.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','כלי','/tool-list-compare')">🔓 פתיחת הכלי</a>
     </div>
   </div>
 
@@ -192,7 +192,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','זיהוי חפיפה בדיווחי שעות','tool-hours-overlap.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','כלי','/tool-hours-overlap')">🔓 פתיחת הכלי</a>
     </div>
   </div>
 
@@ -209,7 +209,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','זמן בין אירועים','tool-time-between.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','כלי','/tool-time-between')">🔓 פתיחת הכלי</a>
     </div>
   </div>
 
@@ -226,7 +226,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','דשבורד פילוח דינמי','tool-dashboard.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','כלי','/tool-dashboard')">🔓 פתיחת הכלי</a>
     </div>
   </div>
 
@@ -243,7 +243,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">₪149</div>
-      <button class="btn-dl btn-premium" onclick="handleDL('premium','ניתוח Benford לאיתור חריגות',149)">⭐ רכישה</button>
+      <button class="btn-dl btn-premium" onclick="handleDL('premium','/ניתוח Benford לאיתור חריגות',149)">⭐ רכישה</button>
     </div>
   </div>
 
@@ -429,9 +429,10 @@ function doRegister(){
   updateUI();
   const pt=sessionStorage.getItem('pt');
   const ptUrl=sessionStorage.getItem('pt_url');
-  sessionStorage.removeItem('pt');sessionStorage.removeItem('pt_url');
-  if(ptUrl){window.location.href=ptUrl}
-  else showOK(pt?`נרשמת בהצלחה! הקובץ "${pt}" נשלח למייל שלך תוך שעה.`:`ברוך הבא ${name}! יש לך גישה לכל הכלים החינמיים.`);
+  sessionStorage.removeItem('pt');
+  sessionStorage.removeItem('pt_url');
+  if(ptUrl){window.location.href=ptUrl;}
+  else showOK(`ברוך הבא ${name}! יש לך גישה לכל הכלים החינמיים.`);
 }
 
 function doLogin(){
@@ -450,25 +451,31 @@ function doLogin(){
   saveSession({name:user.name,email:user.email,office:user.office,tier:user.tier});
   closeModal('modal-auth');
   updateUI();
-  const pt=sessionStorage.getItem('pt');
   const ptUrl=sessionStorage.getItem('pt_url');
-  sessionStorage.removeItem('pt');sessionStorage.removeItem('pt_url');
-  if(ptUrl){window.location.href=ptUrl}
-  else showOK(pt?`ברוך הבא ${user.name}! הקובץ "${pt}" נשלח למייל שלך תוך שעה.`:`ברוך הבא, ${user.name}!`);
+  sessionStorage.removeItem('pt');
+  sessionStorage.removeItem('pt_url');
+  if(ptUrl){window.location.href=ptUrl;}
+  else showOK(`ברוך הבא, ${user.name}!`);
 }
 
 function handleDL(tier,tool,webUrlOrPrice){
   if(tier==='member'){
     if(getSession()){
-      if(webUrlOrPrice&&webUrlOrPrice.endsWith('.html')){window.location.href=webUrlOrPrice}
-      else showOK(`הקובץ "${tool}" נשלח למייל שלך. בדוק גם תיקיית ספאם.`);
+      window.location.href=webUrlOrPrice;
     }else{
+      sessionStorage.setItem('pt_url',webUrlOrPrice);
       sessionStorage.setItem('pt',tool);
-      sessionStorage.setItem('pt_url',webUrlOrPrice&&webUrlOrPrice.endsWith('.html')?webUrlOrPrice:'');
       openAuthModal('reg',tool);
     }
-  }else{
-    if(!getSession()){sessionStorage.setItem('pt',tool);sessionStorage.setItem('pt_url','');openAuthModal('login',tool);return}
+    return;
+  }
+  if(tier==='premium'){
+    if(!getSession()){
+      sessionStorage.setItem('pt_url','');
+      sessionStorage.setItem('pt',tool);
+      openAuthModal('login',tool);
+      return;
+    }
     document.getElementById('prem-title').textContent=`רכישת "${tool}" — ₪${webUrlOrPrice}`;
     const s=getSession();
     document.getElementById('p-name').value=s.name||'';
