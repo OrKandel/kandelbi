@@ -37,6 +37,7 @@
     .tier-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:0.82rem;font-weight:700}
     .tier-member{background:var(--blue-bg);color:var(--blue);border:1px solid #c8d9f2}
     .tier-premium{background:var(--orange-bg);color:#b87400;border:1px solid #f5d48a}
+    .tier-procurement{background:#f0f0ff;color:#5b21b6;border:1px solid #c4b5fd}
     .filters-bar{max-width:1200px;margin:0 auto;padding:2rem 5vw 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
     .filter-tabs{display:flex;gap:0.5rem;flex-wrap:wrap}
     .filter-tab{padding:7px 18px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-white);color:var(--text-mid);font-size:0.88rem;font-weight:600;cursor:pointer;transition:all 0.2s}
@@ -125,7 +126,8 @@
 </div>
 
 <div class="tier-legend">
-  <span class="tier-badge tier-member">👤 כל הכלים חינמיים — הרשמה עם מייל וטלפון</span>
+  <span class="tier-badge tier-member">👤 כלים כלליים — הרשמה חינמית</span>
+  <span class="tier-badge tier-procurement">⚖️ בקרות מכרזים, התקשרויות ותשלומים</span>
 </div>
 
 <div class="filters-bar">
@@ -134,6 +136,7 @@
     <button class="filter-tab" onclick="filterCards('member',this)">מנוי חינמי</button>
     <button class="filter-tab" onclick="filterCards('excel',this)">אקסל / כלי</button>
     <button class="filter-tab" onclick="filterCards('bot',this)">צ'אטבוט</button>
+    <button class="filter-tab" onclick="filterCards('procurement',this)">⚖️ מכרזים והתקשרויות</button>
   </div>
   <div class="search-box">
     <span>🔍</span>
@@ -144,11 +147,11 @@
 <div class="tools-grid" id="tools-grid">
 
   <!-- ═══ כלי 1: מפצל אקסל ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="מפצל וממעיל קבצי אקסל">
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="מפצל ומקטין קבצי אקסל">
     <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
       <div class="card-icon icon-excel">✂️</div>
-      <div class="card-meta"><div class="card-title">מפצל וממעיל קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+      <div class="card-meta"><div class="card-title">מפצל ומקטין קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
       <p class="card-desc">קובץ אקסל כבד שתוקע את המחשב? בחר עמודות רלוונטיות, חתוך לפי תאריך, מחלקה או מספר שורות — וקבל קבצים קטנים וניתנים לעבודה.</p>
@@ -156,7 +159,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','מפצל וממעיל קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','מפצל ומקטין קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
     </div>
   </div>
 
@@ -229,8 +232,8 @@
   </div>
 
   <!-- ═══ כלי 6: השוואת פירוט מול סיכום ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="השוואת פירוט מול סיכום חשבון">
-    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="השוואת פירוט מול סיכום חשבון">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
     <div class="card-top">
       <div class="card-icon icon-excel">⚖️</div>
       <div class="card-meta"><div class="card-title">השוואת פירוט מול סיכום</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
@@ -246,8 +249,8 @@
   </div>
 
   <!-- ═══ כלי 7: צ'אטבוט ניתוח מכרזים ═══ -->
-  <div class="tool-card" data-tier="member" data-type="bot" data-title="ניתוח מכרזים AI">
-    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="ניתוח מכרזים AI">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
     <div class="card-top">
       <div class="card-icon icon-bot">⚖️</div>
       <div class="card-meta"><div class="card-title">ניתוח מכרזים AI</div><div class="card-sub">צ'אטבוט · Gemini Flash</div></div>
@@ -275,7 +278,7 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-premium" onclick="handleDL('member','ניתוח Benford לאיתור חריגות','tool-reconcile.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-premium" onclick="handleDL('member','ניתוח Benford לאיתור חריגות','tool-benford.html')">🔓 פתיחת הכלי</button>
     </div>
   </div>
 
@@ -292,7 +295,41 @@
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','צ'אטבוט חקירה פיננסית','tool-tender-chat.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','ניתוח מכרזים AI','tool-tender-chat.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי VBA: בדיקת דוחות שעות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת דוחות שעות">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">⏰</div>
+      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת דוחות שעות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">קובץ אקסל עם מאקרואים לבדיקת דוחות שעות — חפיפות, תעריפים לפי רמה, סבירות שעות (שבתות, חגים), ודוח סיכום. עובד לגמרי מקומי ללא אינטרנט.</p>
+      <div class="card-tags"><span class="tag">VBA</span><span class="tag">שעות</span><span class="tag">חפיפות</span><span class="tag">מקומי</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleVBADownload('hours','כלי VBA — בדיקת דוחות שעות')">⬇ הורדת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי VBA: בדיקת תפוקות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת תפוקות">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📦</div>
+      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת תפוקות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">כלי אקסל לבדיקת דוחות תפוקות — זיהוי סוגי תפוקה חדשים, בדיקת סבירות, מדגם מבוסס סיכונים, ודשבורד השוואה חודשית עם זיהוי קפיצות.</p>
+      <div class="card-tags"><span class="tag">VBA</span><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleVBADownload('outputs','כלי VBA — בדיקת תפוקות')">⬇ הורדת הכלי</button>
     </div>
   </div>
 
@@ -330,6 +367,40 @@
       <p class="modal-switch">עדיין לא רשום? <a onclick="switchTab('reg')">הרשמה חינמית</a></p>
     </div>
   </div>
+  <!-- ═══ כלי VBA: בדיקת דוחות שעות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת דוחות שעות">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">⏰</div>
+      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת דוחות שעות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">קובץ אקסל עם מאקרואים לבדיקת דוחות שעות — חפיפות, תעריפים לפי רמה, סבירות שעות (שבתות, חגים), ודוח סיכום. עובד לגמרי מקומי ללא אינטרנט.</p>
+      <div class="card-tags"><span class="tag">VBA</span><span class="tag">שעות</span><span class="tag">חפיפות</span><span class="tag">מקומי</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleVBADownload('hours','כלי VBA — בדיקת דוחות שעות')">⬇ הורדת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי VBA: בדיקת תפוקות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת תפוקות">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📦</div>
+      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת תפוקות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">כלי אקסל לבדיקת דוחות תפוקות — זיהוי סוגי תפוקה חדשים, בדיקת סבירות, מדגם מבוסס סיכונים, ודשבורד השוואה חודשית עם זיהוי קפיצות.</p>
+      <div class="card-tags"><span class="tag">VBA</span><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleVBADownload('outputs','כלי VBA — בדיקת תפוקות')">⬇ הורדת הכלי</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══ MODAL: רכישה פרימיום ══ -->
@@ -347,6 +418,40 @@
     <button class="btn-sub gold" onclick="doPremium()">💳 המשך לתשלום מאובטח (UPAY)</button>
     <p class="modal-note">🔒 תשלום מאובטח · לאחר אישור התשלום הקובץ נשלח למייל תוך שעה</p>
   </div>
+  <!-- ═══ כלי VBA: בדיקת דוחות שעות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת דוחות שעות">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">⏰</div>
+      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת דוחות שעות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">קובץ אקסל עם מאקרואים לבדיקת דוחות שעות — חפיפות, תעריפים לפי רמה, סבירות שעות (שבתות, חגים), ודוח סיכום. עובד לגמרי מקומי ללא אינטרנט.</p>
+      <div class="card-tags"><span class="tag">VBA</span><span class="tag">שעות</span><span class="tag">חפיפות</span><span class="tag">מקומי</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleVBADownload('hours','כלי VBA — בדיקת דוחות שעות')">⬇ הורדת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי VBA: בדיקת תפוקות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת תפוקות">
+    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📦</div>
+      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת תפוקות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">כלי אקסל לבדיקת דוחות תפוקות — זיהוי סוגי תפוקה חדשים, בדיקת סבירות, מדגם מבוסס סיכונים, ודשבורד השוואה חודשית עם זיהוי קפיצות.</p>
+      <div class="card-tags"><span class="tag">VBA</span><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleVBADownload('outputs','כלי VBA — בדיקת תפוקות')">⬇ הורדת הכלי</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══ MODAL: הצלחה ══ -->
@@ -360,6 +465,11 @@
 </div>
 
 <!-- Netlify Forms -->
+<form name="vba-download" netlify hidden>
+  <input type="text" name="name"/><input type="email" name="email"/>
+  <input type="text" name="office"/><input type="text" name="tool"/>
+  <input type="text" name="file_id"/><input type="text" name="expiry"/>
+</form>
 <form name="member-register" netlify hidden>
   <input type="text" name="name"/><input type="text" name="office"/>
   <input type="email" name="email"/><input type="tel" name="phone"/>
@@ -379,6 +489,30 @@
 <footer>
   <p>© 2025 קנדל BI — אור קנדל רו"ח · <a href="index.html">kandelbi.org</a> · <a href="terms.html">תנאי שימוש</a></p>
 </footer>
+
+<!-- ══ MODAL: הורדת VBA ══ -->
+<div class="modal-overlay" id="modal-vba">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-vba')">✕</button>
+    <div class="modal-icon">📦</div>
+    <h2 id="vba-title">הורדת כלי VBA</h2>
+    <p class="modal-desc">הכלי יורד עם מזהה אישי ייחודי — תוקף 3 חודשים</p>
+
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;text-align:right">
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px">מזהה אישי שלך (FILE_ID):</div>
+      <div id="vba-file-id" style="font-family:monospace;font-size:0.9rem;font-weight:700;color:var(--blue);letter-spacing:1px;word-break:break-all"></div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">תאריך תפוגה: <strong id="vba-expiry"></strong></div>
+    </div>
+
+    <div class="alert-info" style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:1rem">
+      📋 <strong>הכנס מזהה זה בקוד ה-VBA</strong> בשורה:<br/>
+      <code style="font-size:0.8rem">Const FILE_ID = "<span id="vba-id-inline"></span>"</code>
+    </div>
+
+    <button class="btn-sub green" id="vba-dl-btn" onclick="doVBADownload()">⬇ הורד כלי + הוראות</button>
+    <p class="modal-note">לאחר ההורדה עיין בדף ההוראות להתקנה</p>
+  </div>
+</div>
 
 <script>
 const UK="kbi_users",SK="kbi_session";
