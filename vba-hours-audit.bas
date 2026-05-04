@@ -1,5 +1,5 @@
 ' ============================================================
-' קנדל BI — כלי בדיקת דוחות שעות v1.0
+' קנדל BI — כלי בדיקת דוחות תשומות v1.0
 ' kandelbi.org
 ' ============================================================
 ' הוראות התקנה:
@@ -285,7 +285,7 @@ Sub MakeSummary()
     
     With rpt
         .Range("A1:E1").Merge
-        .Cells(1, 1).Value = "דוח בדיקת דוחות שעות — קנדל BI"
+        .Cells(1, 1).Value = "דוח בדיקת דוחות תשומות — קנדל BI"
         .Cells(1, 1).Font.Bold = True: .Cells(1, 1).Font.Size = 14
         .Cells(1, 1).Interior.Color = RGB(13, 31, 60)
         .Cells(1, 1).Font.Color = RGB(255, 255, 255)
@@ -360,7 +360,7 @@ End Sub
 
 Sub Auto_Open()
     If Not CheckLicense() Then Exit Sub
-    MsgBox "ברוך הבא לכלי בדיקת דוחות שעות — קנדל BI" & Chr(13) & Chr(13) & _
+    MsgBox "ברוך הבא לכלי בדיקת דוחות תשומות — קנדל BI" & Chr(13) & Chr(13) & _
            "1. הכנס נתוני שעות בגיליון 'נתונים'" & Chr(13) & _
            "2. הפעל מאקרו 'RunAudit' לביצוע הבדיקה" & Chr(13) & Chr(13) & _
            "kandelbi.org", vbInformation, "קנדל BI"
