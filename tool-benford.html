@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ניתוח Benford — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:2rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none}
+.form-group select:focus{border-color:var(--blue)}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+
+/* BENFORD CHART */
+.benford-chart{display:flex;align-items:flex-end;gap:8px;height:220px;padding:1rem 0;border-bottom:2px solid var(--border);margin-bottom:1rem}
+.bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bar-wrap{width:100%;display:flex;gap:3px;align-items:flex-end;height:180px}
+.bar-expected{flex:1;background:rgba(30,106,191,0.25);border:1px dashed var(--blue);border-radius:4px 4px 0 0;transition:height 0.5s;position:relative}
+.bar-actual{flex:1;border-radius:4px 4px 0 0;transition:height 0.5s}
+.bar-actual.ok{background:var(--green)}
+.bar-actual.warn{background:var(--orange)}
+.bar-actual.danger{background:var(--red)}
+.bar-digit{font-size:0.75rem;font-weight:700;color:var(--muted)}
+
+.chart-legend{display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;font-size:0.8rem}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:12px;height:12px;border-radius:2px}
+
+/* KPI */
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.4rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.72rem;color:var(--muted);margin-top:3px}
+.kpi.danger .kpi-val{color:var(--red)}.kpi.ok .kpi-val{color:var(--green)}.kpi.warn .kpi-val{color:var(--orange)}
+
+/* TABLE */
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.83rem}
+th{background:var(--navy);color:#fff;padding:9px 12px;text-align:right;font-weight:700;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
+.b-ok{background:#edf7f3;color:var(--green)}.b-warn{background:#fff3e0;color:var(--orange)}.b-danger{background:#fef2f2;color:var(--red)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">🔍 ניתוח חוק Benford</div>
+<div class="tool-sub">זיהוי חריגות וזיופים אפשריים בנתונים פיננסיים לפי חלוקת הספרה הראשונה</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 מה זה חוק Benford?</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">📊</div><span>בנתונים פיננסיים אמיתיים, הספרה 1 מופיעה כ-30% מהזמן, 2 כ-17%, 9 רק כ-4%. זה חוק טבעי.</span></div>
+    <div class="inst-step"><div class="inst-num">🚨</div><span>כשאנשים ממציאים מספרים, הם בדרך כלל מחלקים אותם "שווה בשווה" — וזה יוצר חריגה מהחוק.</span></div>
+    <div class="inst-step"><div class="inst-num">✅</div><span>העלה קובץ, בחר עמודה מספרית, וקבל ניתוח אם הנתונים תואמים את החוק.</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 טעינת קובץ</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📊</div>
+    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+</div>
+
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרות</div>
+  <div class="form-group">
+    <label>עמודה לניתוח (ערכים מספריים):</label>
+    <select id="col-select"></select>
+  </div>
+  <div class="form-group">
+    <label>ערך מינימלי לכלול (מסנן מספרים קטנים מדי):</label>
+    <select id="min-val">
+      <option value="1">כל המספרים מעל 0</option>
+      <option value="100">מעל 100</option>
+      <option value="1000" selected>מעל 1,000</option>
+      <option value="10000">מעל 10,000</option>
+    </select>
+  </div>
+  <button class="btn-primary" onclick="runBenford()">🔍 הרץ ניתוח Benford</button>
+</div>
+
+<div class="card hidden" id="results-card">
+  <div class="card-title">📊 תוצאות ניתוח</div>
+  <div class="kpi-bar" id="kpi-bar"></div>
+
+  <div class="chart-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(30,106,191,0.4);border:1px dashed var(--blue)"></div><span>צפוי לפי Benford</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div><span>תואם (סטייה קטנה)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div><span>סטייה בינונית</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div><span>חריגה חשודה</span></div>
+  </div>
+
+  <div class="benford-chart" id="benford-chart"></div>
+
+  <div class="result-table-wrap" style="margin-top:1rem">
+    <table>
+      <thead><tr><th>ספרה ראשונה</th><th>צפוי %</th><th>בפועל %</th><th>סטייה</th><th>ספירה</th><th>סטטוס</th></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:1rem">
+    <button class="btn-accent" onclick="exportResults()">⬇ ייצא לאקסל</button>
+  </div>
+</div>
+</main>
+
+<script>
+// חוק Benford — אחוזים צפויים לכל ספרה
+const BENFORD = {1:30.1,2:17.6,3:12.5,4:9.7,5:7.9,6:6.7,7:5.8,8:5.1,9:4.6};
+
+let rawData=[], headers=[], analysisResults=[];
+
+document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='var(--blue)'});
+dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
+
+function loadFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    headers=rows[0]||[];
+    rawData=rows.slice(1).filter(r=>r.some(c=>c!==''));
+
+    dz.classList.add('loaded');
+    dz.querySelector('.ub-icon').textContent='✅';
+    dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.length.toLocaleString('he')+' שורות)';
+
+    // מלא עמודות
+    const sel=document.getElementById('col-select');
+    sel.innerHTML=headers.map((h,i)=>`<option value="${i}">${h||'עמודה '+(i+1)}</option>`).join('');
+
+    // ניחוש עמודה מספרית
+    const numIdx=headers.findIndex((_,i)=>rawData.slice(0,5).some(r=>{const v=parseFloat(String(r[i]).replace(/,/g,''));return !isNaN(v)&&v>0}));
+    if(numIdx>=0) sel.value=numIdx;
+
+    document.getElementById('config-card').classList.remove('hidden');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function runBenford(){
+  const colIdx=parseInt(document.getElementById('col-select').value);
+  const minVal=parseInt(document.getElementById('min-val').value);
+
+  // חלץ מספרים
+  const numbers=[];
+  rawData.forEach(row=>{
+    const raw=String(row[colIdx]||'').replace(/[,₪\s]/g,'');
+    const n=Math.abs(parseFloat(raw));
+    if(!isNaN(n)&&n>=minVal) numbers.push(n);
+  });
+
+  if(numbers.length<30){
+    alert('יש צורך לפחות ב-30 מספרים לניתוח תקני. נמצאו: '+numbers.length);
+    return;
+  }
+
+  // ספור ספרות ראשונות
+  const counts={1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0};
+  numbers.forEach(n=>{
+    const firstDigit=parseInt(String(n).replace('.','').replace(/^0+/,'')[0]);
+    if(firstDigit>=1&&firstDigit<=9) counts[firstDigit]++;
+  });
+
+  // חשב תוצאות
+  analysisResults=[];
+  let chiSquare=0;
+  let suspiciousCount=0;
+
+  for(let d=1;d<=9;d++){
+    const expected=BENFORD[d]/100;
+    const actual=counts[d]/numbers.length;
+    const deviation=Math.abs(actual-expected)/expected*100;
+    const zScore=Math.abs(actual-expected)/Math.sqrt(expected*(1-expected)/numbers.length);
+
+    let status,statusClass;
+    if(deviation<15){status='✅ תקין';statusClass='ok';}
+    else if(deviation<30){status='⚠️ סטייה';statusClass='warn';suspiciousCount++;}
+    else{status='🚨 חריגה';statusClass='danger';suspiciousCount++;}
+
+    chiSquare+=(Math.pow(counts[d]-numbers.length*expected,2))/(numbers.length*expected);
+
+    analysisResults.push({digit:d,expected:BENFORD[d],actual:Math.round(actual*1000)/10,count:counts[d],deviation:Math.round(deviation),zScore:Math.round(zScore*10)/10,status,statusClass});
+  }
+
+  // KPIs
+  const mad=analysisResults.reduce((s,r)=>s+Math.abs(r.actual-r.expected),0)/9;
+  let conformity;
+  if(mad<3) conformity='✅ תואם היטב';
+  else if(mad<5) conformity='⚠️ סטייה מתונה';
+  else conformity='🚨 חריגה חשודה';
+
+  document.getElementById('kpi-bar').innerHTML=`
+    <div class="kpi ${mad<3?'ok':mad<5?'warn':'danger'}"><span class="kpi-val">${conformity}</span><span class="kpi-lbl">הערכה כללית</span></div>
+    <div class="kpi"><span class="kpi-val">${numbers.length.toLocaleString('he')}</span><span class="kpi-lbl">מספרים שנותחו</span></div>
+    <div class="kpi ${mad<3?'ok':mad<5?'warn':'danger'}"><span class="kpi-val">${mad.toFixed(2)}%</span><span class="kpi-lbl">MAD (ממוצע סטייה)</span></div>
+    <div class="kpi ${suspiciousCount===0?'ok':suspiciousCount<3?'warn':'danger'}"><span class="kpi-val">${suspiciousCount}</span><span class="kpi-lbl">ספרות חשודות</span></div>
+    <div class="kpi"><span class="kpi-val">${chiSquare.toFixed(1)}</span><span class="kpi-lbl">Chi-Square</span></div>
+  `;
+
+  // גרף
+  const maxPct=Math.max(...Object.values(BENFORD),...analysisResults.map(r=>r.actual));
+  const chart=document.getElementById('benford-chart');
+  chart.innerHTML=analysisResults.map(r=>{
+    const expH=Math.round(r.expected/maxPct*160);
+    const actH=Math.round(r.actual/maxPct*160);
+    return `<div class="bar-group">
+      <div class="bar-wrap">
+        <div class="bar-expected" style="height:${expH}px" title="צפוי: ${r.expected}%"></div>
+        <div class="bar-actual ${r.statusClass}" style="height:${actH}px" title="בפועל: ${r.actual}%"></div>
+      </div>
+      <div class="bar-digit">${r.digit}</div>
+    </div>`;
+  }).join('');
+
+  // טבלה
+  document.getElementById('result-body').innerHTML=analysisResults.map(r=>`
+    <tr>
+      <td><strong>${r.digit}</strong></td>
+      <td>${r.expected}%</td>
+      <td>${r.actual}%</td>
+      <td>${r.deviation > 0 ? '+' : ''}${r.deviation}% (z=${r.zScore})</td>
+      <td>${r.count.toLocaleString('he')}</td>
+      <td><span class="badge b-${r.statusClass}">${r.status}</span></td>
+    </tr>`).join('');
+
+  document.getElementById('results-card').classList.remove('hidden');
+  document.getElementById('results-card').scrollIntoView({behavior:'smooth'});
+}
+
+function exportResults(){
+  const rows=[['ספרה','צפוי %','בפועל %','סטייה %','ספירה','סטטוס'],
+    ...analysisResults.map(r=>[r.digit,r.expected,r.actual,r.deviation,r.count,r.status])];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Benford');
+  XLSX.writeFile(wb,'ניתוח_Benford.xlsx');
+}
+</script>
+</body>
+</html>
