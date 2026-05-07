@@ -148,6 +148,10 @@ tr:hover td{background:var(--bg);}
 </header>
 
 <main>
+<div style="background:#edf7f3;border:1px solid #b2ddd0;border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#0a7c5e">
+  <span style="font-size:1.1rem;flex-shrink:0">🔒</span>
+  <span><strong>הנתונים שלך לא עוזבים את המחשב.</strong> הכלי עובד לגמרי בדפדפן — ללא שרת, ללא העלאה לאינטרנט. ניתן לעבוד גם ללא חיבור לרשת. <span style="color:#6b7a99">רוצה לוודא? פתח F12 ← Network בזמן העלאת הקובץ.</span></span>
+</div>
   <div class="tool-title">✂️ מפצל ומקטין קבצי אקסל</div>
   <div class="tool-sub">טען קובץ כבד, בחר עמודות, חתוך לפי תאריך או ערך — וקבל קבצים קטנים וניתנים לעבודה</div>
 
@@ -386,7 +390,10 @@ function loadSheet() {
 
 // ══ STEP NAVIGATION ══
 function goStep(n) {
-  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('show',i===n-1));
+  ['sec1','sec2','sec3','sec4'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('show',i===n-1);
+  });
   document.querySelectorAll('.step').forEach((s,i)=>{
     s.classList.toggle('active',i===n-1);
     s.classList.toggle('done',i<n-1);
