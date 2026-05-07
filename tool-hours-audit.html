@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>בדיקת דוחות תשומות — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:14px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.2rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.82rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:1100px;margin:0 auto;padding:2rem 5vw 4rem}
+.tool-title{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.92rem;margin-bottom:1.2rem}
+.privacy-bar{background:#edf7f3;border:1px solid #b2ddd0;border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#0a7c5e}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;color:#fff}
+.inst-title{font-weight:800;font-size:0.95rem;margin-bottom:0.7rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:5px}
+.inst-step{display:flex;align-items:flex-start;gap:9px;font-size:0.85rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.72rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:1.5rem;margin-bottom:1.2rem;box-shadow:0 3px 16px rgba(13,31,60,0.07)}
+.card-title{font-size:0.95rem;font-weight:800;color:var(--navy);margin-bottom:1rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.8rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:1.8rem;margin-bottom:5px}.ub-text{font-weight:700;font-size:0.88rem}.ub-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:650px){.grid2{grid-template-columns:1fr}}
+.form-group{margin-bottom:0.8rem}
+.form-group label{display:block;font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+.form-group select,.form-group input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;outline:none;background:var(--white)}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:11px 26px;border-radius:9px;font-family:inherit;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:9px 20px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.88rem;cursor:pointer}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.2rem;flex-wrap:wrap}
+.tab-btn{padding:9px 16px;border:none;background:none;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.show{display:block}
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.8rem;margin-bottom:1.2rem}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.9rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.5rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.7rem;color:var(--muted);margin-top:3px}
+.kpi.danger .kpi-val{color:var(--red)}.kpi.warn .kpi-val{color:var(--orange)}.kpi.ok .kpi-val{color:var(--green)}
+.filter-tabs{display:flex;gap:5px;margin-bottom:0.8rem;flex-wrap:wrap}
+.ftab{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:var(--white);font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.ftab:hover{border-color:var(--blue);color:var(--blue)}.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:420px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.81rem}
+th{background:var(--navy);color:#fff;padding:8px 11px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:7px 11px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:0.7rem;font-weight:700}
+.b-full{background:#fef2f2;color:var(--red)}.b-partial{background:#fff3e0;color:var(--orange)}
+.b-shabbat{background:#f3e8ff;color:#7c3aed}.b-high{background:#fef2f2;color:var(--red)}.b-ok{background:#edf7f3;color:var(--green)}
+/* CHART */
+.month-chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding-bottom:8px;border-bottom:2px solid var(--border);margin-bottom:0.8rem;overflow-x:auto}
+.month-bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:50px}
+.month-bar{width:100%;border-radius:4px 4px 0 0;transition:height 0.4s;cursor:pointer;position:relative}
+.month-bar:hover{opacity:0.8}
+.month-label{font-size:0.68rem;color:var(--muted);text-align:center;white-space:nowrap}
+.month-val{font-size:0.68rem;font-weight:700;color:var(--navy)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">⏰ בדיקת דוחות תשומות (שעות)</div>
+<div class="tool-sub">חפיפות · תעריפים לפי רמה · סבירות · השוואה חודשית</div>
+
+<div class="privacy-bar">
+  <span style="font-size:1.1rem;flex-shrink:0">🔒</span>
+  <span><strong>הנתונים שלך לא עוזבים את המחשב.</strong> הכלי עובד לגמרי בדפדפן — ללא שרת, ללא העלאה לאינטרנט. ניתן לעבוד גם ללא חיבור לרשת. <span style="color:var(--muted)">רוצה לוודא? פתח F12 ← Network בזמן העלאת הקובץ.</span></span>
+</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה דוח תשומות — כל שורה = דיווח שעות של עובד (עם תאריך, שעת כניסה, שעת יציאה)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>אופציונלי: העלה גיליון תעריפים (עובד, רמה, תעריף לשעה) לבדיקת תעריפים</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>הגדר עמודות והרץ — הכלי מזהה חפיפות, שבתות, שעות חריגות ותעריפים שגויים</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>ראה דשבורד חודשי — זהה קפיצות חשודות בשעות לאורך זמן</span></div>
+  </div>
+</div>
+
+<!-- העלאת קבצים -->
+<div class="card">
+  <div class="card-title">📂 העלאת קבצים</div>
+  <div class="grid2">
+    <div>
+      <div style="font-weight:700;margin-bottom:6px;color:var(--blue);font-size:0.88rem">📋 דוח תשומות (חובה)</div>
+      <div class="upload-box" id="dz-main" onclick="document.getElementById('fi-main').click()">
+        <div class="ub-icon">📋</div>
+        <div class="ub-text">העלה דוח תשומות</div>
+        <div class="ub-sub">xlsx / xls / csv</div>
+      </div>
+      <input type="file" id="fi-main" accept=".xlsx,.xls,.csv" hidden/>
+    </div>
+    <div>
+      <div style="font-weight:700;margin-bottom:6px;color:var(--muted);font-size:0.88rem">💰 גיליון תעריפים (אופציונלי)</div>
+      <div class="upload-box" id="dz-rates" onclick="document.getElementById('fi-rates').click()">
+        <div class="ub-icon">💰</div>
+        <div class="ub-text">העלה גיליון תעריפים</div>
+        <div class="ub-sub">עמודות: עובד, רמה, תעריף שעה</div>
+      </div>
+      <input type="file" id="fi-rates" accept=".xlsx,.xls,.csv" hidden/>
+    </div>
+  </div>
+</div>
+
+<!-- הגדרות -->
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרת עמודות</div>
+  <div class="grid2">
+    <div class="form-group"><label>מזהה עובד / שם:</label><select id="col-emp"></select></div>
+    <div class="form-group"><label>תאריך:</label><select id="col-date"></select></div>
+    <div class="form-group"><label>שעת כניסה / התחלה:</label><select id="col-start"></select></div>
+    <div class="form-group"><label>שעת יציאה / סיום:</label><select id="col-end"></select></div>
+    <div class="form-group"><label>חודש (לדשבורד):</label><select id="col-month"><option value="-1">— חשב מהתאריך אוטומטית —</option></select></div>
+    <div class="form-group"><label>תעריף שחויב (אופציונלי):</label><select id="col-rate"><option value="-1">— לא רלוונטי —</option></select></div>
+  </div>
+  <div style="background:var(--bg);border-radius:9px;padding:1rem;border:1px solid var(--border);margin-bottom:1rem">
+    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.7rem">🚩 סף חריגות</div>
+    <div class="grid2">
+      <div class="form-group"><label>שעות מקסימום ליום (חריג):</label><input type="number" id="max-hours" value="12" min="8" max="24"/></div>
+      <div class="form-group"><label>שעות גבוהות ליום (אזהרה):</label><input type="number" id="warn-hours" value="10" min="6" max="20"/></div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="runAudit()">🔍 הרץ בדיקה מלאה</button>
+</div>
+
+<!-- תוצאות -->
+<div class="card hidden" id="results-card">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('summary',this)">📊 סיכום</button>
+    <button class="tab-btn" onclick="showTab('overlaps',this)">⚠️ חפיפות</button>
+    <button class="tab-btn" onclick="showTab('reasonableness',this)">🔍 סבירות</button>
+    <button class="tab-btn" onclick="showTab('rates',this)">💰 תעריפים</button>
+    <button class="tab-btn" onclick="showTab('monthly',this)">📈 דשבורד חודשי</button>
+  </div>
+
+  <!-- סיכום -->
+  <div class="tab-panel show" id="tab-summary">
+    <div class="kpi-bar" id="kpi-bar"></div>
+    <div id="summary-details"></div>
+  </div>
+
+  <!-- חפיפות -->
+  <div class="tab-panel" id="tab-overlaps">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="filterTable('overlaps','all',this)">הכל</button>
+      <button class="ftab" onclick="filterTable('overlaps','full',this)">חפיפה מלאה</button>
+      <button class="ftab" onclick="filterTable('overlaps','partial',this)">חפיפה חלקית</button>
+    </div>
+    <div class="result-table-wrap">
+      <table><thead><tr><th>עובד</th><th>תאריך</th><th>שעות שורה 1</th><th>שעות שורה 2</th><th>חפיפה (דק')</th><th>סוג</th></tr></thead>
+      <tbody id="overlaps-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('overlaps')">⬇ ייצא</button></div>
+  </div>
+
+  <!-- סבירות -->
+  <div class="tab-panel" id="tab-reasonableness">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="filterTable('reason','all',this)">הכל</button>
+      <button class="ftab" onclick="filterTable('reason','shabbat',this)">שבת/חג</button>
+      <button class="ftab" onclick="filterTable('reason','high',this)">שעות חריגות</button>
+      <button class="ftab" onclick="filterTable('reason','warn',this)">שעות גבוהות</button>
+    </div>
+    <div class="result-table-wrap">
+      <table><thead><tr><th>עובד</th><th>תאריך</th><th>סה"כ שעות ביום</th><th>ממצא</th><th>פירוט</th></tr></thead>
+      <tbody id="reason-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('reason')">⬇ ייצא</button></div>
+  </div>
+
+  <!-- תעריפים -->
+  <div class="tab-panel" id="tab-rates">
+    <div id="rates-content">
+      <div style="color:var(--muted);font-size:0.88rem;padding:2rem;text-align:center">
+        📋 העלה גיליון תעריפים כדי לבצע בדיקת תעריפים
+      </div>
+    </div>
+  </div>
+
+  <!-- דשבורד חודשי -->
+  <div class="tab-panel" id="tab-monthly">
+    <div id="monthly-chart-wrap"></div>
+    <div class="result-table-wrap" style="margin-top:1rem">
+      <table><thead id="monthly-head"></thead><tbody id="monthly-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('monthly')">⬇ ייצא</button></div>
+  </div>
+</div>
+</main>
+
+<script>
+let mainData={headers:[],rows:[]};
+let ratesData={headers:[],rows:[]};
+let overlapResults=[], reasonResults=[], ratesResults=[], monthlyData={};
+
+// ── LOAD FILES ──
+function loadFile(inputId,dzId,dataObj,cb){
+  document.getElementById(inputId).addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+      while(rows.length&&rows[0].every(c=>!c)) rows.shift();
+      dataObj.headers=rows[0]||[];
+      dataObj.rows=rows.slice(1).filter(r=>r.some(c=>c!==''));
+      const dz=document.getElementById(dzId);
+      dz.classList.add('loaded');
+      dz.querySelector('.ub-icon').textContent='✅';
+      dz.querySelector('.ub-text').textContent=file.name+' ('+dataObj.rows.length.toLocaleString('he')+' שורות)';
+      cb();
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+loadFile('fi-main','dz-main',mainData,buildConfig);
+loadFile('fi-rates','dz-rates',ratesData,()=>{});
+
+function buildConfig(){
+  const opts=mainData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const optsOpt='<option value="-1">— לא רלוונטי —</option>'+opts;
+  ['col-emp','col-date','col-start','col-end'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  ['col-month','col-rate'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.innerHTML=(id==='col-month'?'<option value="-1">— חשב מהתאריך אוטומטית —</option>':'<option value="-1">— לא רלוונטי —</option>')+opts;
+  });
+  autoGuess();
+  document.getElementById('config-card').classList.remove('hidden');
+}
+
+function autoGuess(){
+  const g={
+    'col-emp':['עובד','שם','מזהה','id','name','employee'],
+    'col-date':['תאריך','date','יום'],
+    'col-start':['כניסה','התחלה','start','from','משעה','שעת כניסה'],
+    'col-end':['יציאה','סיום','end','to','עד','שעת יציאה']
+  };
+  Object.entries(g).forEach(([sel,kws])=>{
+    const i=mainData.headers.findIndex(h=>kws.some(k=>String(h).toLowerCase().includes(k)));
+    if(i>=0) document.getElementById(sel).value=i;
+  });
+}
+
+// ── TIME HELPERS ──
+function timeToMin(v){
+  try{
+    if(!v&&v!==0) return -1;
+    if(typeof v==='number') return v<1?v*1440:-1;
+    const s=String(v).trim();
+    const m=s.match(/(\d{1,2}):(\d{2})/);
+    if(m) return parseInt(m[1])*60+parseInt(m[2]);
+    return -1;
+  }catch{return -1;}
+}
+
+function fmtMin(m){
+  if(m<0) return '--';
+  return Math.floor(m/60)+':'+String(Math.round(m%60)).padStart(2,'0');
+}
+
+function getDateKey(v){
+  try{
+    if(!v) return '';
+    const d=new Date(v);
+    if(!isNaN(d)) return d.toLocaleDateString('he-IL');
+    return String(v);
+  }catch{return String(v);}
+}
+
+function getMonthKey(v){
+  try{
+    const d=new Date(v);
+    if(!isNaN(d)) return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    return String(v).slice(0,7);
+  }catch{return '';}
+}
+
+function isShabbat(v){
+  try{const d=new Date(v);return !isNaN(d)&&d.getDay()===6;}catch{return false;}
+}
+
+// ── MAIN AUDIT ──
+function runAudit(){
+  const ci=parseInt(document.getElementById('col-emp').value);
+  const cd=parseInt(document.getElementById('col-date').value);
+  const cs=parseInt(document.getElementById('col-start').value);
+  const ce=parseInt(document.getElementById('col-end').value);
+  const cm=parseInt(document.getElementById('col-month').value);
+  const cr=parseInt(document.getElementById('col-rate').value);
+  const maxH=parseFloat(document.getElementById('max-hours').value)||12;
+  const warnH=parseFloat(document.getElementById('warn-hours').value)||10;
+
+  const rows=mainData.rows;
+
+  // ── 1. חפיפות ──
+  overlapResults=[];
+  const groups={};
+  rows.forEach((row,idx)=>{
+    const k=`${row[ci]}||${getDateKey(row[cd])}`;
+    if(!groups[k]) groups[k]=[];
+    groups[k].push({row,idx,s:timeToMin(row[cs]),e:timeToMin(row[ce])});
+  });
+
+  Object.values(groups).forEach(entries=>{
+    if(entries.length<2) return;
+    for(let i=0;i<entries.length-1;i++){
+      for(let j=i+1;j<entries.length;j++){
+        const a=entries[i],b=entries[j];
+        if(a.s<0||a.e<=0||b.s<0||b.e<=0) continue;
+        const os=Math.max(a.s,b.s), oe=Math.min(a.e,b.e);
+        if(oe>os){
+          const full=(b.s>=a.s&&b.e<=a.e)||(a.s>=b.s&&a.e<=b.e);
+          overlapResults.push({
+            emp:a.row[ci], date:getDateKey(a.row[cd]),
+            s1:fmtMin(a.s)+'-'+fmtMin(a.e),
+            s2:fmtMin(b.s)+'-'+fmtMin(b.e),
+            overlap:Math.round(oe-os),
+            type:full?'full':'partial'
+          });
+        }
+      }
+    }
+  });
+
+  // ── 2. סבירות ──
+  reasonResults=[];
+  const dailyHours={};
+  rows.forEach(row=>{
+    const k=`${row[ci]}||${getDateKey(row[cd])}`;
+    const s=timeToMin(row[cs]),e=timeToMin(row[ce]);
+    const hrs=s>=0&&e>s?(e-s)/60:0;
+    if(!dailyHours[k]) dailyHours[k]={emp:row[ci],date:row[cd],total:0};
+    dailyHours[k].total+=hrs;
+  });
+
+  Object.values(dailyHours).forEach(d=>{
+    let issue='',detail='',type='';
+    if(isShabbat(d.date)){issue='עבודה בשבת';detail='נדרש אישור';type='shabbat';}
+    if(d.total>maxH){
+      issue+=(issue?' + ':'')+'שעות חריגות';
+      detail+=' '+d.total.toFixed(1)+' שעות';
+      type=type||'high';
+    } else if(d.total>warnH){
+      issue+=(issue?' + ':'')+'שעות גבוהות';
+      detail+=' '+d.total.toFixed(1)+' שעות';
+      type=type||'warn';
+    }
+    if(issue) reasonResults.push({emp:d.emp,date:getDateKey(d.date),total:d.total,issue,detail:detail.trim(),type});
+  });
+
+  // ── 3. תעריפים ──
+  ratesResults=[];
+  if(ratesData.rows.length>0&&cr>=0){
+    const rateMap={};
+    const rEmp=ratesData.headers.findIndex(h=>['עובד','שם','id'].some(k=>String(h).toLowerCase().includes(k)));
+    const rRate=ratesData.headers.findIndex(h=>['תעריף','rate','מחיר'].some(k=>String(h).toLowerCase().includes(k)));
+    if(rEmp>=0&&rRate>=0){
+      ratesData.rows.forEach(r=>{ rateMap[String(r[rEmp]).trim()]=parseFloat(r[rRate])||0; });
+      rows.forEach(row=>{
+        const emp=String(row[ci]).trim();
+        const charged=parseFloat(row[cr])||0;
+        const expected=rateMap[emp]||0;
+        if(expected>0&&charged>0&&Math.abs(charged-expected)>0.01){
+          ratesResults.push({emp,charged,expected,diff:charged-expected});
+        }
+      });
+    }
+  }
+
+  // ── 4. דשבורד חודשי ──
+  monthlyData={};
+  rows.forEach(row=>{
+    const emp=String(row[ci]);
+    const mn=cm>=0?String(row[cm]):getMonthKey(row[cd]);
+    const s=timeToMin(row[cs]),e=timeToMin(row[ce]);
+    const hrs=s>=0&&e>s?(e-s)/60:0;
+    if(!monthlyData[mn]) monthlyData[mn]={};
+    if(!monthlyData[mn][emp]) monthlyData[mn][emp]=0;
+    monthlyData[mn][emp]+=hrs;
+  });
+
+  renderResults();
+  document.getElementById('results-card').classList.remove('hidden');
+  document.getElementById('results-card').scrollIntoView({behavior:'smooth'});
+}
+
+function renderResults(){
+  // KPIs
+  const totalRows=mainData.rows.length;
+  const emps=new Set(mainData.rows.map(r=>r[parseInt(document.getElementById('col-emp').value)])).size;
+  document.getElementById('kpi-bar').innerHTML=`
+    <div class="kpi ${overlapResults.length>0?'danger':'ok'}"><span class="kpi-val">${overlapResults.length}</span><span class="kpi-lbl">חפיפות שעות</span></div>
+    <div class="kpi ${reasonResults.filter(r=>r.type==='high'||r.type==='shabbat').length>0?'danger':'ok'}"><span class="kpi-val">${reasonResults.filter(r=>r.type==='high').length}</span><span class="kpi-lbl">ימים חריגים</span></div>
+    <div class="kpi ${reasonResults.filter(r=>r.type==='shabbat').length>0?'warn':'ok'}"><span class="kpi-val">${reasonResults.filter(r=>r.type==='shabbat').length}</span><span class="kpi-lbl">עבודה בשבת</span></div>
+    <div class="kpi"><span class="kpi-val">${emps}</span><span class="kpi-lbl">עובדים</span></div>
+    <div class="kpi"><span class="kpi-val">${totalRows.toLocaleString('he')}</span><span class="kpi-lbl">שורות</span></div>
+  `;
+
+  // Summary
+  document.getElementById('summary-details').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${overlapResults.length>0?`<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.85rem">🔴 <strong>נמצאו ${overlapResults.length} חפיפות שעות</strong> — עבור ל"חפיפות" לפירוט</div>`:'<div style="background:#edf7f3;border:1px solid #b2ddd0;border-radius:8px;padding:10px 14px;font-size:0.85rem">✅ לא נמצאו חפיפות שעות</div>'}
+      ${reasonResults.filter(r=>r.type==='shabbat').length>0?`<div style="background:#f3e8ff;border:1px solid #c4b5fd;border-radius:8px;padding:10px 14px;font-size:0.85rem">🟣 <strong>${reasonResults.filter(r=>r.type==='shabbat').length} ימי שבת</strong> עם דיווח שעות</div>`:''}
+      ${reasonResults.filter(r=>r.type==='high').length>0?`<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.85rem">🔴 <strong>${reasonResults.filter(r=>r.type==='high').length} ימים</strong> עם שעות חריגות</div>`:''}
+      ${ratesResults.length>0?`<div style="background:#fff3e0;border:1px solid #f5d48a;border-radius:8px;padding:10px 14px;font-size:0.85rem">🟠 <strong>${ratesResults.length} חריגות תעריף</strong> — עבור ל"תעריפים" לפירוט</div>`:''}
+    </div>`;
+
+  // Overlaps table
+  document.getElementById('overlaps-body').innerHTML=overlapResults.map(r=>`
+    <tr data-type="${r.type}">
+      <td><strong>${r.emp}</strong></td><td>${r.date}</td>
+      <td>${r.s1}</td><td>${r.s2}</td>
+      <td><strong>${r.overlap}</strong></td>
+      <td><span class="badge ${r.type==='full'?'b-full':'b-partial'}">${r.type==='full'?'חפיפה מלאה':'חפיפה חלקית'}</span></td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו חפיפות</td></tr>';
+
+  // Reasonableness table
+  document.getElementById('reason-body').innerHTML=reasonResults.map(r=>`
+    <tr data-type="${r.type}">
+      <td><strong>${r.emp}</strong></td><td>${r.date}</td>
+      <td>${r.total.toFixed(1)}</td>
+      <td><span class="badge ${r.type==='shabbat'?'b-shabbat':r.type==='high'?'b-high':'b-partial'}">${r.issue}</span></td>
+      <td>${r.detail}</td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו חריגות</td></tr>';
+
+  // Rates table
+  if(ratesResults.length>0){
+    document.getElementById('rates-content').innerHTML=`
+      <div class="result-table-wrap">
+        <table><thead><tr><th>עובד</th><th>תעריף שחויב</th><th>תעריף צפוי</th><th>הפרש</th></tr></thead>
+        <tbody>${ratesResults.map(r=>`<tr>
+          <td>${r.emp}</td>
+          <td>${r.charged.toFixed(2)}</td>
+          <td>${r.expected.toFixed(2)}</td>
+          <td style="color:${r.diff>0?'var(--red)':'var(--orange)';font-weight:700}">${r.diff>0?'+':''}${r.diff.toFixed(2)}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>`;
+  }
+
+  // Monthly dashboard
+  buildMonthlyChart();
+}
+
+function buildMonthlyChart(){
+  const months=Object.keys(monthlyData).sort();
+  const emps=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
+  if(!months.length) return;
+
+  // חשב סה"כ לכל חודש
+  const totals=months.map(m=>Object.values(monthlyData[m]).reduce((s,v)=>s+v,0));
+  const maxTotal=Math.max(...totals,1);
+
+  // גרף
+  const COLORS=['#1e6abf','#0a7c5e','#e67e22','#7c3aed','#d93025','#f0a500'];
+  const chartHTML=months.map((m,i)=>{
+    const total=totals[i];
+    const h=Math.round((total/maxTotal)*130);
+    const isHigh=i>0&&total>totals[i-1]*1.3;
+    const color=isHigh?'var(--red)':'var(--blue)';
+    return `<div class="month-bar-group">
+      <div class="month-val">${total.toFixed(0)}</div>
+      <div class="month-bar" style="height:${h}px;background:${color}" title="${m}: ${total.toFixed(1)} שעות${isHigh?' ⚠️ קפיצה חשודה':''}"></div>
+      <div class="month-label">${m}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('monthly-chart-wrap').innerHTML=`
+    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;color:var(--navy)">סה"כ שעות לחודש <span style="font-size:0.72rem;color:var(--muted);font-weight:400">| אדום = קפיצה מעל 30% מהחודש הקודם</span></div>
+    <div class="month-chart">${chartHTML}</div>`;
+
+  // טבלה pivot
+  document.getElementById('monthly-head').innerHTML=`<tr><th>עובד</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>סה"כ</th></tr>`;
+  document.getElementById('monthly-body').innerHTML=emps.map(emp=>{
+    const vals=months.map(m=>monthlyData[m][emp]||0);
+    const total=vals.reduce((s,v)=>s+v,0);
+    const cells=vals.map((v,i)=>{
+      const isHigh=i>0&&vals[i-1]>0&&v>vals[i-1]*1.3;
+      return `<td style="${isHigh?'background:#fef2f2;color:var(--red);font-weight:700':''}">${v>0?v.toFixed(1):'—'}</td>`;
+    }).join('');
+    return `<tr><td><strong>${emp}</strong></td>${cells}<td><strong>${total.toFixed(1)}</strong></td></tr>`;
+  }).join('');
+}
+
+function showTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('show');
+  btn.classList.add('active');
+}
+
+function filterTable(type,filter,btn){
+  btn.parentElement.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const bodyId=type==='overlaps'?'overlaps-body':'reason-body';
+  document.querySelectorAll('#'+bodyId+' tr').forEach(tr=>{
+    tr.style.display=(filter==='all'||tr.dataset.type===filter)?'':'none';
+  });
+}
+
+function exportTable(type){
+  let rows=[], headers=[];
+  if(type==='overlaps'){
+    headers=['עובד','תאריך','שורה 1','שורה 2','חפיפה (דק\')','סוג'];
+    rows=overlapResults.map(r=>[r.emp,r.date,r.s1,r.s2,r.overlap,r.type==='full'?'מלאה':'חלקית']);
+  } else if(type==='reason'){
+    headers=['עובד','תאריך','שעות','ממצא','פירוט'];
+    rows=reasonResults.map(r=>[r.emp,r.date,r.total.toFixed(1),r.issue,r.detail]);
+  } else if(type==='monthly'){
+    const months=Object.keys(monthlyData).sort();
+    const emps=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
+    headers=['עובד',...months,'סה"כ'];
+    rows=emps.map(emp=>{
+      const vals=months.map(m=>monthlyData[m][emp]||0);
+      return [emp,...vals.map(v=>v.toFixed(1)),vals.reduce((s,v)=>s+v,0).toFixed(1)];
+    });
+  }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([headers,...rows]),'תוצאות');
+  XLSX.writeFile(wb,`בדיקת_תשומות_${type}.xlsx`);
+}
+
+// Drag & Drop
+document.getElementById('dz-main').addEventListener('dragover',e=>{e.preventDefault()});
+document.getElementById('dz-main').addEventListener('drop',e=>{
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];
+  if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fi-main').files=dt.files;document.getElementById('fi-main').dispatchEvent(new Event('change'));}
+});
+</script>
+</body>
+</html>

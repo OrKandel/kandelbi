@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>בדיקת דוחות תפוקות — קנדל BI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22;--purple:#7c3aed}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:14px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.2rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.82rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:1100px;margin:0 auto;padding:2rem 5vw 4rem}
+.tool-title{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.92rem;margin-bottom:1.2rem}
+.privacy-bar{background:#edf7f3;border:1px solid #b2ddd0;border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#0a7c5e}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;color:#fff}
+.inst-title{font-weight:800;font-size:0.95rem;margin-bottom:0.7rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:5px}
+.inst-step{display:flex;align-items:flex-start;gap:9px;font-size:0.85rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.72rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:1.5rem;margin-bottom:1.2rem;box-shadow:0 3px 16px rgba(13,31,60,0.07)}
+.card-title{font-size:0.95rem;font-weight:800;color:var(--navy);margin-bottom:1rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.8rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:1.8rem;margin-bottom:5px}.ub-text{font-weight:700;font-size:0.88rem}.ub-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:650px){.grid2{grid-template-columns:1fr}}
+.form-group{margin-bottom:0.8rem}
+.form-group label{display:block;font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+.form-group select,.form-group input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;outline:none;background:var(--white)}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:11px 26px;border-radius:9px;font-family:inherit;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:9px 20px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.88rem;cursor:pointer}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.2rem;flex-wrap:wrap}
+.tab-btn{padding:9px 16px;border:none;background:none;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.show{display:block}
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.8rem;margin-bottom:1.2rem}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.9rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.5rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.7rem;color:var(--muted);margin-top:3px}
+.kpi.danger .kpi-val{color:var(--red)}.kpi.warn .kpi-val{color:var(--orange)}.kpi.ok .kpi-val{color:var(--green)}
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:420px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.81rem}
+th{background:var(--navy);color:#fff;padding:8px 11px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:7px 11px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:0.7rem;font-weight:700}
+.b-new{background:#f3e8ff;color:var(--purple)}.b-high{background:#fef2f2;color:var(--red)}.b-low{background:#fff3e0;color:var(--orange)}.b-ok{background:#edf7f3;color:var(--green)}
+.b-risk-high{background:#fef2f2;color:var(--red)}.b-risk-med{background:#fff3e0;color:var(--orange)}.b-risk-low{background:#eef3fb;color:var(--blue)}
+.month-chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding-bottom:8px;border-bottom:2px solid var(--border);margin-bottom:0.8rem;overflow-x:auto}
+.month-bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:50px}
+.month-bar{width:100%;border-radius:4px 4px 0 0;transition:height 0.4s}
+.month-label{font-size:0.68rem;color:var(--muted);text-align:center;white-space:nowrap}
+.month-val{font-size:0.68rem;font-weight:700;color:var(--navy)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">📦 בדיקת דוחות תפוקות</div>
+<div class="tool-sub">זיהוי תפוקות חדשות · סבירות · מדגם סיכונים · דשבורד חודשי</div>
+
+<div class="privacy-bar">
+  <span style="font-size:1.1rem;flex-shrink:0">🔒</span>
+  <span><strong>הנתונים שלך לא עוזבים את המחשב.</strong> הכלי עובד לגמרי בדפדפן — ללא שרת, ללא העלאה לאינטרנט. ניתן לעבוד גם ללא חיבור לרשת. <span style="color:var(--muted)">רוצה לוודא? פתח F12 ← Network בזמן העלאת הקובץ.</span></span>
+</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה דוח תפוקות — כל שורה = תפוקה של עובד (עם חודש, סוג תפוקה, כמות)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>הגדר עמודות והרץ — הכלי מזהה תפוקות חדשות, חריגות סבירות ומדגם סיכונים</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>ראה דשבורד חודשי — השוואה לאורך זמן עם זיהוי קפיצות חשודות</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>ייצא את המדגם לאקסל לצורך בדיקה מפורטת ואישור</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📂 העלאת דוח תפוקות</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📦</div>
+    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+</div>
+
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרת עמודות</div>
+  <div class="grid2">
+    <div class="form-group"><label>מזהה עובד / שם:</label><select id="col-emp"></select></div>
+    <div class="form-group"><label>סוג תפוקה:</label><select id="col-type"></select></div>
+    <div class="form-group"><label>חודש / תאריך:</label><select id="col-month"></select></div>
+    <div class="form-group"><label>כמות תפוקות:</label><select id="col-qty"></select></div>
+  </div>
+  <div style="background:var(--bg);border-radius:9px;padding:1rem;border:1px solid var(--border);margin-bottom:1rem">
+    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.7rem">🎯 סף חריגות</div>
+    <div class="grid2">
+      <div class="form-group"><label>קפיצה חריגה (% מעל ממוצע):</label><input type="number" id="thresh-high" value="100" min="20"/></div>
+      <div class="form-group"><label>ירידה חריגה (% מתחת ממוצע):</label><input type="number" id="thresh-low" value="50" min="10"/></div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="runAudit()">🔍 הרץ בדיקה מלאה</button>
+</div>
+
+<div class="card hidden" id="results-card">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('summary',this)">📊 סיכום</button>
+    <button class="tab-btn" onclick="showTab('new-types',this)">🆕 תפוקות חדשות</button>
+    <button class="tab-btn" onclick="showTab('reasonableness',this)">🔍 סבירות</button>
+    <button class="tab-btn" onclick="showTab('sample',this)">🎯 מדגם סיכונים</button>
+    <button class="tab-btn" onclick="showTab('monthly',this)">📈 דשבורד חודשי</button>
+  </div>
+
+  <div class="tab-panel show" id="tab-summary">
+    <div class="kpi-bar" id="kpi-bar"></div>
+    <div id="summary-details"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-new-types">
+    <div class="result-table-wrap">
+      <table><thead><tr><th>סוג תפוקה</th><th>חודש ראשון שהופיע</th><th>כמות שורות</th><th>הערה</th></tr></thead>
+      <tbody id="new-types-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('new-types')">⬇ ייצא</button></div>
+  </div>
+
+  <div class="tab-panel" id="tab-reasonableness">
+    <div class="result-table-wrap">
+      <table><thead><tr><th>עובד</th><th>סוג תפוקה</th><th>חודש</th><th>כמות</th><th>ממוצע</th><th>סטיה %</th><th>ממצא</th></tr></thead>
+      <tbody id="reason-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('reasonableness')">⬇ ייצא</button></div>
+  </div>
+
+  <div class="tab-panel" id="tab-sample">
+    <div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:1rem">
+      🎯 <strong>עקרון המדגם:</strong> סיכון גבוה = כמות גבוהה פי 2+ מהממוצע · סיכון בינוני = ירידה חריגה · סיכון נמוך = מדגם אקראי 10%
+    </div>
+    <div class="result-table-wrap">
+      <table><thead><tr><th>עובד</th><th>סוג תפוקה</th><th>חודש</th><th>כמות</th><th>ממוצע</th><th>רמת סיכון</th><th>סיבה</th></tr></thead>
+      <tbody id="sample-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('sample')">⬇ ייצא מדגם</button></div>
+  </div>
+
+  <div class="tab-panel" id="tab-monthly">
+    <div id="monthly-chart-wrap"></div>
+    <div class="result-table-wrap" style="margin-top:1rem">
+      <table><thead id="monthly-head"></thead><tbody id="monthly-body"></tbody></table>
+    </div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('monthly')">⬇ ייצא דשבורד</button></div>
+  </div>
+</div>
+</main>
+
+<script>
+let rawData={headers:[],rows:[]};
+let newTypesRes=[], reasonRes=[], sampleRes=[], monthlyData={};
+
+document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault()});
+dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
+
+function loadFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',raw:false});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+    while(rows.length&&rows[0].every(c=>!c)) rows.shift();
+    rawData.headers=rows[0]||[];
+    rawData.rows=rows.slice(1).filter(r=>r.some(c=>c!==''));
+    dz.classList.add('loaded');
+    dz.querySelector('.ub-icon').textContent='✅';
+    dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.rows.length.toLocaleString('he')+' שורות)';
+    buildConfig();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildConfig(){
+  const opts=rawData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
+  ['col-emp','col-type','col-month','col-qty'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  const g={
+    'col-emp':['עובד','שם','id'],
+    'col-type':['סוג תפוקה','תפוקה','שירות','type','output'],
+    'col-month':['חודש','תאריך','month','date'],
+    'col-qty':['כמות','qty','quantity','count','מספר']
+  };
+  Object.entries(g).forEach(([sel,kws])=>{
+    const i=rawData.headers.findIndex(h=>kws.some(k=>String(h).toLowerCase().includes(k)));
+    if(i>=0) document.getElementById(sel).value=i;
+  });
+  document.getElementById('config-card').classList.remove('hidden');
+}
+
+function getMonthKey(v){
+  try{const d=new Date(v);if(!isNaN(d))return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}catch{}
+  return String(v).slice(0,7);
+}
+
+function runAudit(){
+  const ce=parseInt(document.getElementById('col-emp').value);
+  const ct=parseInt(document.getElementById('col-type').value);
+  const cm=parseInt(document.getElementById('col-month').value);
+  const cq=parseInt(document.getElementById('col-qty').value);
+  const thHigh=parseFloat(document.getElementById('thresh-high').value)/100||1;
+  const thLow=parseFloat(document.getElementById('thresh-low').value)/100||0.5;
+
+  const rows=rawData.rows;
+
+  // אסוף נתונים
+  const firstMonth={}, typeCounts={};
+  const byEmpType={}, byMonth={}, allMonths=new Set(), allTypes=new Set();
+
+  rows.forEach((row,idx)=>{
+    const emp=String(row[ce]||'');
+    const tp=String(row[ct]||'');
+    const mn=getMonthKey(row[cm]);
+    const qty=parseFloat(row[cq])||0;
+    if(!emp||!tp) return;
+
+    allMonths.add(mn); allTypes.add(tp);
+
+    // חודש ראשון לסוג
+    if(!firstMonth[tp]||mn<firstMonth[tp]) firstMonth[tp]=mn;
+    typeCounts[tp]=(typeCounts[tp]||0)+1;
+
+    // לפי עובד+סוג
+    const k=`${emp}||${tp}`;
+    if(!byEmpType[k]) byEmpType[k]={emp,tp,total:0,count:0,months:{}};
+    byEmpType[k].total+=qty; byEmpType[k].count++;
+    byEmpType[k].months[mn]=(byEmpType[k].months[mn]||0)+qty;
+
+    // לפי חודש+סוג (לדשבורד)
+    if(!byMonth[mn]) byMonth[mn]={};
+    byMonth[mn][tp]=(byMonth[mn][tp]||0)+qty;
+    monthlyData=byMonth;
+  });
+
+  // מצא חודש ראשון בקובץ
+  const sortedMonths=[...allMonths].sort();
+  const minMonth=sortedMonths[0]||'';
+
+  // ── 1. תפוקות חדשות ──
+  newTypesRes=Object.entries(firstMonth)
+    .filter(([tp,m])=>m>minMonth)
+    .map(([tp,m])=>({tp,firstMonth:m,count:typeCounts[tp]}))
+    .sort((a,b)=>a.firstMonth.localeCompare(b.firstMonth));
+
+  // ── 2. סבירות ──
+  reasonRes=[];
+  Object.values(byEmpType).forEach(d=>{
+    const avg=d.total/d.count;
+    Object.entries(d.months).forEach(([mn,qty])=>{
+      const dev=(qty-avg)/avg;
+      if(dev>thHigh){
+        reasonRes.push({emp:d.emp,tp:d.tp,mn,qty,avg:avg.toFixed(1),devPct:Math.round(dev*100),type:'high',label:'קפיצה חריגה'});
+      } else if(dev<-thLow){
+        reasonRes.push({emp:d.emp,tp:d.tp,mn,qty,avg:avg.toFixed(1),devPct:Math.round(dev*100),type:'low',label:'ירידה חריגה'});
+      }
+    });
+  });
+  reasonRes.sort((a,b)=>Math.abs(b.devPct)-Math.abs(a.devPct));
+
+  // ── 3. מדגם סיכונים ──
+  sampleRes=[];
+  Object.values(byEmpType).forEach(d=>{
+    const avg=d.total/d.count;
+    let idx=0;
+    Object.entries(d.months).forEach(([mn,qty])=>{
+      idx++;
+      const dev=(qty-avg)/avg;
+      let risk='', reason='';
+      if(dev>thHigh){risk='גבוה';reason='כמות גבוהה פי '+(1+dev).toFixed(1)+' מהממוצע';}
+      else if(dev<-thLow){risk='בינוני';reason='ירידה של '+Math.abs(Math.round(dev*100))+'% מהממוצע';}
+      else if(idx%10===0){risk='נמוך';reason='מדגם אקראי 10%';}
+      if(risk) sampleRes.push({emp:d.emp,tp:d.tp,mn,qty,avg:avg.toFixed(1),risk,reason});
+    });
+  });
+  sampleRes.sort((a,b)=>['גבוה','בינוני','נמוך'].indexOf(a.risk)-['גבוה','בינוני','נמוך'].indexOf(b.risk));
+
+  renderResults();
+  document.getElementById('results-card').classList.remove('hidden');
+  document.getElementById('results-card').scrollIntoView({behavior:'smooth'});
+}
+
+function renderResults(){
+  // KPIs
+  document.getElementById('kpi-bar').innerHTML=`
+    <div class="kpi ${newTypesRes.length>0?'warn':'ok'}"><span class="kpi-val">${newTypesRes.length}</span><span class="kpi-lbl">סוגי תפוקה חדשים</span></div>
+    <div class="kpi ${reasonRes.filter(r=>r.type==='high').length>0?'danger':'ok'}"><span class="kpi-val">${reasonRes.filter(r=>r.type==='high').length}</span><span class="kpi-lbl">קפיצות חריגות</span></div>
+    <div class="kpi ${reasonRes.filter(r=>r.type==='low').length>0?'warn':'ok'}"><span class="kpi-val">${reasonRes.filter(r=>r.type==='low').length}</span><span class="kpi-lbl">ירידות חריגות</span></div>
+    <div class="kpi"><span class="kpi-val">${sampleRes.filter(r=>r.risk==='גבוה').length}</span><span class="kpi-lbl">במדגם סיכון גבוה</span></div>
+    <div class="kpi"><span class="kpi-val">${rawData.rows.length.toLocaleString('he')}</span><span class="kpi-lbl">שורות</span></div>
+  `;
+
+  // Summary
+  document.getElementById('summary-details').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${newTypesRes.length>0?`<div style="background:#f3e8ff;border:1px solid #c4b5fd;border-radius:8px;padding:10px 14px;font-size:0.85rem">🟣 <strong>נמצאו ${newTypesRes.length} סוגי תפוקה חדשים</strong> שלא היו בחודשים הראשונים</div>`:'<div style="background:#edf7f3;border:1px solid #b2ddd0;border-radius:8px;padding:10px 14px;font-size:0.85rem">✅ לא נמצאו סוגי תפוקה חדשים</div>'}
+      ${reasonRes.filter(r=>r.type==='high').length>0?`<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.85rem">🔴 <strong>${reasonRes.filter(r=>r.type==='high').length} קפיצות חריגות</strong> בכמות תפוקות</div>`:''}
+      <div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:8px;padding:10px 14px;font-size:0.85rem">🎯 <strong>${sampleRes.length} שורות נבחרו למדגם</strong> (${sampleRes.filter(r=>r.risk==='גבוה').length} גבוה, ${sampleRes.filter(r=>r.risk==='בינוני').length} בינוני, ${sampleRes.filter(r=>r.risk==='נמוך').length} נמוך)</div>
+    </div>`;
+
+  // New types
+  document.getElementById('new-types-body').innerHTML=newTypesRes.map(r=>`
+    <tr><td><strong>${r.tp}</strong></td><td>${r.firstMonth}</td><td>${r.count}</td>
+    <td><span class="badge b-new">סוג חדש</span></td></tr>`).join('')||
+    '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו סוגי תפוקה חדשים</td></tr>';
+
+  // Reasonableness
+  document.getElementById('reason-body').innerHTML=reasonRes.map(r=>`
+    <tr><td>${r.emp}</td><td>${r.tp}</td><td>${r.mn}</td>
+    <td><strong>${r.qty}</strong></td><td>${r.avg}</td>
+    <td style="color:${r.type==='high'?'var(--red)':'var(--orange)'};font-weight:700">${r.devPct>0?'+':''}${r.devPct}%</td>
+    <td><span class="badge ${r.type==='high'?'b-high':'b-low'}">${r.label}</span></td></tr>`).join('')||
+    '<tr><td colspan="7" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו חריגות סבירות</td></tr>';
+
+  // Sample
+  document.getElementById('sample-body').innerHTML=sampleRes.map(r=>`
+    <tr><td>${r.emp}</td><td>${r.tp}</td><td>${r.mn}</td>
+    <td>${r.qty}</td><td>${r.avg}</td>
+    <td><span class="badge ${r.risk==='גבוה'?'b-risk-high':r.risk==='בינוני'?'b-risk-med':'b-risk-low'}">${r.risk}</span></td>
+    <td>${r.reason}</td></tr>`).join('');
+
+  buildMonthlyChart();
+}
+
+function buildMonthlyChart(){
+  const months=Object.keys(monthlyData).sort();
+  const types=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
+  if(!months.length) return;
+
+  const totals=months.map(m=>Object.values(monthlyData[m]).reduce((s,v)=>s+v,0));
+  const maxTotal=Math.max(...totals,1);
+
+  const chartHTML=months.map((m,i)=>{
+    const total=totals[i];
+    const h=Math.round((total/maxTotal)*130);
+    const isHigh=i>0&&totals[i-1]>0&&total>totals[i-1]*1.3;
+    return `<div class="month-bar-group">
+      <div class="month-val">${total.toFixed(0)}</div>
+      <div class="month-bar" style="height:${h}px;background:${isHigh?'var(--red)':'var(--blue)'}" title="${m}: ${total.toFixed(0)}${isHigh?' ⚠️':''}"></div>
+      <div class="month-label">${m}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('monthly-chart-wrap').innerHTML=`
+    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;color:var(--navy)">סה"כ תפוקות לחודש <span style="font-size:0.72rem;color:var(--muted);font-weight:400">| אדום = קפיצה מעל 30%</span></div>
+    <div class="month-chart">${chartHTML}</div>`;
+
+  document.getElementById('monthly-head').innerHTML=`<tr><th>סוג תפוקה</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>סה"כ</th></tr>`;
+  document.getElementById('monthly-body').innerHTML=types.map(tp=>{
+    const vals=months.map(m=>monthlyData[m][tp]||0);
+    const total=vals.reduce((s,v)=>s+v,0);
+    const cells=vals.map((v,i)=>{
+      const isHigh=i>0&&vals[i-1]>0&&v>vals[i-1]*1.3;
+      return `<td style="${isHigh?'background:#fef2f2;color:var(--red);font-weight:700':''}">${v>0?v.toFixed(0):'—'}</td>`;
+    }).join('');
+    return `<tr><td><strong>${tp}</strong></td>${cells}<td><strong>${total.toFixed(0)}</strong></td></tr>`;
+  }).join('');
+}
+
+function showTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('show');
+  btn.classList.add('active');
+}
+
+function exportTable(type){
+  let headers=[], rows=[];
+  if(type==='new-types'){
+    headers=['סוג תפוקה','חודש ראשון','כמות שורות'];
+    rows=newTypesRes.map(r=>[r.tp,r.firstMonth,r.count]);
+  } else if(type==='reasonableness'){
+    headers=['עובד','סוג תפוקה','חודש','כמות','ממוצע','סטיה%','ממצא'];
+    rows=reasonRes.map(r=>[r.emp,r.tp,r.mn,r.qty,r.avg,r.devPct+'%',r.label]);
+  } else if(type==='sample'){
+    headers=['עובד','סוג תפוקה','חודש','כמות','ממוצע','סיכון','סיבה'];
+    rows=sampleRes.map(r=>[r.emp,r.tp,r.mn,r.qty,r.avg,r.risk,r.reason]);
+  } else if(type==='monthly'){
+    const months=Object.keys(monthlyData).sort();
+    const types=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
+    headers=['סוג תפוקה',...months,'סה"כ'];
+    rows=types.map(tp=>{
+      const vals=months.map(m=>monthlyData[m][tp]||0);
+      return [tp,...vals,vals.reduce((s,v)=>s+v,0)];
+    });
+  }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([headers,...rows]),'תוצאות');
+  XLSX.writeFile(wb,`בדיקת_תפוקות_${type}.xlsx`);
+}
+</script>
+</body>
+</html>
