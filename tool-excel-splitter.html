@@ -228,82 +228,48 @@ tr:hover td{background:var(--bg);}
   <!-- STEP 3: חיתוך -->
   <div class="section" id="sec3">
     <div class="card">
-      <div class="card-title">✂️ הגדרת חיתוך לקבצים קטנים</div>
+      <div class="card-title">✂️ הגדרת סינון וחיתוך</div>
+      <div class="alert alert-info show" style="margin-bottom:1rem">ניתן להוסיף מספר תנאים — כולם פועלים יחד (AND). בסוף בחר אם לקבל קובץ אחד מסונן או פיצול לקבצים נפרדים.</div>
 
-      <div class="split-tabs">
-        <button class="split-tab active" onclick="setSplitMode('none',this)">ללא חיתוך (קובץ אחד)</button>
-        <button class="split-tab" onclick="setSplitMode('date',this)">לפי טווח תאריכים</button>
-        <button class="split-tab" onclick="setSplitMode('col',this)">לפי ערך בעמודה</button>
-        <button class="split-tab" onclick="setSplitMode('rows',this)">לפי מספר שורות</button>
-      </div>
+      <!-- תנאי סינון -->
+      <div id="filters-container"></div>
+      <button class="btn-sm" onclick="addFilter()" style="margin-bottom:1.2rem">+ הוסף תנאי סינון</button>
 
-      <!-- ללא חיתוך -->
-      <div class="split-panel show" id="panel-none">
-        <div class="alert alert-info show">הקובץ יאוחד עם העמודות שנבחרו בלבד, ללא פיצול.</div>
-      </div>
-
-      <!-- לפי תאריך -->
-      <div class="split-panel" id="panel-date">
+      <!-- פלט -->
+      <div style="background:var(--bg);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.8rem">📤 הגדרת פלט</div>
         <div class="form-row">
-          <div class="form-group">
-            <label>עמודת תאריך:</label>
-            <select id="date-col"></select>
-          </div>
-          <div class="form-group">
-            <label>פיצול לפי:</label>
-            <select id="date-period">
-              <option value="custom">טווח מותאם (מ-תאריך עד תאריך)</option>
-              <option value="month">לפי חודש (קובץ לכל חודש)</option>
-              <option value="quarter">לפי רבעון</option>
-              <option value="year">לפי שנה</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row" id="custom-dates">
-          <div class="form-group">
-            <label>מתאריך:</label>
-            <input type="date" id="date-from" />
-          </div>
-          <div class="form-group">
-            <label>עד תאריך:</label>
-            <input type="date" id="date-to" />
-          </div>
-        </div>
-      </div>
-
-      <!-- לפי עמודה -->
-      <div class="split-panel" id="panel-col">
-        <div class="form-row">
-          <div class="form-group">
-            <label>עמודה לפיצול:</label>
-            <select id="split-col"></select>
-          </div>
           <div class="form-group">
             <label>אופן הפלט:</label>
-            <select id="col-split-mode">
-              <option value="filter">קובץ אחד — רק הערכים שנבחרו</option>
-              <option value="split">קובץ נפרד לכל ערך שנבחר</option>
+            <select id="output-mode" onchange="toggleSplitBy()">
+              <option value="one">קובץ אחד מסונן</option>
+              <option value="split-col">פיצול לפי עמודה (קובץ לכל ערך)</option>
+              <option value="split-date">פיצול לפי תאריך (חודש/רבעון/שנה)</option>
+              <option value="split-rows">פיצול לפי מספר שורות</option>
             </select>
           </div>
-        </div>
-        <div class="form-group">
-          <label>בחר ערכים לכלול (לחץ לבחירה/ביטול):</label>
-          <div id="split-col-vals-list" style="max-height:220px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--bg)"></div>
-        </div>
-      </div>
-
-      <!-- לפי שורות -->
-      <div class="split-panel" id="panel-rows">
-        <div class="form-row">
-          <div class="form-group">
-            <label>מספר שורות לכל קובץ:</label>
-            <input type="number" id="rows-per-file" value="10000" min="100" max="500000" />
+          <div class="form-group" id="split-by-col-wrap" style="display:none">
+            <label>עמודת פיצול:</label>
+            <select id="split-by-col"></select>
           </div>
-          <div class="form-group">
-            <label>מספר קבצים משוער:</label>
-            <input type="text" id="est-files" readonly style="background:var(--bg);color:var(--muted);" />
+          <div class="form-group" id="split-by-date-wrap" style="display:none">
+            <label>פיצול לפי:</label>
+            <select id="split-by-period">
+              <option value="month">חודש</option>
+              <option value="quarter">רבעון</option>
+              <option value="year">שנה</option>
+            </select>
+          </div>
+          <div class="form-group" id="split-by-date-col-wrap" style="display:none">
+            <label>עמודת תאריך לפיצול:</label>
+            <select id="split-by-date-col"></select>
+          </div>
+          <div class="form-group" id="split-rows-wrap" style="display:none">
+            <label>שורות לכל קובץ:</label>
+            <input type="number" id="rows-per-file" value="10000" min="100"/>
           </div>
         </div>
+        <div id="est-files-wrap" style="font-size:0.82rem;color:var(--muted)"></div>
       </div>
     </div>
 
@@ -482,32 +448,143 @@ function buildPreview() {
 }
 
 // ══ SPLIT UI ══
+let filterCount = 0;
+
 function buildSplitUI() {
   const allCols = [...selectedCols].sort((a,b)=>a-b);
+  filterCount = 0;
+  document.getElementById('filters-container').innerHTML = '';
   
-  // עמודות תאריך בלבד
-  const dateColSel = document.getElementById('date-col');
+  // מלא עמודות פיצול
+  const colOpts = allCols.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
+  const dateOpts = allCols.filter(i=>isDateCol(i)).map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
+  document.getElementById('split-by-col').innerHTML = colOpts;
+  document.getElementById('split-by-date-col').innerHTML = dateOpts || colOpts;
+  document.getElementById('rows-per-file').addEventListener('input', updateEstRows);
+  
+  // הוסף תנאי ראשון אוטומטית
+  addFilter();
+}
+
+function addFilter() {
+  const allCols = [...selectedCols].sort((a,b)=>a-b);
+  const id = ++filterCount;
+  const colOpts = allCols.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
   const dateOnlyOpts = allCols.filter(i=>isDateCol(i)).map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
-  dateColSel.innerHTML = dateOnlyOpts || allCols.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
   
-  // הגדר min/max תאריכים
-  dateColSel.addEventListener('change', updateDateRange);
-  updateDateRange();
+  const div = document.createElement('div');
+  div.className = 'filter-block';
+  div.id = 'filter-'+id;
+  div.innerHTML = `
+    <div class="filter-block-title">
+      <span>תנאי סינון ${id}</span>
+      <button class="btn-remove-filter" onclick="removeFilter(${id})">✕ הסר</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>סוג תנאי:</label>
+        <select id="ftype-${id}" onchange="updateFilterType(${id})">
+          <option value="col">לפי ערך בעמודה</option>
+          <option value="date">לפי טווח תאריכים</option>
+        </select>
+      </div>
+      <div class="form-group" id="fcol-wrap-${id}">
+        <label>עמודה:</label>
+        <select id="fcol-${id}" onchange="buildFilterVals(${id})">${colOpts}</select>
+      </div>
+      <div class="form-group" id="fdatecol-wrap-${id}" style="display:none">
+        <label>עמודת תאריך:</label>
+        <select id="fdatecol-${id}" onchange="updateFilterDateRange(${id})">${dateOnlyOpts||colOpts}</select>
+      </div>
+    </div>
+    <div id="fvals-${id}"></div>
+    <div id="fdates-${id}" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label>מתאריך:</label><input type="date" id="ffrom-${id}"/></div>
+        <div class="form-group"><label>עד תאריך:</label><input type="date" id="fto-${id}"/></div>
+      </div>
+    </div>`;
+  
+  document.getElementById('filters-container').appendChild(div);
+  buildFilterVals(id);
+}
 
-  // כל העמודות לחיתוך לפי ערך
-  const splitCol = document.getElementById('split-col');
-  splitCol.innerHTML = allCols.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
-  splitCol.addEventListener('change', updateSplitVals);
-  updateSplitVals();
+function removeFilter(id) {
+  const el = document.getElementById('filter-'+id);
+  if(el) el.remove();
+}
 
-  // שורות לקובץ
-  document.getElementById('rows-per-file').addEventListener('input', updateEstFiles);
-  updateEstFiles();
+function updateFilterType(id) {
+  const type = document.getElementById('ftype-'+id).value;
+  document.getElementById('fcol-wrap-'+id).style.display = type==='col' ? '' : 'none';
+  document.getElementById('fdatecol-wrap-'+id).style.display = type==='date' ? '' : 'none';
+  document.getElementById('fvals-'+id).style.display = type==='col' ? '' : 'none';
+  document.getElementById('fdates-'+id).style.display = type==='date' ? '' : 'none';
+  if(type==='date') updateFilterDateRange(id);
+}
 
-  // תאריך period
-  document.getElementById('date-period').addEventListener('change', function(){
-    document.getElementById('custom-dates').style.display = this.value==='custom' ? '' : 'none';
+function updateFilterDateRange(id) {
+  const colIdx = parseInt(document.getElementById('fdatecol-'+id).value);
+  if(isNaN(colIdx)) return;
+  const dates = allData.slice(1).map(r=>parseFlexDate(String(r[colIdx]||''))).filter(Boolean);
+  if(!dates.length) return;
+  const minD = new Date(Math.min(...dates));
+  const maxD = new Date(Math.max(...dates));
+  const fmt = d => d.toISOString().slice(0,10);
+  const fromEl = document.getElementById('ffrom-'+id);
+  const toEl = document.getElementById('fto-'+id);
+  fromEl.min=fmt(minD); fromEl.max=fmt(maxD); fromEl.value=fmt(minD);
+  toEl.min=fmt(minD); toEl.max=fmt(maxD); toEl.value=fmt(maxD);
+  fromEl.onchange = () => { if(fromEl.value>toEl.value) toEl.value=fromEl.value; };
+  toEl.onchange = () => { if(toEl.value<fromEl.value) fromEl.value=toEl.value; };
+}
+
+function buildFilterVals(id) {
+  const colIdx = parseInt(document.getElementById('fcol-'+id).value);
+  const valCounts = {};
+  allData.slice(1).forEach(r=>{
+    const v=String(r[colIdx]||'(ריק)');
+    valCounts[v]=(valCounts[v]||0)+1;
   });
+  const sorted = Object.entries(valCounts).sort((a,b)=>b[1]-a[1]);
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  
+  let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+    <input type="checkbox" id="chk-all-${id}" onchange="toggleAllVals('${id}',this.checked)" checked/>
+    <label for="chk-all-${id}" style="font-weight:700;font-size:0.82rem;cursor:pointer">בחר הכל (${sorted.length})</label>
+  </div>
+  <div style="max-height:180px;overflow-y:auto">`;
+  
+  sorted.forEach(([v,cnt])=>{
+    const ev=esc(v);
+    html+=`<div style="display:flex;align-items:center;gap:8px;padding:3px 0">
+      <input type="checkbox" class="val-chk-${id}" value="${ev}" checked/>
+      <span style="flex:1;font-size:0.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ev}">${ev}</span>
+      <span style="font-size:0.72rem;color:var(--muted);background:#e8edf5;padding:1px 7px;border-radius:10px;flex-shrink:0">${cnt.toLocaleString('he')}</span>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('fvals-'+id).innerHTML = html;
+}
+
+function toggleAllVals(id, checked) {
+  document.querySelectorAll('.val-chk-'+id).forEach(c=>c.checked=checked);
+}
+
+function toggleSplitBy() {
+  const mode = document.getElementById('output-mode').value;
+  document.getElementById('split-by-col-wrap').style.display = mode==='split-col' ? '' : 'none';
+  document.getElementById('split-by-date-wrap').style.display = mode==='split-date' ? '' : 'none';
+  document.getElementById('split-by-date-col-wrap').style.display = mode==='split-date' ? '' : 'none';
+  document.getElementById('split-rows-wrap').style.display = mode==='split-rows' ? '' : 'none';
+  updateEstRows();
+}
+
+function updateEstRows() {
+  const rows = allData.length-1;
+  const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
+  document.getElementById('est-files-wrap').textContent = document.getElementById('output-mode').value==='split-rows' ?
+    `משוער: ${Math.ceil(rows/perFile)} קבצים` : '';
 }
 
 function updateDateRange() {
@@ -536,18 +613,23 @@ function updateSplitVals() {
   });
   const sorted = Object.entries(valCounts).sort((a,b)=>b[1]-a[1]);
   const listEl = document.getElementById('split-col-vals-list');
-  listEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  
+  let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)">
       <input type="checkbox" id="chk-all" onchange="toggleAllVals(this.checked)" checked/>
       <label for="chk-all" style="font-weight:700;font-size:0.82rem;cursor:pointer">בחר הכל (${sorted.length} ערכים)</label>
-    </div>
-    ${sorted.map(([v,cnt])=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:3px 0">
-        <input type="checkbox" class="val-chk" value="${v}" checked/>
-        <span style="flex:1;font-size:0.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v}</span>
-        <span style="font-size:0.75rem;color:var(--muted);background:var(--bg);padding:1px 7px;border-radius:10px;flex-shrink:0">${cnt.toLocaleString('he')} שורות</span>
-      </div>`).join('')}`;
-  // track changes for select-all checkbox
+    </div>`;
+  
+  sorted.forEach(([v,cnt]) => {
+    const ev = esc(v);
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f3f8">
+      <input type="checkbox" class="val-chk" value="${ev}" checked/>
+      <span style="flex:1;font-size:0.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ev}">${ev}</span>
+      <span style="font-size:0.75rem;color:var(--muted);background:#e8edf5;padding:2px 8px;border-radius:10px;flex-shrink:0;font-weight:600">${cnt.toLocaleString('he')} שורות</span>
+    </div>`;
+  });
+  
+  listEl.innerHTML = html;
   listEl.querySelectorAll('.val-chk').forEach(chk=>chk.addEventListener('change',updateSelectAll));
 }
 
@@ -583,72 +665,77 @@ async function processFile() {
   const dataRows = allData.slice(1);
 
   setProgress(10,'מסנן עמודות...');
-
-  // סינון עמודות
   const filtered = dataRows.map(r=>cols.map(i=>r[i]));
   const filteredHeaders = cols.map(i=>headers[i]);
 
-  setProgress(30,'מחלק לקבצים...');
+  setProgress(20,'מחיל תנאי סינון...');
 
-  if (splitMode==='none') {
-    outputFiles.push({name:'ממועל', data:[filteredHeaders,...filtered]});
-
-  } else if (splitMode==='rows') {
-    const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
-    for (let i=0; i<filtered.length; i+=perFile) {
-      outputFiles.push({name:`חלק_${Math.floor(i/perFile)+1}`, data:[filteredHeaders,...filtered.slice(i,i+perFile)]});
+  // ── החל את כל תנאי הסינון ──
+  let result = filtered;
+  const filterBlocks = document.querySelectorAll('.filter-block');
+  filterBlocks.forEach(block => {
+    const id = block.id.replace('filter-','');
+    const type = document.getElementById('ftype-'+id).value;
+    if(type==='col'){
+      const colIdx = parseInt(document.getElementById('fcol-'+id).value);
+      const localIdx = cols.indexOf(colIdx);
+      if(localIdx<0) return;
+      const selected = new Set([...document.querySelectorAll('.val-chk-'+id+':checked')].map(c=>c.value));
+      result = result.filter(r=>selected.has(String(r[localIdx]||'(ריק)')));
+    } else if(type==='date'){
+      const colIdx = parseInt(document.getElementById('fdatecol-'+id).value);
+      const localIdx = cols.indexOf(colIdx);
+      if(localIdx<0) return;
+      const from = new Date(document.getElementById('ffrom-'+id).value);
+      const to = new Date(document.getElementById('fto-'+id).value);
+      to.setHours(23,59,59);
+      result = result.filter(r=>{
+        const d=parseFlexDate(String(r[localIdx]||'')); return d&&d>=from&&d<=to;
+      });
     }
+  });
 
-  } else if (splitMode==='col') {
-    const colIdx = parseInt(document.getElementById('split-col').value);
-    const localIdx = cols.indexOf(colIdx);
-    const colSplitMode = document.getElementById('col-split-mode').value;
-    const selectedVals = new Set([...document.querySelectorAll('.val-chk:checked')].map(c=>c.value));
-    const groups = {};
-    filtered.forEach(r=>{
-      const key = String(r[localIdx]||'(ריק)');
-      if(!selectedVals.has(key)) return;
+  setProgress(40,'יוצר קבצי פלט...');
+
+  const outputMode = document.getElementById('output-mode').value;
+
+  if(outputMode==='one'){
+    outputFiles.push({name:'מסונן', data:[filteredHeaders,...result]});
+
+  } else if(outputMode==='split-rows'){
+    const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
+    for(let i=0;i<result.length;i+=perFile)
+      outputFiles.push({name:`חלק_${Math.floor(i/perFile)+1}`, data:[filteredHeaders,...result.slice(i,i+perFile)]});
+
+  } else if(outputMode==='split-col'){
+    const splitColIdx = parseInt(document.getElementById('split-by-col').value);
+    const localIdx = cols.indexOf(splitColIdx);
+    const groups={};
+    result.forEach(r=>{
+      const k=String(r[localIdx]||'(ריק)');
+      if(!groups[k]) groups[k]=[];
+      groups[k].push(r);
+    });
+    Object.entries(groups).sort().forEach(([k,rows])=>
+      outputFiles.push({name:sanitize(k), data:[filteredHeaders,...rows]}));
+
+  } else if(outputMode==='split-date'){
+    const splitDateColIdx = parseInt(document.getElementById('split-by-date-col').value);
+    const localIdx = cols.indexOf(splitDateColIdx);
+    const period = document.getElementById('split-by-period').value;
+    const groups={};
+    result.forEach(r=>{
+      const d=parseFlexDate(String(r[localIdx]||''));
+      if(!d) return;
+      let key;
+      if(period==='month') key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      else if(period==='quarter') key=`${d.getFullYear()}-Q${Math.ceil((d.getMonth()+1)/3)}`;
+      else key=String(d.getFullYear());
       if(!groups[key]) groups[key]=[];
       groups[key].push(r);
     });
-    if(colSplitMode==='split'){
-      Object.entries(groups).forEach(([key,rows])=>{
-        outputFiles.push({name:sanitize(key), data:[filteredHeaders,...rows]});
-      });
-    } else {
-      const allRows = Object.values(groups).flat();
-      outputFiles.push({name:'מסונן', data:[filteredHeaders,...allRows]});
-    }
-
-  } else if (splitMode==='date') {
-    const colIdx = parseInt(document.getElementById('date-col').value);
-    const localIdx = cols.indexOf(colIdx);
-    const period = document.getElementById('date-period').value;
-
-    if (period==='custom') {
-      const from = new Date(document.getElementById('date-from').value);
-      const to   = new Date(document.getElementById('date-to').value);
-      to.setHours(23,59,59);
-      const inRange = filtered.filter(r=>{
-        const d=parseFlexDate(String(r[localIdx]||'')); return d&&d>=from&&d<=to;
-      });
-      outputFiles.push({name:'טווח_תאריכים', data:[filteredHeaders,...inRange]});
-    } else {
-      const groups={};
-      filtered.forEach(r=>{
-        const d=parseFlexDate(String(r[localIdx]||''));
-        if (!d) return;
-        let key;
-        if (period==='month') key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        else if (period==='quarter') key=`${d.getFullYear()}-Q${Math.ceil((d.getMonth()+1)/3)}`;
-        else key=String(d.getFullYear());
-        if (!groups[key]) groups[key]=[];
-        groups[key].push(r);
-      });
-      Object.entries(groups).sort().forEach(([key,rows])=>{
-        outputFiles.push({name:key, data:[filteredHeaders,...rows]});
-      });
-    }
+    Object.entries(groups).sort().forEach(([k,rows])=>
+      outputFiles.push({name:k, data:[filteredHeaders,...rows]}));
   }
 
   setProgress(80,'יוצר קבצי אקסל...');
