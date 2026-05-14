@@ -13,7 +13,7 @@
   --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
   --green:#0a7c5e;--red:#d93025;--shadow:0 4px 24px rgba(13,31,60,0.10);
 }
-body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;overflow-y:auto;}
 
 /* HEADER */
 header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between;}
@@ -33,7 +33,8 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem;}
 .step{flex:1;padding:12px 16px;background:var(--white);font-size:0.82rem;font-weight:600;color:var(--muted);text-align:center;border-left:1px solid var(--border);transition:all 0.2s;}
 .step:last-child{border-left:none;}
 .step.active{background:var(--navy);color:#fff;}
-.step.done{background:var(--green);color:#fff;}
+.step.done{background:var(--green);color:#fff;cursor:pointer;}
+.step.done:hover{filter:brightness(1.1);}
 .step-num{display:block;font-size:1rem;font-weight:900;margin-bottom:2px;}
 
 /* CARD */
@@ -151,7 +152,7 @@ tr:hover td{background:var(--bg);}
 <main>
 <div style="background:#edf7f3;border:1px solid #b2ddd0;border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#0a7c5e">
   <span style="font-size:1.1rem;flex-shrink:0">🔒</span>
-  <span><strong>הנתונים שלך לא עוזבים את המחשב.</strong> הכלי עובד לגמרי בדפדפן — ללא שרת, ללא העלאה לאינטרנט. ניתן לעבוד גם ללא חיבור לרשת. <span style="color:#6b7a99">רוצה לוודא? פתח F12 ← Network בזמן העלאת הקובץ.</span></span>
+  <span><strong>הנתונים שלך לא עוזבים את המחשב שלך.</strong> הכלי עובד לגמרי בדפדפן שבמחשב שלך — ללא שרת, ללא העלאה לאינטרנט. ניתן לעבוד גם ללא חיבור לרשת.</span>
 </div>
   <div class="tool-title">✂️ מפצל ומקטין קבצי אקסל</div>
   <div class="tool-sub">טען קובץ כבד, בחר עמודות, חתוך לפי תאריך או ערך — וקבל קבצים קטנים וניתנים לעבודה</div>
@@ -159,8 +160,8 @@ tr:hover td{background:var(--bg);}
   <!-- STEPS -->
   <div class="steps">
     <div class="step active" id="step1"><span class="step-num">1</span>טעינת קובץ</div>
-    <div class="step" id="step2"><span class="step-num">2</span>בחירת עמודות</div>
-    <div class="step" id="step3"><span class="step-num">3</span>הגדרת חיתוך</div>
+    <div class="step" id="step2" onclick="stepNav(2)"><span class="step-num">2</span>בחירת עמודות</div>
+    <div class="step" id="step3" onclick="stepNav(3)"><span class="step-num">3</span>הגדרת חיתוך</div>
     <div class="step" id="step4"><span class="step-num">4</span>הורדה</div>
   </div>
 
@@ -196,6 +197,7 @@ tr:hover td{background:var(--bg);}
 
     <div class="btn-row">
       <button class="btn-primary" id="btn-next1" disabled onclick="goStep(2)">המשך לבחירת עמודות ←</button>
+      <span style="font-size:0.8rem;color:var(--muted)">🔒 הקובץ נשאר בדפדפן שבמחשב שלך בלבד</span>
     </div>
   </div>
 
@@ -361,6 +363,7 @@ function loadSheet() {
   document.getElementById('st-cols').textContent = headers.length;
 
   allData = [headers, ...dataRows];
+  selectedCols = null; // איפוס בחירת עמודות לקובץ/גיליון חדש
 }
 
 // ══ STEP NAVIGATION ══
@@ -375,19 +378,25 @@ function goStep(n) {
   });
   if (n===2) buildColumnsUI();
   if (n===3) buildSplitUI();
-  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),30);
+}
+
+function stepNav(n) {
+  const el = document.getElementById('step'+n);
+  if (el && (el.classList.contains('done') || el.classList.contains('active'))) goStep(n);
 }
 
 // ══ COLUMNS UI ══
 function buildColumnsUI() {
-  selectedCols = new Set(headers.map((_,i)=>i));
+  if (!selectedCols) selectedCols = new Set(headers.map((_,i)=>i));
   document.getElementById('col-count').textContent = headers.length;
 
   const grid = document.getElementById('cols-grid');
   grid.innerHTML = headers.map((h,i)=>{
     const isDate = isDateCol(i);
-    return `<div class="col-item checked ${isDate?'date-col':''}" id="ci-${i}" onclick="toggleCol(${i})">
-      <div class="col-check">✓</div>
+    const checked = selectedCols.has(i);
+    return `<div class="col-item ${checked?'checked':''} ${isDate?'date-col':''}" id="ci-${i}" onclick="toggleCol(${i})">
+      <div class="col-check">${checked?'✓':''}</div>
       <span class="col-name" title="${h}">${h||'(ריק)'}</span>
       <span class="col-type">${isDate?'📅':''}</span>
     </div>`;
@@ -453,17 +462,23 @@ let filterCount = 0;
 function buildSplitUI() {
   const allCols = [...selectedCols].sort((a,b)=>a-b);
   filterCount = 0;
-  document.getElementById('filters-container').innerHTML = '';
-  
-  // מלא עמודות פיצול
+
+  // מלא עמודות פיצול — פעולות קלות תחילה, הדפדפן מצייר מיד
   const colOpts = allCols.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
   const dateOpts = allCols.filter(i=>isDateCol(i)).map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
   document.getElementById('split-by-col').innerHTML = colOpts;
   document.getElementById('split-by-date-col').innerHTML = dateOpts || colOpts;
+  const rowsInput = document.getElementById('rows-per-file');
+  rowsInput.replaceWith(rowsInput.cloneNode(true));
   document.getElementById('rows-per-file').addEventListener('input', updateEstRows);
-  
-  // הוסף תנאי ראשון אוטומטית
-  addFilter();
+
+  // הצג placeholder קל — הפילטר הכבד נבנה אחרי שהמסך מתרענן
+  document.getElementById('filters-container').innerHTML =
+    '<div style="padding:0.6rem 0;color:var(--muted);font-size:0.88rem">⏳ טוען תנאי סינון...</div>';
+  setTimeout(() => {
+    document.getElementById('filters-container').innerHTML = '';
+    addFilter();
+  }, 30);
 }
 
 function addFilter() {
@@ -535,40 +550,116 @@ function updateFilterDateRange(id) {
   const toEl = document.getElementById('fto-'+id);
   fromEl.min=fmt(minD); fromEl.max=fmt(maxD); fromEl.value=fmt(minD);
   toEl.min=fmt(minD); toEl.max=fmt(maxD); toEl.value=fmt(maxD);
-  fromEl.onchange = () => { if(fromEl.value>toEl.value) toEl.value=fromEl.value; };
-  toEl.onchange = () => { if(toEl.value<fromEl.value) fromEl.value=toEl.value; };
+  fromEl.addEventListener('change', () => { toEl.min = fromEl.value; if(toEl.value < fromEl.value) toEl.value = fromEl.value; });
+  toEl.addEventListener('change', () => { fromEl.max = toEl.value; if(fromEl.value > toEl.value) fromEl.value = toEl.value; });
 }
 
-function buildFilterVals(id) {
+// מחזיר את שורות הנתונים אחרי החלת כל הסינונים *חוץ* מהסינון excludeId
+function getFilteredDataExcluding(excludeId) {
+  let result = allData.slice(1);
+  document.querySelectorAll('.filter-block').forEach(block => {
+    const bid = block.id.replace('filter-','');
+    if (bid === String(excludeId)) return;
+    const typeEl = document.getElementById('ftype-'+bid);
+    if (!typeEl) return;
+    if (typeEl.value === 'col') {
+      const ci = parseInt(document.getElementById('fcol-'+bid).value);
+      if (isNaN(ci)) return;
+      const sel = new Set([...document.querySelectorAll('.val-chk-'+bid+':checked')].map(c=>c.dataset.val));
+      if (!sel.size) return;
+      result = result.filter(r => {
+        const v = r[ci] !== undefined && r[ci] !== '' ? String(r[ci]) : '(ריק)';
+        return sel.has(v);
+      });
+    } else if (typeEl.value === 'date') {
+      const ci = parseInt(document.getElementById('fdatecol-'+bid)?.value);
+      if (isNaN(ci)) return;
+      const fromEl = document.getElementById('ffrom-'+bid);
+      const toEl   = document.getElementById('fto-'+bid);
+      if (!fromEl?.value || !toEl?.value) return;
+      const from = new Date(fromEl.value);
+      const to   = new Date(toEl.value); to.setHours(23,59,59);
+      result = result.filter(r => { const d=parseFlexDate(String(r[ci]||'')); return d&&d>=from&&d<=to; });
+    }
+  });
+  return result;
+}
+
+function buildFilterVals(id, keepChecked, keepUnchecked) {
   const colIdx = parseInt(document.getElementById('fcol-'+id).value);
+  const filteredData = getFilteredDataExcluding(id);
   const valCounts = {};
-  allData.slice(1).forEach(r=>{
-    const v=String(r[colIdx]||'(ריק)');
-    valCounts[v]=(valCounts[v]||0)+1;
+  filteredData.forEach(r => {
+    const v = r[colIdx] !== undefined && r[colIdx] !== '' ? String(r[colIdx]) : '(ריק)';
+    valCounts[v] = (valCounts[v]||0) + 1;
   });
   const sorted = Object.entries(valCounts).sort((a,b)=>b[1]-a[1]);
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  
-  let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)">
-    <input type="checkbox" id="chk-all-${id}" onchange="toggleAllVals('${id}',this.checked)" checked/>
-    <label for="chk-all-${id}" style="font-weight:700;font-size:0.82rem;cursor:pointer">בחר הכל (${sorted.length})</label>
-  </div>
-  <div style="max-height:180px;overflow-y:auto">`;
-  
-  sorted.forEach(([v,cnt])=>{
-    const ev=esc(v);
-    html+=`<div style="display:flex;align-items:center;gap:8px;padding:3px 0">
-      <input type="checkbox" class="val-chk-${id}" value="${ev}" checked/>
-      <span style="flex:1;font-size:0.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ev}">${ev}</span>
-      <span style="font-size:0.72rem;color:var(--muted);background:#e8edf5;padding:1px 7px;border-radius:10px;flex-shrink:0">${cnt.toLocaleString('he')}</span>
-    </div>`;
+  const container = document.getElementById('fvals-'+id);
+  container.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #dce3ef';
+  const chkAll = document.createElement('input');
+  chkAll.type = 'checkbox'; chkAll.id = 'chk-all-'+id; chkAll.checked = true;
+  chkAll.onchange = () => {
+    document.querySelectorAll('.val-chk-'+id).forEach(c=>c.checked=chkAll.checked);
+    cascadeRefresh(id);
+  };
+  const lbl = document.createElement('label');
+  lbl.htmlFor = 'chk-all-'+id;
+  lbl.textContent = 'בחר הכל (' + sorted.length + ' ערכים)';
+  lbl.style.cssText = 'font-weight:700;font-size:0.82rem;cursor:pointer';
+  header.appendChild(chkAll); header.appendChild(lbl);
+  container.appendChild(header);
+
+  const list = document.createElement('div');
+  list.style.cssText = 'max-height:200px;overflow-y:auto';
+
+  sorted.forEach(([v, cnt]) => {
+    const isChecked = keepUnchecked ? !keepUnchecked.has(v) : true;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f3f8';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.className = 'val-chk-'+id;
+    chk.checked = isChecked;
+    chk.dataset.val = v;
+    chk.addEventListener('change', () => { updateSelectAllState(id); cascadeRefresh(id); });
+    const span = document.createElement('span');
+    span.textContent = v;
+    span.style.cssText = 'flex:1;font-size:0.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    span.title = v;
+    const badge = document.createElement('span');
+    badge.textContent = cnt.toLocaleString('he') + ' שורות';
+    badge.style.cssText = 'font-size:0.72rem;color:#6b7a99;background:#e8edf5;padding:2px 8px;border-radius:10px;flex-shrink:0;font-weight:600';
+    row.appendChild(chk); row.appendChild(span); row.appendChild(badge);
+    list.appendChild(row);
   });
-  html += '</div>';
-  document.getElementById('fvals-'+id).innerHTML = html;
+  container.appendChild(list);
+  updateSelectAllState(id);
 }
 
-function toggleAllVals(id, checked) {
-  document.querySelectorAll('.val-chk-'+id).forEach(c=>c.checked=checked);
+// מרענן את רשימות הערכים של שאר הסינונים אחרי שינוי בסינון changedId
+function cascadeRefresh(changedId) {
+  document.querySelectorAll('.filter-block').forEach(block => {
+    const bid = block.id.replace('filter-','');
+    if (bid === String(changedId)) return;
+    const typeEl = document.getElementById('ftype-'+bid);
+    if (!typeEl || typeEl.value !== 'col') return;
+    // שמור בחירה קיימת
+    const unchecked = new Set([...document.querySelectorAll('.val-chk-'+bid+':not(:checked)')].map(c=>c.dataset.val));
+    buildFilterVals(bid, null, unchecked);
+  });
+}
+
+function updateSelectAllState(id) {
+  const all = document.querySelectorAll('.val-chk-'+id);
+  const checked = [...all].filter(c=>c.checked);
+  const chkAll = document.getElementById('chk-all-'+id);
+  if(chkAll){
+    chkAll.checked = checked.length === all.length;
+    chkAll.indeterminate = checked.length > 0 && checked.length < all.length;
+  }
 }
 
 function toggleSplitBy() {
@@ -587,76 +678,6 @@ function updateEstRows() {
     `משוער: ${Math.ceil(rows/perFile)} קבצים` : '';
 }
 
-function updateDateRange() {
-  const colIdx = parseInt(document.getElementById('date-col').value);
-  if(isNaN(colIdx)) return;
-  const dates = allData.slice(1).map(r=>parseFlexDate(String(r[colIdx]||''))).filter(Boolean);
-  if(!dates.length) return;
-  const minD = new Date(Math.min(...dates));
-  const maxD = new Date(Math.max(...dates));
-  const fmt = d => d.toISOString().slice(0,10);
-  const fromEl = document.getElementById('date-from');
-  const toEl = document.getElementById('date-to');
-  fromEl.min = fmt(minD); fromEl.max = fmt(maxD); fromEl.value = fmt(minD);
-  toEl.min = fmt(minD); toEl.max = fmt(maxD); toEl.value = fmt(maxD);
-  // enforce: from <= to
-  fromEl.addEventListener('change',()=>{ if(fromEl.value>toEl.value) toEl.value=fromEl.value; });
-  toEl.addEventListener('change',()=>{ if(toEl.value<fromEl.value) fromEl.value=toEl.value; });
-}
-
-function updateSplitVals() {
-  const colIdx = parseInt(document.getElementById('split-col').value);
-  const valCounts = {};
-  allData.slice(1).forEach(r=>{
-    const v=String(r[colIdx]||'(ריק)');
-    valCounts[v]=(valCounts[v]||0)+1;
-  });
-  const sorted = Object.entries(valCounts).sort((a,b)=>b[1]-a[1]);
-  const listEl = document.getElementById('split-col-vals-list');
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  
-  let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)">
-      <input type="checkbox" id="chk-all" onchange="toggleAllVals(this.checked)" checked/>
-      <label for="chk-all" style="font-weight:700;font-size:0.82rem;cursor:pointer">בחר הכל (${sorted.length} ערכים)</label>
-    </div>`;
-  
-  sorted.forEach(([v,cnt]) => {
-    const ev = esc(v);
-    html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f3f8">
-      <input type="checkbox" class="val-chk" value="${ev}" checked/>
-      <span style="flex:1;font-size:0.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ev}">${ev}</span>
-      <span style="font-size:0.75rem;color:var(--muted);background:#e8edf5;padding:2px 8px;border-radius:10px;flex-shrink:0;font-weight:600">${cnt.toLocaleString('he')} שורות</span>
-    </div>`;
-  });
-  
-  listEl.innerHTML = html;
-  listEl.querySelectorAll('.val-chk').forEach(chk=>chk.addEventListener('change',updateSelectAll));
-}
-
-function toggleAllVals(checked) {
-  document.querySelectorAll('.val-chk').forEach(c=>c.checked=checked);
-}
-
-function updateSelectAll() {
-  const all = document.querySelectorAll('.val-chk');
-  const checked = document.querySelectorAll('.val-chk:checked');
-  document.getElementById('chk-all').checked = all.length===checked.length;
-  document.getElementById('chk-all').indeterminate = checked.length>0&&checked.length<all.length;
-}
-
-function updateEstFiles() {
-  const rows = allData.length-1;
-  const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
-  document.getElementById('est-files').value = Math.ceil(rows/perFile)+' קבצים';
-}
-
-function setSplitMode(mode, btn) {
-  splitMode = mode;
-  document.querySelectorAll('.split-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.split-panel').forEach(p=>p.classList.remove('show'));
-  document.getElementById('panel-'+mode).classList.add('show');
-}
 
 // ══ PROCESS ══
 async function processFile() {
@@ -680,8 +701,11 @@ async function processFile() {
       const colIdx = parseInt(document.getElementById('fcol-'+id).value);
       const localIdx = cols.indexOf(colIdx);
       if(localIdx<0) return;
-      const selected = new Set([...document.querySelectorAll('.val-chk-'+id+':checked')].map(c=>c.value));
-      result = result.filter(r=>selected.has(String(r[localIdx]||'(ריק)')));
+      const selected = new Set([...document.querySelectorAll('.val-chk-'+id+':checked')].map(c=>c.dataset.val||c.value));
+      result = result.filter(r=>{
+        const v = r[localIdx] !== undefined && r[localIdx] !== '' ? String(r[localIdx]) : '(ריק)';
+        return selected.has(v);
+      });
     } else if(type==='date'){
       const colIdx = parseInt(document.getElementById('fdatecol-'+id).value);
       const localIdx = cols.indexOf(colIdx);

@@ -29,6 +29,11 @@
     .user-bar.show{display:flex}
     .user-bar span{font-size:0.88rem;color:var(--green);font-weight:600}
     .btn-logout{background:none;border:1px solid var(--green);color:var(--green);font-size:0.8rem;font-weight:600;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit}
+    .user-dropdown{display:none;position:absolute;top:52px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.13);padding:0.5rem;min-width:160px;z-index:2000;text-align:center}
+    .user-dropdown.open{display:block}
+    .user-dropdown-name{font-size:0.82rem;color:var(--text-mid);padding:6px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;white-space:nowrap}
+    .user-dropdown button{display:block;width:100%;background:none;border:none;padding:8px 14px;font-family:inherit;font-size:0.9rem;font-weight:600;cursor:pointer;border-radius:6px;color:#c0392b;white-space:nowrap}
+    .user-dropdown button:hover{background:#fff0ee}
     .page-hero{background:linear-gradient(145deg,var(--navy) 0%,var(--navy-mid) 100%);padding:120px 5vw 60px;text-align:center}
     .page-hero h1{font-family:'Heebo';font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;color:#fff;margin-bottom:0.8rem}
     .page-hero h1 em{color:var(--accent);font-style:normal}
@@ -111,7 +116,13 @@
     <li><a href="index.html#services">שירותים</button></li>
     <li><a href="tools.html" class="active">כלים להורדה</button></li>
     <li><a href="index.html#cta" class="nav-cta">צרו קשר</button></li>
-    <li><a id="nav-auth-btn" class="nav-user" onclick="openAuthModal('login')">כניסה / הרשמה</a></li>
+    <li style="position:relative">
+      <a id="nav-auth-btn" class="nav-user" onclick="openAuthModal('login')">כניסה / הרשמה</a>
+      <div id="user-dropdown" class="user-dropdown">
+        <div class="user-dropdown-name" id="user-dropdown-name"></div>
+        <button onclick="confirmLogout()">🚪 התנתקות</button>
+      </div>
+    </li>
   </ul>
 </nav>
 
@@ -382,9 +393,9 @@
       <h2>הרשמה חינמית</h2>
       <p class="modal-desc" id="reg-desc">גישה לכל הכלים החינמיים</p>
       <div class="form-field"><label>שם מלא <span style="color:var(--red)">*</span></label><input type="text" id="r-name" placeholder="ישראל ישראלי"/></div>
-      <div class="form-field"><label>שם המשרד / הגוף <span style="color:var(--red)">*</span></label><input type="text" id="r-office" placeholder="משרד הבריאות / עיריית תל אביב"/></div>
+      <div class="form-field"><label>שם המשרד / הגוף <span style="color:var(--text-muted);font-size:0.78rem">(אופציונלי)</span></label><input type="text" id="r-office" placeholder="משרד הבריאות / עיריית תל אביב"/></div>
       <div class="form-field"><label>כתובת מייל <span style="color:var(--red)">*</span></label><input type="email" id="r-email" placeholder="name@example.com"/></div>
-      <div class="form-field"><label>טלפון <span style="color:var(--red)">*</span></label><input type="tel" id="r-phone" placeholder="050-1234567" maxlength="11"/></div>
+      <div class="form-field"><label>טלפון <span style="color:var(--text-muted);font-size:0.78rem">(אופציונלי)</span></label><input type="tel" id="r-phone" placeholder="050-1234567" maxlength="11"/></div>
       <div class="form-field"><label>סיסמה <span style="color:var(--red)">*</span></label><input type="password" id="r-pass" placeholder="לפחות 8 תווים"/></div>
       <div class="form-field"><label>אימות סיסמה <span style="color:var(--red)">*</span></label><input type="password" id="r-pass2" placeholder="הקלד שוב את הסיסמה"/></div>
       <div class="terms-row"><input type="checkbox" id="r-terms"/><label for="r-terms">קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank">תנאי השימוש</a></label></div>
@@ -397,6 +408,7 @@
       <p class="modal-desc" id="login-desc">הכנס פרטים להמשך</p>
       <div class="form-field"><label>כתובת מייל</label><input type="email" id="l-email" placeholder="name@example.com"/></div>
       <div class="form-field"><label>סיסמה</label><input type="password" id="l-pass" placeholder="הסיסמה שלך"/></div>
+      <p style="text-align:left;margin-top:-4px;margin-bottom:8px"><a onclick="forgotPassword()" style="font-size:0.82rem;color:var(--blue);cursor:pointer">שכחתי סיסמה</a></p>
       <button class="btn-sub green" onclick="doLogin()">כניסה ←</button>
       <p class="modal-switch">עדיין לא רשום? <a onclick="switchTab('reg')">הרשמה חינמית</a></p>
     </div>
@@ -486,74 +498,6 @@
     <button class="btn-sub gold" onclick="doPremium()">💳 המשך לתשלום מאובטח (UPAY)</button>
     <p class="modal-note">🔒 תשלום מאובטח · לאחר אישור התשלום הקובץ נשלח למייל תוך שעה</p>
   </div>
-  <!-- ═══ בדיקת דוחות תשומות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="בדיקת דוחות תשומות שעות">
-    <div class="card-top">
-      <div class="card-icon icon-excel">⏰</div>
-      <div class="card-meta"><div class="card-title">בדיקת דוחות תשומות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
-    </div>
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-body">
-      <p class="card-desc">חפיפות שעות · תעריפים לפי רמה · בדיקת סבירות (שבתות, שעות חריגות) · דשבורד חודשי עם זיהוי קפיצות. ייצוא לאקסל.</p>
-      <div class="card-tags"><span class="tag">תשומות</span><span class="tag">חפיפות</span><span class="tag">דשבורד</span><span class="tag">סבירות</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','בדיקת דוחות תשומות','tool-hours-audit.html')">🔓 פתיחת הכלי</button>
-    </div>
-  </div>
-
-  <!-- ═══ בדיקת דוחות תפוקות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="בדיקת דוחות תפוקות">
-    <div class="card-top">
-      <div class="card-icon icon-excel">📦</div>
-      <div class="card-meta"><div class="card-title">בדיקת דוחות תפוקות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
-    </div>
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-body">
-      <p class="card-desc">זיהוי תפוקות חדשות · בדיקת סבירות וחריגות · מדגם מבוסס סיכונים · דשבורד חודשי להשוואת מגמות. ייצוא לאקסל.</p>
-      <div class="card-tags"><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span><span class="tag">סיכונים</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','בדיקת דוחות תפוקות','tool-outputs-audit.html')">🔓 פתיחת הכלי</button>
-    </div>
-  </div>
-
-  <!-- ═══ כלי VBA: בדיקת דוחות תשומות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת דוחות תשומות">
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-top">
-      <div class="card-icon icon-excel">⏰</div>
-      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת דוחות תשומות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc">קובץ אקסל עם מאקרואים לבדיקת דוחות תשומות — חפיפות, תעריפים לפי רמה, סבירות שעות (שבתות, חגים), ודוח סיכום. עובד לגמרי מקומי ללא אינטרנט.</p>
-      <div class="card-tags"><span class="tag">VBA</span><span class="tag">שעות</span><span class="tag">חפיפות</span><span class="tag">מקומי</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleVBADownload('hours','כלי VBA — בדיקת דוחות תשומות')">⬇ הורדת הכלי</button>
-    </div>
-  </div>
-
-  <!-- ═══ כלי VBA: בדיקת תפוקות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת תפוקות">
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-top">
-      <div class="card-icon icon-excel">📦</div>
-      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת תפוקות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc">כלי אקסל לבדיקת דוחות תפוקות — זיהוי סוגי תפוקה חדשים, בדיקת סבירות, מדגם מבוסס סיכונים, ודשבורד השוואה חודשית עם זיהוי קפיצות.</p>
-      <div class="card-tags"><span class="tag">VBA</span><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleVBADownload('outputs','כלי VBA — בדיקת תפוקות')">⬇ הורדת הכלי</button>
-    </div>
-  </div>
-
 </div>
 
 <!-- ══ MODAL: הצלחה ══ -->
@@ -621,6 +565,8 @@ const UK="kbi_users",SK="kbi_session";
 const SHEETS_URL='https://script.google.com/macros/s/AKfycby1tlOkvMLIwPt_Jb_voDGj56MF2KOL63uGcq8uPnfdqqnBPghmbbJLXVjkVN1RJasrDg/exec';
 // Cookie + localStorage + memory fallback
 let _mu={},_ms=null;
+function encPass(s){return btoa(encodeURIComponent(s))}
+function decPass(s){try{return decodeURIComponent(atob(s))}catch(e){try{return atob(s)}catch(e2){return ''}}}
 
 function setCookie(n,v,days){const d=new Date();d.setTime(d.getTime()+(days||365)*864e5);document.cookie=n+'='+encodeURIComponent(v)+';expires='+d.toUTCString()+';path=/;SameSite=Lax'}
 function getCookie(n){const m=document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)');return m?decodeURIComponent(m.pop()):null}
@@ -659,11 +605,37 @@ function updateUI(){
   const s=getSession();
   const bar=document.getElementById('user-bar');
   const btn=document.getElementById('nav-auth-btn');
-  if(s){bar.classList.add('show');document.getElementById('user-name-display').textContent=s.name;btn.textContent=s.name.split(' ')[0];btn.onclick=logout}
-  else{bar.classList.remove('show');btn.textContent='כניסה / הרשמה';btn.onclick=()=>openAuthModal('login')}
+  if(s){
+    bar.classList.add('show');
+    document.getElementById('user-name-display').textContent=s.name;
+    document.getElementById('user-dropdown-name').textContent=s.name;
+    btn.textContent=s.name.split(' ')[0]+' ▾';
+    btn.onclick=(e)=>{e.stopPropagation();toggleUserDropdown()};
+  } else {
+    bar.classList.remove('show');
+    btn.textContent='כניסה / הרשמה';
+    btn.onclick=()=>openAuthModal('login');
+    closeUserDropdown();
+  }
 }
 
+function toggleUserDropdown(){
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+function closeUserDropdown(){
+  document.getElementById('user-dropdown').classList.remove('open');
+}
+function confirmLogout(){closeUserDropdown();logout();}
+function forgotPassword(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  if(email && !validEmail(email)){setErr('l-email','מייל לא תקין');return}
+  showOK(email
+    ? `לאיפוס הסיסמה לחשבון ${email} — שלח מייל ל־info@kandelbi.org עם כתובת המייל שנרשמת.`
+    : 'שלח מייל ל־info@kandelbi.org עם כתובת המייל שנרשמת ונאפס עבורך את הסיסמה.');
+}
 function logout(){clearSess();updateUI();showOK('יצאת מהחשבון בהצלחה.')}
+
+document.addEventListener('click',()=>closeUserDropdown());
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 function showOK(msg){document.getElementById('ok-msg').textContent=msg;document.getElementById('modal-ok').classList.add('open')}
 
@@ -685,23 +657,23 @@ function doRegister(){
   clrAll(ids);
   const name=document.getElementById('r-name').value.trim();
   const office=document.getElementById('r-office').value.trim();
-  const email=document.getElementById('r-email').value.trim();
+  const email=document.getElementById('r-email').value.trim().toLowerCase();
   const phone=document.getElementById('r-phone').value.trim();
   const pass=document.getElementById('r-pass').value;
   const pass2=document.getElementById('r-pass2').value;
   const terms=document.getElementById('r-terms').checked;
   let ok=true;
   if(!name){setErr('r-name','שדה חובה');ok=false}
-  if(!office){setErr('r-office','שדה חובה');ok=false}
   if(!validEmail(email)){setErr('r-email',email?'מייל לא תקין':'שדה חובה');ok=false}
-  if(!validPhone(phone)){setErr('r-phone',phone?'מספר לא תקין (לדוגמה: 050-1234567)':'שדה חובה');ok=false}
+  if(phone && !validPhone(phone)){setErr('r-phone','מספר לא תקין (לדוגמה: 050-1234567)');ok=false}
   if(!validPass(pass)){setErr('r-pass','סיסמה חייבת להכיל לפחות 8 תווים');ok=false}
   if(pass!==pass2){setErr('r-pass2','הסיסמאות אינן תואמות');ok=false}
   if(!terms){alert('יש לאשר את תנאי השימוש');ok=false}
   if(!ok)return;
   const users=getUsers();
   if(users[email]){setErr('r-email','מייל זה כבר רשום — נסה להיכנס');return}
-  users[email]={name,office,email,phone,pass:btoa(pass),tier:'member'};
+  if(phone && Object.values(users).some(u=>u.phone && u.phone.replace(/[-\s]/g,'')===phone.replace(/[-\s]/g,''))){setErr('r-phone','מספר טלפון זה כבר רשום');return}
+  users[email]={name,office,email,phone,pass:encPass(pass),tier:'member'};
   saveUsers(users);
   saveSession({name,email,office,tier:'member'});
   logToSheets({name,office,email,phone,tool:'הרשמה חדשה'});
@@ -718,7 +690,7 @@ function doRegister(){
 
 function doLogin(){
   clrAll(['l-email','l-pass']);
-  const email=document.getElementById('l-email').value.trim();
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
   const pass=document.getElementById('l-pass').value;
   let ok=true;
   if(!validEmail(email)){setErr('l-email',email?'מייל לא תקין':'שדה חובה');ok=false}
@@ -726,7 +698,7 @@ function doLogin(){
   if(!ok)return;
   const users=getUsers();
   const user=users[email];
-  const passOk=user&&atob(user.pass)===pass;
+  const passOk=user&&decPass(user.pass)===pass;
   if(!user||!passOk){setErr('l-email','מייל או סיסמה שגויים');return}
   saveSession({name:user.name,email:user.email,office:user.office,tier:user.tier});
   closeModal('modal-auth');
@@ -815,7 +787,17 @@ function searchCards(q){
 
 document.addEventListener("DOMContentLoaded",function(){
   updateUI();
-  document.querySelectorAll('.tool-card').forEach(c=>c.style.setProperty('display','flex','important'));
+  document.querySelectorAll('.tool-card').forEach(c=>{
+    c.style.setProperty('display','flex','important');
+    const sub = c.querySelector('.card-sub');
+    if(sub && sub.textContent.includes('כלי web')){
+      const note = document.createElement('div');
+      note.style.cssText='font-size:0.75rem;color:#0a7c5e;margin-top:8px;display:flex;align-items:center;gap:5px;font-weight:600;';
+      note.innerHTML='🔒 הנתונים נשארים בדפדפן במחשב שלך בלבד';
+      const footer = c.querySelector('.card-footer');
+      if(footer) footer.insertBefore(note, footer.firstChild);
+    }
+  });
 });
 </script>
 </body>
