@@ -303,6 +303,7 @@ tr:hover td{background:var(--bg);}
 
 <script>
 let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
+let _dateColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
 
 // ══ DRAG & DROP ══
 const dz = document.getElementById('drop-zone');
@@ -363,7 +364,10 @@ function loadSheet() {
   document.getElementById('st-cols').textContent = headers.length;
 
   allData = [headers, ...dataRows];
-  selectedCols = null; // איפוס בחירת עמודות לקובץ/גיליון חדש
+  selectedCols = null;
+  _dateColCache = null;
+  _valCountCache = null;
+  _precomputeValCounts();
 }
 
 // ══ STEP NAVIGATION ══
@@ -406,8 +410,29 @@ function buildColumnsUI() {
 }
 
 function isDateCol(colIdx) {
+  if (_dateColCache && colIdx in _dateColCache) return _dateColCache[colIdx];
   const vals = allData.slice(1,10).map(r=>r[colIdx]).filter(Boolean);
-  return vals.filter(v=>parseFlexDate(String(v))!==null).length >= Math.min(3,vals.length);
+  const result = vals.filter(v=>parseFlexDate(String(v))!==null).length >= Math.min(3,vals.length);
+  if (!_dateColCache) _dateColCache = {};
+  _dateColCache[colIdx] = result;
+  return result;
+}
+
+function _precomputeValCounts() {
+  // שלב 1: dateCol לכל העמודות — מהיר (9 שורות בלבד)
+  _dateColCache = {};
+  headers.forEach((_,i) => isDateCol(i));
+  // שלב 2: ספירת ערכים לכל עמודה — בBackground אחרי שה-UI מתייצב
+  setTimeout(() => {
+    const cache = headers.map(() => ({}));
+    allData.slice(1).forEach(r => {
+      headers.forEach((_,i) => {
+        const v = r[i] !== undefined && r[i] !== '' ? String(r[i]) : '(ריק)';
+        cache[i][v] = (cache[i][v]||0) + 1;
+      });
+    });
+    _valCountCache = cache;
+  }, 400);
 }
 
 function parseFlexDate(v) {
@@ -448,12 +473,15 @@ function selectAll(v) {
 }
 
 function buildPreview() {
-  const cols = [...selectedCols].sort((a,b)=>a-b);
-  const preview = allData.slice(0,6);
-  let html = '<table><thead><tr>'+cols.map(i=>`<th>${headers[i]||''}</th>`).join('')+'</tr></thead><tbody>';
-  html += preview.slice(1).map(r=>'<tr>'+cols.map(i=>`<td>${r[i]??''}</td>`).join('')+'</tr>').join('');
-  html += '</tbody></table>';
-  document.getElementById('preview-wrap').innerHTML = html;
+  clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(() => {
+    const cols = [...selectedCols].sort((a,b)=>a-b);
+    const preview = allData.slice(0,6);
+    let html = '<table><thead><tr>'+cols.map(i=>`<th>${headers[i]||''}</th>`).join('')+'</tr></thead><tbody>';
+    html += preview.slice(1).map(r=>'<tr>'+cols.map(i=>`<td>${r[i]??''}</td>`).join('')+'</tr>').join('');
+    html += '</tbody></table>';
+    document.getElementById('preview-wrap').innerHTML = html;
+  }, 150);
 }
 
 // ══ SPLIT UI ══
@@ -587,13 +615,24 @@ function getFilteredDataExcluding(excludeId) {
 
 function buildFilterVals(id, keepChecked, keepUnchecked) {
   const colIdx = parseInt(document.getElementById('fcol-'+id).value);
-  const filteredData = getFilteredDataExcluding(id);
-  const valCounts = {};
-  filteredData.forEach(r => {
-    const v = r[colIdx] !== undefined && r[colIdx] !== '' ? String(r[colIdx]) : '(ריק)';
-    valCounts[v] = (valCounts[v]||0) + 1;
-  });
+  let valCounts;
+  const otherFiltersActive = document.querySelectorAll('.filter-block').length > 1 ||
+    (document.querySelectorAll('.filter-block').length === 1 &&
+     document.querySelector('.filter-block').id.replace('filter-','') !== String(id));
+  if (!otherFiltersActive && _valCountCache) {
+    valCounts = _valCountCache[colIdx] || {};
+  } else {
+    const filteredData = getFilteredDataExcluding(id);
+    valCounts = {};
+    filteredData.forEach(r => {
+      const v = r[colIdx] !== undefined && r[colIdx] !== '' ? String(r[colIdx]) : '(ריק)';
+      valCounts[v] = (valCounts[v]||0) + 1;
+    });
+  }
   const sorted = Object.entries(valCounts).sort((a,b)=>b[1]-a[1]);
+  const MAX_VALS = 300;
+  const displayed = sorted.slice(0, MAX_VALS);
+  const overflow = sorted.length - displayed.length;
   const container = document.getElementById('fvals-'+id);
   container.innerHTML = '';
 
@@ -615,7 +654,7 @@ function buildFilterVals(id, keepChecked, keepUnchecked) {
   const list = document.createElement('div');
   list.style.cssText = 'max-height:200px;overflow-y:auto';
 
-  sorted.forEach(([v, cnt]) => {
+  displayed.forEach(([v, cnt]) => {
     const isChecked = keepUnchecked ? !keepUnchecked.has(v) : true;
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f3f8';
@@ -636,20 +675,28 @@ function buildFilterVals(id, keepChecked, keepUnchecked) {
     list.appendChild(row);
   });
   container.appendChild(list);
+  if (overflow > 0) {
+    const more = document.createElement('div');
+    more.textContent = `ועוד ${overflow.toLocaleString('he')} ערכים נוספים...`;
+    more.style.cssText = 'font-size:0.78rem;color:#6b7a99;padding:6px 4px;text-align:center';
+    container.appendChild(more);
+  }
   updateSelectAllState(id);
 }
 
 // מרענן את רשימות הערכים של שאר הסינונים אחרי שינוי בסינון changedId
 function cascadeRefresh(changedId) {
-  document.querySelectorAll('.filter-block').forEach(block => {
-    const bid = block.id.replace('filter-','');
-    if (bid === String(changedId)) return;
-    const typeEl = document.getElementById('ftype-'+bid);
-    if (!typeEl || typeEl.value !== 'col') return;
-    // שמור בחירה קיימת
-    const unchecked = new Set([...document.querySelectorAll('.val-chk-'+bid+':not(:checked)')].map(c=>c.dataset.val));
-    buildFilterVals(bid, null, unchecked);
-  });
+  clearTimeout(_cascadeTimer);
+  _cascadeTimer = setTimeout(() => {
+    document.querySelectorAll('.filter-block').forEach(block => {
+      const bid = block.id.replace('filter-','');
+      if (bid === String(changedId)) return;
+      const typeEl = document.getElementById('ftype-'+bid);
+      if (!typeEl || typeEl.value !== 'col') return;
+      const unchecked = new Set([...document.querySelectorAll('.val-chk-'+bid+':not(:checked)')].map(c=>c.dataset.val));
+      buildFilterVals(bid, null, unchecked);
+    });
+  }, 200);
 }
 
 function updateSelectAllState(id) {
