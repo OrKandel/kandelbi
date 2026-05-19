@@ -1,6 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>פיצול קובץ אקסל גדול לפי תאריך, עמודה או שורות — קנדל BI</title>
@@ -59,12 +67,19 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem;}
 #file-input{display:none;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* FILE INFO */
-.file-info{display:none;align-items:center;gap:12px;padding:12px 16px;background:#edf7f3;border-radius:10px;margin-top:1rem;}
-.file-info.show{display:flex;}
-.fi-icon{font-size:1.5rem;}
-.fi-name{font-weight:700;font-size:0.92rem;color:var(--green);}
-.fi-size{font-size:0.78rem;color:var(--muted);}
+/* FILES LIST */
+.files-list{margin-top:1rem;display:flex;flex-direction:column;gap:6px;}
+.file-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#edf7f3;border-radius:10px;border:1px solid #b2ddd0;}
+.file-item.extra{background:#f0f6ff;border-color:#c8d9f2;}
+.fi-icon{font-size:1.3rem;flex-shrink:0;}
+.fi-name{font-weight:700;font-size:0.9rem;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px;}
+.fi-size{font-size:0.76rem;color:var(--muted);}
+.fi-label{font-size:0.72rem;background:var(--green);color:#fff;border-radius:10px;padding:2px 8px;font-weight:700;flex-shrink:0;}
+.fi-remove{margin-right:auto;flex-shrink:0;background:none;border:1px solid #fca5a5;color:var(--red);border-radius:6px;padding:3px 9px;font-size:0.76rem;cursor:pointer;font-family:inherit;}
+.fi-remove:hover{background:#fef2f2;}
+.multi-badge{display:inline-flex;align-items:center;gap:6px;background:#eef3fb;border:1px solid #c8d9f2;border-radius:20px;padding:5px 14px;font-size:0.82rem;font-weight:700;color:var(--blue);margin-top:0.8rem;}
+/* source group header in results */
+.source-group-hdr{grid-column:1/-1;font-size:0.82rem;font-weight:700;color:var(--muted);padding:4px 0 6px;border-bottom:1px solid var(--border);margin-bottom:2px;}
 
 /* COLUMNS */
 .cols-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;}
@@ -188,13 +203,10 @@ tr:hover td{background:var(--bg);}
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
         <span class="drop-icon">📊</span>
         <div class="drop-text">לחץ לבחירת קובץ או גרור לכאן</div>
-        <div class="drop-sub">תומך ב-.xlsx / .xls / .csv · עד 100MB</div>
+        <div class="drop-sub">ניתן לבחור מספר קבצים במבנה אחיד · .xlsx / .xls / .csv · עד 100MB לקובץ</div>
       </div>
-      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
-      <div class="file-info" id="file-info">
-        <span class="fi-icon">✅</span>
-        <div><div class="fi-name" id="fi-name"></div><div class="fi-size" id="fi-size"></div></div>
-      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple />
+      <div class="files-list" id="files-list"></div>
     </div>
 
     <div class="card section" id="file-stats-card">
@@ -320,10 +332,16 @@ tr:hover td{background:var(--bg);}
     </div>
   </div>
 
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור למקרה שלך</strong> — תעריפים, כללי SLA ובדיקות מותאמות להתקשרות הספציפית שלך? <span style="color:#0a7c5e;font-weight:600;">החל מ-1,900 ₪ + מע"מ</span> &nbsp;|&nbsp; <a href="index.html#cta" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
+  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות | חל איסור על העתקת הכלים</span>
+</div>
 </main>
 
 <script>
 let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
+let uploadedFiles = []; // { file, wb, name, size }
 let _dateColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
 let _pendingOutputPrefs = null;
 
@@ -371,48 +389,110 @@ function clearPrefs() { localStorage.removeItem(SPLITTER_PREFS_KEY); document.ge
 const dz = document.getElementById('drop-zone');
 dz.addEventListener('dragover', e=>{e.preventDefault(); dz.classList.add('drag');});
 dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
-dz.addEventListener('drop', e=>{e.preventDefault(); dz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]);});
-document.getElementById('file-input').addEventListener('change', e=>handleFile(e.target.files[0]));
+dz.addEventListener('drop', e=>{e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files);});
+document.getElementById('file-input').addEventListener('change', e=>{handleFiles(e.target.files); e.target.value='';});
 
-function handleFile(file) {
-  if (!file) return;
-  const maxMB = 100;
-  if (file.size > maxMB*1024*1024) { alert(`הקובץ גדול מ-${maxMB}MB. נסה קובץ קטן יותר.`); return; }
+// ── טעינת קובץ בודד (Promise) ──
+function loadOneFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+        resolve({file, wb: workbook, name: file.name, size: file.size});
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
 
-  document.getElementById('fi-name').textContent = file.name;
-  document.getElementById('fi-size').textContent = formatSize(file.size);
-  document.getElementById('file-info').classList.add('show');
+// ── טעינת מספר קבצים ──
+async function handleFiles(fileList) {
+  const MAX_MB = 100;
+  const files = [...fileList].filter(f => {
+    if (f.size > MAX_MB*1024*1024) { alert(`"${f.name}" גדול מ-${MAX_MB}MB ולא נטען.`); return false; }
+    return true;
+  });
+  if (!files.length) return;
+
+  uploadedFiles = [];
+  document.getElementById('files-list').innerHTML = '';
   dz.classList.add('loaded');
-  dz.querySelector('.drop-icon').innerHTML = '<div style="display:inline-block;width:36px;height:36px;border:4px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite"></div>';
-  dz.querySelector('.drop-text').textContent = 'טוען קובץ...';
+  const spinner = '<div style="display:inline-block;width:36px;height:36px;border:4px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite"></div>';
+  dz.querySelector('.drop-icon').innerHTML = spinner;
+  dz.querySelector('.drop-text').textContent = files.length > 1 ? `טוען ${files.length} קבצים...` : 'טוען קובץ...';
 
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = new Uint8Array(e.target.result);
-    wb = XLSX.read(data, {type:'array', cellDates:true});
+  for (const file of files) {
+    try {
+      const loaded = await loadOneFile(file);
+      uploadedFiles.push(loaded);
+    } catch(e) { alert(`שגיאה בטעינת "${file.name}"`); }
+  }
+  if (!uploadedFiles.length) return;
 
-    // גיליונות
-    const sheets = wb.SheetNames;
-    document.getElementById('st-sheets').textContent = sheets.length;
-    document.getElementById('st-size').textContent = formatSize(file.size);
+  // הגדרת סטרוקטורה לפי הקובץ הראשון
+  wb = uploadedFiles[0].wb;
+  const sheets = wb.SheetNames;
+  document.getElementById('st-sheets').textContent = sheets.length;
+  document.getElementById('st-size').textContent =
+    formatSize(uploadedFiles.reduce((s,u)=>s+u.size, 0)) + (uploadedFiles.length > 1 ? ` (${uploadedFiles.length} קבצים)` : '');
 
-    if (sheets.length > 1) {
-      document.getElementById('sheet-select-wrap').style.display = '';
-      const sel = document.getElementById('sheet-select');
-      sel.innerHTML = sheets.map(s=>`<option>${s}</option>`).join('');
-    }
+  // הצג בחירת גיליון רק כשיש קובץ אחד ויש כמה גיליונות
+  if (sheets.length > 1 && uploadedFiles.length === 1) {
+    document.getElementById('sheet-select-wrap').style.display = '';
+    const sel = document.getElementById('sheet-select');
+    sel.innerHTML = sheets.map(s=>`<option>${s}</option>`).join('');
+  } else {
+    document.getElementById('sheet-select-wrap').style.display = 'none';
+  }
 
-    loadSheet();
-    dz.querySelector('.drop-icon').innerHTML = '✅';
-    dz.querySelector('.drop-text').textContent = file.name;
-    document.getElementById('file-stats-card').classList.add('show');
-    document.getElementById('btn-next1').disabled = false;
-  };
-  reader.readAsArrayBuffer(file);
+  loadSheet();
+
+  // עדכון drop zone
+  const label = uploadedFiles.length === 1 ? uploadedFiles[0].name : `${uploadedFiles.length} קבצים נטענו`;
+  dz.querySelector('.drop-icon').innerHTML = '✅';
+  dz.querySelector('.drop-text').textContent = label;
+
+  renderFilesList();
+  document.getElementById('file-stats-card').classList.add('show');
+  document.getElementById('btn-next1').disabled = false;
+}
+
+// ── הצגת רשימת קבצים ──
+function renderFilesList() {
+  const container = document.getElementById('files-list');
+  if (uploadedFiles.length === 0) { container.innerHTML = ''; return; }
+  container.innerHTML = uploadedFiles.map((uf, i) => `
+    <div class="file-item ${i > 0 ? 'extra' : ''}">
+      <span class="fi-icon">${i === 0 ? '✅' : '📄'}</span>
+      <div style="flex:1;min-width:0">
+        <div class="fi-name" style="color:${i===0?'var(--green)':'var(--blue)'}">${uf.name}</div>
+        <div class="fi-size">${formatSize(uf.size)}</div>
+      </div>
+      ${i === 0 ? '<span class="fi-label">בסיס מבנה</span>' : ''}
+      <button class="fi-remove" onclick="removeFile(${i})">✕ הסר</button>
+    </div>`).join('') +
+    (uploadedFiles.length > 1 ? `<div class="multi-badge">📂 ${uploadedFiles.length} קבצים — יעובדו עם אותן הגדרות</div>` : '');
+}
+
+// ── הסרת קובץ מהרשימה ──
+function removeFile(idx) {
+  uploadedFiles.splice(idx, 1);
+  if (!uploadedFiles.length) { reset(); return; }
+  // אם הוסר קובץ ראשון — עדכן מבנה
+  wb = uploadedFiles[0].wb;
+  loadSheet();
+  const label = uploadedFiles.length === 1 ? uploadedFiles[0].name : `${uploadedFiles.length} קבצים נטענו`;
+  dz.querySelector('.drop-text').textContent = label;
+  renderFilesList();
+  document.getElementById('st-size').textContent =
+    formatSize(uploadedFiles.reduce((s,u)=>s+u.size, 0)) + (uploadedFiles.length > 1 ? ` (${uploadedFiles.length} קבצים)` : '');
 }
 
 function loadSheet() {
-  const sheetName = document.getElementById('sheet-select').value || wb.SheetNames[0];
+  // wb תמיד מצביע על הקובץ הראשון (מבנה הבסיס)
+  const sheetName = (document.getElementById('sheet-select').value || wb.SheetNames[0]);
   ws = wb.Sheets[sheetName];
   allData = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
 
@@ -815,104 +895,151 @@ function updateEstRows() {
 async function processFile() {
   saveSplitterPrefs();
   outputFiles = [];
+
   const cols = [...selectedCols].sort((a,b)=>a-b);
-  const dataRows = allData.slice(1);
-
-  setProgress(10,'מסנן עמודות...');
-  const filtered = dataRows.map(r=>cols.map(i=>r[i]));
   const filteredHeaders = cols.map(i=>headers[i]);
+  const outputMode = document.getElementById('output-mode').value;
+  const totalFiles = uploadedFiles.length;
 
-  setProgress(20,'מחיל תנאי סינון...');
-
-  // ── החל את כל תנאי הסינון ──
-  let result = filtered;
-  const filterBlocks = document.querySelectorAll('.filter-block');
-  filterBlocks.forEach(block => {
+  // ── קריאת הגדרות סינון פעם אחת ──
+  const filterDefs = [];
+  document.querySelectorAll('.filter-block').forEach(block => {
     const id = block.id.replace('filter-','');
-    const type = document.getElementById('ftype-'+id).value;
-    if(type==='col'){
-      const colIdx = parseInt(document.getElementById('fcol-'+id).value);
-      const localIdx = cols.indexOf(colIdx);
-      if(localIdx<0) return;
+    const typeEl = document.getElementById('ftype-'+id);
+    if (!typeEl) return;
+    const type = typeEl.value;
+    if (type === 'col') {
+      const origColIdx = parseInt(document.getElementById('fcol-'+id).value);
       const selected = new Set([...document.querySelectorAll('.val-chk-'+id+':checked')].map(c=>c.dataset.val||c.value));
-      result = result.filter(r=>{
-        const v = r[localIdx] !== undefined && r[localIdx] !== '' ? String(r[localIdx]) : '(ריק)';
-        return selected.has(v);
-      });
-    } else if(type==='date'){
-      const colIdx = parseInt(document.getElementById('fdatecol-'+id).value);
-      const localIdx = cols.indexOf(colIdx);
-      if(localIdx<0) return;
-      const from = new Date(document.getElementById('ffrom-'+id).value);
-      const to = new Date(document.getElementById('fto-'+id).value);
-      to.setHours(23,59,59);
-      result = result.filter(r=>{
-        const d=parseFlexDate(String(r[localIdx]||'')); return d&&d>=from&&d<=to;
-      });
+      filterDefs.push({type:'col', origColIdx, selected});
+    } else if (type === 'date') {
+      const origColIdx = parseInt(document.getElementById('fdatecol-'+id)?.value);
+      const fromVal = document.getElementById('ffrom-'+id)?.value;
+      const toVal   = document.getElementById('fto-'+id)?.value;
+      if (!fromVal || !toVal) return;
+      const from = new Date(fromVal);
+      const to   = new Date(toVal); to.setHours(23,59,59);
+      filterDefs.push({type:'date', origColIdx, from, to});
     }
   });
 
-  setProgress(40,'יוצר קבצי פלט...');
+  // הגדרות פיצול
+  const splitByColOrigIdx   = parseInt(document.getElementById('split-by-col').value);
+  const splitByDateOrigIdx  = parseInt(document.getElementById('split-by-date-col').value);
+  const splitPeriod         = document.getElementById('split-by-period').value;
+  const rowsPerFile         = parseInt(document.getElementById('rows-per-file').value)||10000;
 
-  const outputMode = document.getElementById('output-mode').value;
+  // ── לולאה על כל קובץ ──
+  for (let fi = 0; fi < totalFiles; fi++) {
+    const uf = uploadedFiles[fi];
+    const pctBase = Math.round((fi / totalFiles) * 80);
+    setProgress(pctBase + 5, `(${fi+1}/${totalFiles}) קורא: ${uf.name}...`);
+    await new Promise(r=>setTimeout(r,30));
 
-  if(outputMode==='one'){
-    outputFiles.push({name:'מסונן', data:[filteredHeaders,...result]});
+    // טען נתוני הקובץ הנוכחי
+    const sheetName = fi === 0
+      ? (document.getElementById('sheet-select').value || uf.wb.SheetNames[0])
+      : uf.wb.SheetNames[0];
+    let rawData = XLSX.utils.sheet_to_json(uf.wb.Sheets[sheetName], {header:1, defval:'', raw:false});
+    while (rawData.length && rawData[0].every(c=>!c)) rawData.shift();
+    const fileHeaders = rawData[0] || [];
+    const fileDataRows = rawData.slice(1).filter(r=>r.some(c=>c!==''));
 
-  } else if(outputMode==='split-rows'){
-    const perFile = parseInt(document.getElementById('rows-per-file').value)||10000;
-    for(let i=0;i<result.length;i+=perFile)
-      outputFiles.push({name:`חלק_${Math.floor(i/perFile)+1}`, data:[filteredHeaders,...result.slice(i,i+perFile)]});
-
-  } else if(outputMode==='split-col'){
-    const splitColIdx = parseInt(document.getElementById('split-by-col').value);
-    const localIdx = cols.indexOf(splitColIdx);
-    const groups={};
-    result.forEach(r=>{
-      const k=String(r[localIdx]||'(ריק)');
-      if(!groups[k]) groups[k]=[];
-      groups[k].push(r);
+    // מיפוי עמודות לפי שם (לגמישות במבנה)
+    const colMap = cols.map(origIdx => {
+      const hName = String(headers[origIdx]||'');
+      const found  = fileHeaders.findIndex(h=>String(h||'')===hName);
+      return found >= 0 ? found : origIdx; // fallback לפי מיקום
     });
-    Object.entries(groups).sort().forEach(([k,rows])=>
-      outputFiles.push({name:sanitize(k), data:[filteredHeaders,...rows]}));
 
-  } else if(outputMode==='split-date'){
-    const splitDateColIdx = parseInt(document.getElementById('split-by-date-col').value);
-    const localIdx = cols.indexOf(splitDateColIdx);
-    const period = document.getElementById('split-by-period').value;
-    const groups={};
-    result.forEach(r=>{
-      const d=parseFlexDate(String(r[localIdx]||''));
-      if(!d) return;
-      let key;
-      if(period==='month') key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      else if(period==='quarter') key=`${d.getFullYear()}-Q${Math.ceil((d.getMonth()+1)/3)}`;
-      else key=String(d.getFullYear());
-      if(!groups[key]) groups[key]=[];
-      groups[key].push(r);
+    // ממיר origColIdx של הגדרת סינון/פיצול → localIdx בתוך cols
+    function toLocal(origIdx) {
+      // origIdx הוא אינדקס בתוך headers (הקובץ הראשון)
+      // צריך להמיר לאינדקס בתוך fileHeaders דרך colMap
+      const posInCols = cols.indexOf(origIdx);
+      if (posInCols < 0) return -1;
+      return posInCols; // localIdx בתוך result
+    }
+    function fileColOf(origIdx) {
+      const posInCols = cols.indexOf(origIdx);
+      return posInCols >= 0 ? colMap[posInCols] : origIdx;
+    }
+
+    setProgress(pctBase + 10, `(${fi+1}/${totalFiles}) מסנן: ${uf.name}...`);
+
+    // בחר עמודות
+    let result = fileDataRows.map(r => colMap.map(i=>r[i]));
+
+    // החל סינונים
+    filterDefs.forEach(fd => {
+      if (fd.type === 'col') {
+        const li = toLocal(fd.origColIdx);
+        if (li < 0) return;
+        result = result.filter(r => {
+          const v = r[li]!==undefined && r[li]!=='' ? String(r[li]) : '(ריק)';
+          return fd.selected.has(v);
+        });
+      } else if (fd.type === 'date') {
+        const li = toLocal(fd.origColIdx);
+        if (li < 0) return;
+        result = result.filter(r => {
+          const d = parseFlexDate(String(r[li]||'')); return d&&d>=fd.from&&d<=fd.to;
+        });
+      }
     });
-    Object.entries(groups).sort().forEach(([k,rows])=>
-      outputFiles.push({name:k, data:[filteredHeaders,...rows]}));
+
+    // קידומת שם לפלט (כשיש יותר מקובץ אחד)
+    const prefix = totalFiles > 1 ? sanitize(uf.name.replace(/\.[^.]+$/,'')) + '_' : '';
+    const src    = uf.name;
+
+    if (outputMode === 'one') {
+      outputFiles.push({name: prefix+'מסונן', data:[filteredHeaders,...result], sourceFile:src});
+
+    } else if (outputMode === 'split-rows') {
+      for (let i=0;i<result.length;i+=rowsPerFile)
+        outputFiles.push({name:`${prefix}חלק_${Math.floor(i/rowsPerFile)+1}`, data:[filteredHeaders,...result.slice(i,i+rowsPerFile)], sourceFile:src});
+
+    } else if (outputMode === 'split-col') {
+      const li = toLocal(splitByColOrigIdx);
+      if (li < 0) { outputFiles.push({name:prefix+'כל_הנתונים', data:[filteredHeaders,...result], sourceFile:src}); }
+      else {
+        const groups={};
+        result.forEach(r=>{ const k=String(r[li]||'(ריק)'); if(!groups[k])groups[k]=[]; groups[k].push(r); });
+        Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+sanitize(k), data:[filteredHeaders,...rows], sourceFile:src}));
+      }
+
+    } else if (outputMode === 'split-date') {
+      const li = toLocal(splitByDateOrigIdx);
+      if (li < 0) { outputFiles.push({name:prefix+'כל_הנתונים', data:[filteredHeaders,...result], sourceFile:src}); }
+      else {
+        const groups={};
+        result.forEach(r=>{
+          const d=parseFlexDate(String(r[li]||'')); if(!d) return;
+          let key;
+          if(splitPeriod==='month') key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+          else if(splitPeriod==='quarter') key=`${d.getFullYear()}-Q${Math.ceil((d.getMonth()+1)/3)}`;
+          else key=String(d.getFullYear());
+          if(!groups[key])groups[key]=[]; groups[key].push(r);
+        });
+        Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+k, data:[filteredHeaders,...rows], sourceFile:src}));
+      }
+    }
   }
 
-  setProgress(80,'יוצר קבצי אקסל...');
+  setProgress(90,'יוצר קבצי אקסל...');
   await new Promise(r=>setTimeout(r,50));
 
-  // בניית blob לכל קובץ
   outputFiles.forEach(f=>{
     const newWb = XLSX.utils.book_new();
     const newWs = XLSX.utils.aoa_to_sheet(f.data);
     XLSX.utils.book_append_sheet(newWb, newWs, 'נתונים');
-    f.blob = XLSX.write(newWb, {bookType:'xlsx', type:'array'});
-    f.rows = f.data.length-1;
+    f.blob  = XLSX.write(newWb, {bookType:'xlsx', type:'array'});
+    f.rows  = f.data.length-1;
     f.sizeMB = (f.blob.byteLength/1024/1024).toFixed(1);
   });
 
   setProgress(100,'מוכן!');
-  setTimeout(()=>{
-    document.getElementById('progress-wrap').classList.remove('show');
-    showResults();
-  },400);
+  setTimeout(()=>{ document.getElementById('progress-wrap').classList.remove('show'); showResults(); }, 400);
 }
 
 function setProgress(pct, txt) {
@@ -922,19 +1049,39 @@ function setProgress(pct, txt) {
 }
 
 function showResults() {
+  const totalRows = outputFiles.reduce((s,f)=>s+f.rows,0);
   document.getElementById('result-summary').textContent =
-    `נוצרו ${outputFiles.length} קבצים עם סה"כ ${outputFiles.reduce((s,f)=>s+f.rows,0).toLocaleString('he')} שורות`;
+    `נוצרו ${outputFiles.length} קבצים עם סה"כ ${totalRows.toLocaleString('he')} שורות` +
+    (uploadedFiles.length > 1 ? ` (מ-${uploadedFiles.length} קבצי מקור)` : '');
 
   const grid = document.getElementById('results-grid');
-  grid.innerHTML = outputFiles.map((f,i)=>`
-    <div class="result-card">
+
+  function cardHTML(f, i) {
+    return `<div class="result-card">
       <div class="rc-name">📊 ${f.name}.xlsx</div>
       <div class="rc-stats">
         <span class="badge badge-rows">${f.rows.toLocaleString('he')} שורות</span>
         <span class="badge badge-size">${f.sizeMB} MB</span>
       </div>
       <button class="rc-dl" onclick="downloadOne(${i})">⬇ הורדה</button>
-    </div>`).join('');
+    </div>`;
+  }
+
+  if (uploadedFiles.length > 1) {
+    // קיבוץ לפי קובץ מקור
+    const groups = {};
+    const order  = [];
+    outputFiles.forEach((f, i) => {
+      if (!groups[f.sourceFile]) { groups[f.sourceFile]=[]; order.push(f.sourceFile); }
+      groups[f.sourceFile].push({f, i});
+    });
+    grid.innerHTML = order.map(src =>
+      `<div class="source-group-hdr">📁 ${src}</div>` +
+      groups[src].map(({f,i}) => cardHTML(f,i)).join('')
+    ).join('');
+  } else {
+    grid.innerHTML = outputFiles.map((f,i) => cardHTML(f,i)).join('');
+  }
 
   goStep(4);
 }
@@ -952,12 +1099,12 @@ function downloadAll() {
 }
 
 function reset() {
-  wb=ws=allData=headers=selectedCols=null; outputFiles=[];
+  wb=ws=allData=headers=selectedCols=null; outputFiles=[]; uploadedFiles=[];
   document.getElementById('file-input').value='';
   dz.classList.remove('loaded','drag');
   dz.querySelector('.drop-icon').textContent='📊';
   dz.querySelector('.drop-text').textContent='לחץ לבחירת קובץ או גרור לכאן';
-  document.getElementById('file-info').classList.remove('show');
+  document.getElementById('files-list').innerHTML='';
   document.getElementById('file-stats-card').classList.remove('show');
   document.getElementById('btn-next1').disabled=true;
   goStep(1);
@@ -971,3 +1118,6 @@ function sanitize(s) { return String(s).replace(/[\\/:*?"<>|]/g,'_').substring(0
 </script>
 </body>
 </html>
+
+
+

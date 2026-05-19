@@ -1,6 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל | קנדל BI</title>
 <meta name="description" content="מה הן חפיפות שעות בדיווחי עובדים, למה הן מסוכנות, ואיך לזהות אותן אוטומטית. מדריך מלא לאנשי רכש וביקורת פנימית במגזר הציבורי."/>
@@ -37,7 +45,18 @@ li{margin-bottom:0.4rem;font-size:0.97rem}
 .example-table td{padding:7px 12px;border-bottom:1px solid var(--border);background:#fff}
 .example-table tr.bad td{background:#fef2f2;color:var(--red);font-weight:600}
 footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:0.8rem}
+.related-section{margin:2.5rem 0;padding:1.4rem 1.6rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px}
+.related-title{font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.related-grid{grid-template-columns:1fr}}
+.related-card{display:block;padding:0.8rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.2s}
+.related-card:hover{border-color:var(--blue);background:#eef3fb}
+.related-card-cat{font-size:0.72rem;color:var(--blue);font-weight:700;display:block;margin-bottom:0.3rem}
+.related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
 </style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל","description":"מה הן חפיפות שעות בדיווחי עובדים, למה הן מסוכנות, ואיך לזהות אותן אוטומטית. מדריך מלא לאנשי רכש וביקורת פנימית במגזר הציבורי.","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA ובודק שכר מוסמך","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-hours-overlap.html","inLanguage":"he"}
+</script>
 </head>
 <body>
 <header>
@@ -130,12 +149,33 @@ footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px soli
   <h3>רוצה לבדוק דוח נוכחות עכשיו?</h3>
   <p>הכלי של קנדל BI מאתר חפיפות ועוד 9 בדיקות אוטומטית — העלה קובץ ותקבל תוצאות בשניות. חינמי, עובד בדפדפן, הנתונים לא עוזבים את המחשב שלך.</p>
   <a href="tool-hours-overlap.html" class="cta-btn">🔍 פתח את כלי בדיקת השעות</a>
+  <p style="margin-top:1rem;font-size:0.85rem;color:rgba(255,255,255,0.7);">רוצה בקרה מותאמת לחוזה הספציפי שלך? <a href="index.html#cta" style="color:var(--accent);font-weight:700;">צור קשר — החל מ-1,900 ₪ + מע"מ ←</a></p>
+</div>
+
+<div class="related-section">
+  <div class="related-title">📖 קראו גם</div>
+  <div class="related-grid">
+    <a href="article-procurement-audit.html" class="related-card">
+      <span class="related-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <span class="related-card-title">5 בדיקות חובה על חשבוניות קבלנים</span>
+    </a>
+    <a href="article-tender-controls.html" class="related-card">
+      <span class="related-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <span class="related-card-title">בקרה אפקטיבית על קבלנים — כבר משלב המכרז</span>
+    </a>
+    <a href="article-excel-large-files.html" class="related-card">
+      <span class="related-card-cat">ניהול נתונים ואקסל</span>
+      <span class="related-card-title">קובץ אקסל כבד שתוקע את המחשב — 4 פתרונות</span>
+    </a>
+  </div>
 </div>
 
 <p style="font-size:0.82rem;color:var(--muted);margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1.5rem">
-  קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך | <a href="index.html" style="color:var(--blue)">kandelbi.org</a>
+  © 2025 קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך | <a href="index.html" style="color:var(--blue)">kandelbi.org</a> | כל הזכויות שמורות
 </p>
 
 </main>
 </body>
 </html>
+
+

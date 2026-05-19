@@ -1,6 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>קובץ אקסל כבד שתוקע את המחשב — 4 פתרונות מהירים | קנדל BI</title>
 <meta name="description" content="קובץ אקסל של עשרות אלפי שורות שמקרס את המחשב? מדריך מעשי ל-4 פתרונות: פיצול לפי תאריך, עמודה, שורות, ובחירת עמודות רלוונטיות בלבד."/>
@@ -37,7 +45,18 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
 .stats-row{display:flex;gap:1.5rem;flex-wrap:wrap;margin:1.5rem 0}
 .stat-item{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;flex:1;min-width:120px}
 .stat-lbl{font-size:0.75rem;color:var(--muted);margin-top:4px;display:block}
+.related-section{margin:2.5rem 0;padding:1.4rem 1.6rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px}
+.related-title{font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.related-grid{grid-template-columns:1fr}}
+.related-card{display:block;padding:0.8rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.2s}
+.related-card:hover{border-color:var(--blue);background:#eef3fb}
+.related-card-cat{font-size:0.72rem;color:var(--blue);font-weight:700;display:block;margin-bottom:0.3rem}
+.related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
 </style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"קובץ אקסל כבד שתוקע את המחשב — 4 פתרונות מהירים","description":"קובץ אקסל של עשרות אלפי שורות שמקרס את המחשב? מדריך מעשי ל-4 פתרונות: פיצול לפי תאריך, עמודה, שורות, ובחירת עמודות רלוונטיות בלבד.","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA ובודק שכר מוסמך","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-excel-large-files.html","inLanguage":"he"}
+</script>
 </head>
 <body>
 <header>
@@ -122,6 +141,7 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
   <h3>נסו את כלי הפיצול של קנדל BI</h3>
   <p>העלו קובץ אקסל כבד, בחרו עמודות, הגדירו את סוג הפיצול — וקבלו קבצים מוכנים בשניות. חינמי, עובד בדפדפן, הנתונים נשארים אצלכם.</p>
   <a href="tool-excel-splitter.html" class="cta-btn">✂️ פתח את כלי הפיצול</a>
+  <p style="margin-top:1rem;font-size:0.85rem;color:rgba(255,255,255,0.7);">רוצה בקרה מותאמת לחוזה הספציפי שלך? <a href="index.html#cta" style="color:var(--accent);font-weight:700;">צור קשר — החל מ-1,900 ₪ + מע"מ ←</a></p>
 </div>
 
 <h2>טיפ בונוס: איחוד חזרה</h2>
@@ -129,10 +149,30 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
 עשיתם ניתוח על כל קובץ בנפרד ועכשיו רוצים לאחד את התוצאות? הכלי <a href="tool-merge-files.html" style="color:var(--blue)">איחוד קבצי אקסל</a> של קנדל BI מאחד מספר קבצים לקובץ אחד ומוסיף עמודה שמציינת מאיזה קובץ הגיעה כל שורה.
 </p>
 
+<div class="related-section">
+  <div class="related-title">📖 קראו גם</div>
+  <div class="related-grid">
+    <a href="article-hours-overlap.html" class="related-card">
+      <span class="related-card-cat">ביקורת שכר ורכש ציבורי</span>
+      <span class="related-card-title">חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל</span>
+    </a>
+    <a href="article-procurement-audit.html" class="related-card">
+      <span class="related-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <span class="related-card-title">5 בדיקות חובה על חשבוניות קבלנים</span>
+    </a>
+    <a href="article-tender-controls.html" class="related-card">
+      <span class="related-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <span class="related-card-title">בקרה אפקטיבית על קבלנים — כבר משלב המכרז</span>
+    </a>
+  </div>
+</div>
+
 <p style="font-size:0.82rem;color:var(--muted);margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1.5rem">
-  קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך | <a href="index.html" style="color:var(--blue)">kandelbi.org</a>
+  © 2025 קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך | <a href="index.html" style="color:var(--blue)">kandelbi.org</a> | כל הזכויות שמורות
 </p>
 
 </main>
 </body>
 </html>
+
+

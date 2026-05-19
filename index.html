@@ -1,11 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>קנדל BI – פתרונות אקסל, Power BI וביקורת פנימית למגזר הציבורי | אור קנדל רו"ח</title>
-  <meta name="description" content="אור קנדל רו"ח, CISA ובודק שכר מוסמך. פתרונות אקסל חכמים, Power BI, VBA ובקרות אוטומטיות למשרדי ממשלה וגופים ציבוריים. ניסיון של מעל 14 שנים. צרו קשר עכשיו." />
-  <meta name="keywords" content="קנדל BI, אור קנדל, אקסל מגזר ציבורי, Power BI ממשלה, ביקורת פנימית נתונים, VBA אוטומציה, רו"ח CISA, בקרות חשבונאיות, כפילויות שכר, ניתוח נתונים ציבורי" />
+  <title>קנדל BI — בקרות חשבונאיות אוטומטיות לרכש הציבורי | אור קנדל רו"ח CISA</title>
+  <meta name="description" content="קנדל BI — חברה ליישום בקרות חשבונאיות אוטומטיות לרכש ציבורי. חפיפות שעות, תעריפים, SLA וניתוח חריגות. כלים חינמיים ופתרונות מותאמים אישית. אור קנדל רו&quot;ח CISA." />
+  <meta name="keywords" content="קנדל BI, קנדלBI, אור קנדל, Or Kandel, רו&quot;ח קנדל, Kandel BI, kandelbi, אקסל מגזר ציבורי, Power BI ממשלה, ביקורת פנימית נתונים, VBA אוטומציה, רו&quot;ח CISA, בקרות חשבונאיות, כפילויות שכר, ניתוח נתונים ציבורי" />
   <meta name="author" content="אור קנדל" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://kandelbi.org/" />
@@ -29,6 +37,7 @@
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
     "name": "קנדל BI",
+    "alternateName": ["קנדלBI", "Kandel BI", "kandelbi", "KandelBI"],
     "url": "https://kandelbi.org",
     "telephone": "050-691-4898",
     "description": "פתרונות אקסל, Power BI, VBA וביקורת פנימית מבוססת נתונים למגזר הציבורי",
@@ -36,10 +45,12 @@
     "founder": {
       "@type": "Person",
       "name": "אור קנדל",
-      "jobTitle": "רואה חשבון, CISA",
-      "description": "רואה חשבון ומומחה לאוטומציה, ניתוח נתונים ובקרות פיננסיות למגזר הציבורי"
+      "alternateName": ["Or Kandel", "רו\"ח קנדל", "אור קנדל רו\"ח"],
+      "jobTitle": "רואה חשבון, CISA, בודק שכר מוסמך",
+      "description": "רואה חשבון ומומחה לאוטומציה, ניתוח נתונים ובקרות פיננסיות למגזר הציבורי",
+      "url": "https://kandelbi.org/about.html"
     },
-    "sameAs": ["https://kandelbi.org"]
+    "sameAs": ["https://kandelbi.org", "https://kandelbi.org/about.html"]
   }
   </script>
 
@@ -381,6 +392,27 @@
       color: var(--green); font-weight: 700; font-size: 0.8rem;
     }
 
+    /* ─── FEATURED SERVICE ─── */
+    .service-card.featured {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3561 100%);
+      border: 2px solid var(--accent);
+      color: #fff;
+    }
+    .service-card.featured h3 { color: var(--accent); font-size: 1.2rem; }
+    .service-card.featured p { color: rgba(255,255,255,0.85); }
+    .service-card.featured .service-icon { background: rgba(255,255,255,0.1); }
+    .service-card.featured .service-list li { color: rgba(255,255,255,0.82); }
+    .service-card.featured .service-list li::before { color: var(--accent); }
+    .service-card.featured:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(240,165,0,0.2); border-color: var(--accent); }
+    .featured-badge { display: inline-block; background: var(--accent); color: var(--navy); font-size: 0.72rem; font-weight: 900; padding: 3px 12px; border-radius: 20px; margin-bottom: 1rem; letter-spacing: 0.02em; }
+    .featured-body { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.2rem; }
+    @media (max-width: 640px) { .featured-body { grid-template-columns: 1fr; } }
+    .featured-cta { margin-top: 1.5rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+    .featured-cta a.btn-featured { background: var(--accent); color: var(--navy); padding: 11px 26px; border-radius: 10px; font-weight: 900; font-size: 0.92rem; text-decoration: none; transition: opacity 0.2s; }
+    .featured-cta a.btn-featured:hover { opacity: 0.88; }
+    .featured-price { font-size: 0.83rem; color: rgba(255,255,255,0.6); }
+
     /* ─── WHY ─── */
     #why { background: var(--navy); }
     #why h2 { color: #fff; }
@@ -522,6 +554,7 @@
     <li><a href="#process">תהליך עבודה</a></li>
     <li><a href="tel:050-691-4898" class="nav-phone">📞 050-691-4898</a></li>
     <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="about.html">אודות</a></li>
     <li><a href="#cta" class="nav-cta">צרו קשר</a></li>
   </ul>
 
@@ -535,16 +568,16 @@
 <section id="hero" aria-label="אזור ראשי">
   <div class="hero-grid">
     <div class="hero-content">
-      <div class="hero-badge">רו"ח · CISA · בודק שכר מוסמך</div>
+      <div class="hero-badge">בקרות חשבונאיות אוטומטיות לרכש הציבורי</div>
 
       <h1>
-        <em>אקסל חכם. בקרה מדויקת.</em><br />
-        תוצאות אמיתיות למגזר הציבורי.
+        <em>הספק יודע שמישהו בודק.</em><br />
+        בקרות חשבונאיות אוטומטיות לרכש הציבורי.
       </h1>
 
       <p class="hero-sub">
-        אני אור קנדל — מלווה משרדי ממשלה וגופים ציבוריים בשדרוג תהליכי ניתוח הנתונים,
-        איתור חריגים וכפילויות, ובנייה של כלי בקרה אוטומטיים ב-Excel, Power BI ו-VBA.
+        קנדל BI מתמחה בבניית בקרות חשבונאיות אוטומטיות — לרכש ציבורי, חשבות וביקורת פנימית.
+        מכלי web חינמיים ועד פתרונות מותאמים אישית לכל התקשרות: חפיפות שעות, תעריפים, SLA וניתוח חריגות.
       </p>
 
       <div class="hero-actions">
@@ -754,6 +787,10 @@
           <li>חוות דעת מקצועית וליווי הליכים</li>
         </ul>
       </article>
+
+      <article class="service-card fade-in">
+        <div class="service-icon">🎓</div>
+        <h3>הדרכות והעברת ידע</h3>
         <p>העברת ידע ובניית יכולות פנימיות — כך שהצוות ימשיך לעבוד עצמאית עם הכלים שנבנו.</p>
         <ul class="service-list">
           <li>הדרכות Excel ו-Power BI</li>
@@ -762,6 +799,33 @@
           <li>עדכון כלים לפי שינויים</li>
         </ul>
       </article>
+
+      <!-- FEATURED: Managed Service -->
+      <article class="service-card featured fade-in">
+        <span class="featured-badge">✨ שירות מנוהל — חדש</span>
+        <div class="service-icon">🎯</div>
+        <h3>בקרה חודשית מנוהלת — הצוות עובד, אתם מקבלים דוח</h3>
+        <p>
+          אנחנו מפעילים את הבקרות במקומכם: דגימת מסמכי גיבוי לאימות נתוני הספק, הרצת הבקרות האוטומטיות, וניתוח הממצאים — אתם מקבלים כל חודש דוח חריגות מוכן לפעולה ודוח SLA. <strong style="color:var(--accent);">הכל במחיר חודשי קבוע ומוזל — בזכות האוטומציה.</strong>
+        </p>
+        <div class="featured-body">
+          <ul class="service-list">
+            <li>הפעלת בקרות אוטומטיות על נתוני הספק</li>
+            <li>דגימת מסמכי גיבוי לאימות הדיווחים</li>
+            <li>חישוב SLA ואיתור סטיות מהחוזה</li>
+          </ul>
+          <ul class="service-list">
+            <li>דוח חריגות חודשי מוכן לפעולה</li>
+            <li>מחיר מוזל משמעותית בזכות האוטומציה</li>
+            <li>ללא עלות גיוס מומחה פנימי</li>
+          </ul>
+        </div>
+        <div class="featured-cta">
+          <a href="#cta" class="btn-featured">קבלו הצעת מחיר ←</a>
+          <span class="featured-price">מחיר חודשי קבוע | מוזל בזכות החיסכון בשעות עבודה</span>
+        </div>
+      </article>
+
     </div>
   </div>
 </section>
@@ -921,3 +985,4 @@
 </script>
 </body>
 </html>
+
