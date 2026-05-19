@@ -2,7 +2,15 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>בדיקת דוחות תשומות — קנדל BI</title>
+<title>בדיקת דוחות תשומות שעות — קנדל BI</title>
+<meta name="description" content="בדיקת דוחות תשומות שעות קבלנים: חפיפות שעות, תעריפים לפי רמה, שבתות וחגים, דשבורד חודשי להשוואת מגמות. כלי ייצוא לאקסל לביקורת רכש ציבורי."/>
+<meta name="keywords" content="בדיקת דוחות תשומות, ביקורת שעות קבלן, חפיפות שעות, תעריפי שעות לפי רמה, רכש ציבורי ביקורת"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-hours-audit.html"/>
+<meta property="og:title" content="בדיקת דוחות תשומות שעות — קנדל BI"/>
+<meta property="og:description" content="בדיקת דוחות תשומות: חפיפות, תעריפים לפי רמה, שבתות וחגים, דשבורד חודשי. ייצוא לאקסל."/>
+<meta property="og:url" content="https://kandelbi.org/tool-hours-audit.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
@@ -269,13 +277,20 @@ function timeToMin(v){
 
 function fmtMin(m){
   if(m<0) return '--';
-  return Math.floor(m/60)+':'+String(Math.round(m%60)).padStart(2,'0');
+  const t=Math.round(m);
+  return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
+}
+
+function excelToDate(v){
+  if(typeof v==='number' && v>1)
+    return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
+  return new Date(v);
 }
 
 function getDateKey(v){
   try{
     if(!v) return '';
-    const d=new Date(v);
+    const d=excelToDate(v);
     if(!isNaN(d)) return d.toLocaleDateString('he-IL');
     return String(v);
   }catch{return String(v);}
@@ -283,14 +298,14 @@ function getDateKey(v){
 
 function getMonthKey(v){
   try{
-    const d=new Date(v);
+    const d=excelToDate(v);
     if(!isNaN(d)) return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     return String(v).slice(0,7);
   }catch{return '';}
 }
 
 function isShabbat(v){
-  try{const d=new Date(v);return !isNaN(d)&&d.getDay()===6;}catch{return false;}
+  try{const d=excelToDate(v);return !isNaN(d)&&d.getDay()===6;}catch{return false;}
 }
 
 // ── MAIN AUDIT ──

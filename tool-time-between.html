@@ -2,7 +2,15 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>זמן בין אירועים — קנדל BI</title>
+<title>חישוב זמן בין פעולות לכל עובד — זיהוי חריגות — קנדל BI</title>
+<meta name="description" content="חשב את הזמן שעבר בין פעולות עוקבות של כל עובד/משתמש. מאתר פעולות חשודות המבוצעות מהר מדי. מחזיר את הטבלה המקורית עם עמודת זמן — ייצוא לאקסל."/>
+<meta name="keywords" content="ניתוח לוג מערכת, זמן עיבוד עסקאות, חריגות זמן פעולה, בדיקת קצב עבודה עובדים, ניתוח יומן פעולות"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-time-between.html"/>
+<meta property="og:title" content="חישוב זמן בין פעולות — זיהוי חריגות — קנדל BI"/>
+<meta property="og:description" content="חשב זמן בין פעולות עוקבות לכל עובד. מאתר פעולות מהירות מדי. מחזיר הטבלה המקורית + עמודת זמן."/>
+<meta property="og:url" content="https://kandelbi.org/tool-time-between.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
@@ -47,7 +55,9 @@ th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weig
 td{padding:7px 12px;border-bottom:1px solid var(--border)}
 tr:hover td{background:var(--bg)}
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
-.b-fast{background:#edf7f3;color:var(--green)}.b-normal{background:#eef3fb;color:var(--blue)}.b-slow{background:#fff3e0;color:var(--orange)}.b-very-slow{background:#fef2f2;color:var(--red)}
+.b-fast{background:#fef2f2;color:var(--red)}.b-normal{background:#eef3fb;color:var(--blue)}
+tr.row-fast td{background:#fff8f8}
+tr.row-fast:hover td{background:#ffe8e8}
 .time-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:3px;max-width:120px}
 .time-fill{height:100%;border-radius:3px;background:var(--blue)}
 .hidden{display:none}
@@ -66,9 +76,9 @@ tr:hover td{background:var(--bg)}
   <div class="inst-title">📖 הוראות שימוש</div>
   <div class="inst-steps">
     <div class="inst-step"><div class="inst-num">1</div><span>העלה פלט מהמערכת התפעולית — קובץ לוג / יומן פעולות (כל שורה = פעולה עם חותמת זמן)</span></div>
-    <div class="inst-step"><div class="inst-num">2</div><span>בחר עמודות: מזהה עובד, חותמת זמן, ואופציונלית — סוג פעולה / מזהה עסקה</span></div>
-    <div class="inst-step"><div class="inst-num">3</div><span>הכלי ממיין לפי עובד ותאריך ומחשב את הזמן שעבר בין כל שורה לקודמת של אותו עובד</span></div>
-    <div class="inst-step"><div class="inst-num">4</div><span>סמן סף זמן מינימלי ומקסימלי לחיפוש חריגות — לדוגמה: פחות מ-30 שניות לעסקה = חשוד</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>בחר עמודת מזהה עובד ועמודת חותמת זמן</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>הכלי ממיין לפי עובד ותאריך, מחשב זמן בין שורה לקודמת — ומחזיר את כל הטבלה עם עמודת זמן נוספת</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>הגדר סף זמן קצר מדי (שניות) — שורות מתחת לסף יסומנו כחשודות</span></div>
   </div>
 </div>
 
@@ -87,15 +97,17 @@ tr:hover td{background:var(--bg)}
   <div class="grid2">
     <div class="form-group"><label>עמודת מזהה עובד / משתמש:</label><select id="col-emp"></select></div>
     <div class="form-group"><label>עמודת חותמת זמן (תאריך + שעה):</label><select id="col-ts"></select></div>
-    <div class="form-group"><label>עמודת סוג פעולה (אופציונלי):</label><select id="col-action"><option value="-1">— לא רלוונטי —</option></select></div>
-    <div class="form-group"><label>עמודת מזהה עסקה (אופציונלי):</label><select id="col-tx"><option value="-1">— לא רלוונטי —</option></select></div>
   </div>
   <div class="card" style="background:var(--bg);border:1px solid var(--border);padding:1rem;margin-top:0.5rem">
     <div style="font-weight:700;margin-bottom:0.8rem;font-size:0.9rem">🚩 סימון חריגות זמן</div>
-    <div class="grid2">
-      <div class="form-group"><label>זמן קצר מדי — חשוד (שניות):</label><input type="number" id="thresh-fast" value="30" min="0"/></div>
-      <div class="form-group"><label>זמן ארוך מדי — חשוד (דקות):</label><input type="number" id="thresh-slow" value="60" min="0"/></div>
+    <div class="form-group" style="max-width:280px">
+      <label>זמן קצר מדי — חשוד (שניות): <span style="font-weight:400;color:var(--muted)">(ריק = ללא סף)</span></label>
+      <input type="number" id="thresh-fast" placeholder="לדוגמה: 30" min="0"/>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--text);margin-top:4px">
+      <input type="checkbox" id="only-fast" style="accent-color:var(--red);width:16px;height:16px;flex-shrink:0"/>
+      הצג ויצא לאקסל רק שורות עם זמן קצר מדי
+    </label>
   </div>
   <button class="btn-primary" onclick="runAnalysis()">⏱️ חשב זמנים</button>
 </div>
@@ -106,18 +118,16 @@ tr:hover td{background:var(--bg)}
     <div class="sum-item"><span class="sum-val" id="cnt-rows">0</span><span class="sum-lbl">שורות</span></div>
     <div class="sum-item"><span class="sum-val" id="cnt-emp">0</span><span class="sum-lbl">עובדים</span></div>
     <div class="sum-item"><span class="sum-val" id="avg-time">—</span><span class="sum-lbl">זמן ממוצע</span></div>
-    <div class="sum-item"><span class="sum-val" id="cnt-fast" style="color:var(--red)">0</span><span class="sum-lbl">מהירים מדי</span></div>
-    <div class="sum-item"><span class="sum-val" id="cnt-slow" style="color:var(--orange)">0</span><span class="sum-lbl">איטיים מדי</span></div>
+    <div class="sum-item"><span class="sum-val" id="cnt-fast" style="color:var(--red)">0</span><span class="sum-lbl">מהירים מדי ⚡</span></div>
   </div>
-  <div class="filter-tabs">
+  <div class="filter-tabs" id="filter-tabs">
     <button class="ftab active" onclick="filterR('all',this)">הכל</button>
     <button class="ftab" onclick="filterR('fast',this)">מהיר מדי ⚡</button>
-    <button class="ftab" onclick="filterR('slow',this)">איטי מדי 🐢</button>
     <button class="ftab" onclick="filterR('normal',this)">תקין</button>
   </div>
   <div class="result-table-wrap">
     <table>
-      <thead><tr><th>עובד</th><th>חותמת זמן</th><th>זמן מהשורה הקודמת</th><th>פעולה</th><th>מזהה עסקה</th><th>סטטוס</th></tr></thead>
+      <thead id="result-head"><tr></tr></thead>
       <tbody id="result-body"></tbody>
     </table>
   </div>
@@ -145,10 +155,7 @@ function loadFile(file){
     dz.querySelector('.ub-icon').textContent='✅';
     dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.length+' שורות)';
     const opts=headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
-    ['col-emp','col-ts','col-action','col-tx'].forEach(id=>{
-      const el=document.getElementById(id);
-      el.innerHTML=(id==='col-action'||id==='col-tx'?'<option value="-1">— לא רלוונטי —</option>':'')+opts;
-    });
+    ['col-emp','col-ts'].forEach(id=>{ document.getElementById(id).innerHTML=opts; });
     autoGuess();
     document.getElementById('config-card').classList.remove('hidden');
   };
@@ -187,15 +194,14 @@ function fmtDuration(ms){
 function runAnalysis(){
   const ci=parseInt(document.getElementById('col-emp').value);
   const ct=parseInt(document.getElementById('col-ts').value);
-  const ca=parseInt(document.getElementById('col-action').value);
-  const cx=parseInt(document.getElementById('col-tx').value);
-  const thFast=parseInt(document.getElementById('thresh-fast').value)*1000;
-  const thSlow=parseInt(document.getElementById('thresh-slow').value)*60*1000;
+  const thVal=parseFloat(document.getElementById('thresh-fast').value);
+  const thFast=(!isNaN(thVal)&&thVal>0)?thVal*1000:Infinity;
+  const onlyFast=document.getElementById('only-fast').checked;
 
-  // קיבוץ לפי עובד וממיין לפי זמן
+  // קיבוץ לפי עובד, ממיין לפי זמן
   const groups={};
   rawData.forEach((row,idx)=>{
-    const emp=row[ci]||'(לא ידוע)';
+    const emp=String(row[ci]||'(לא ידוע)');
     if(!groups[emp]) groups[emp]=[];
     groups[emp].push({row,idx,ts:parseDateTime(row[ct])});
   });
@@ -207,41 +213,46 @@ function runAnalysis(){
       const prev=entries[i-1];
       const diff=prev&&e.ts&&prev.ts?e.ts-prev.ts:null;
       let status='first';
-      if(diff!==null){
-        if(diff<thFast) status='fast';
-        else if(diff>thSlow) status='slow';
-        else status='normal';
-      }
-      allResults.push({emp,ts:e.row[ct],diff,status,action:ca>=0?e.row[ca]:'',tx:cx>=0?e.row[cx]:''});
+      if(diff!==null){ status=(thFast<Infinity&&diff<thFast)?'fast':'normal'; }
+      allResults.push({row:e.row, diff, status});
     });
   });
 
   const withDiff=allResults.filter(r=>r.diff!==null);
   const avgMs=withDiff.length?withDiff.reduce((s,r)=>s+r.diff,0)/withDiff.length:0;
+  const fastCount=allResults.filter(r=>r.status==='fast').length;
   document.getElementById('cnt-rows').textContent=allResults.length;
   document.getElementById('cnt-emp').textContent=Object.keys(groups).length;
   document.getElementById('avg-time').textContent=fmtDuration(avgMs);
-  document.getElementById('cnt-fast').textContent=allResults.filter(r=>r.status==='fast').length;
-  document.getElementById('cnt-slow').textContent=allResults.filter(r=>r.status==='slow').length;
+  document.getElementById('cnt-fast').textContent=thFast<Infinity?fastCount:'—';
 
-  renderResults(allResults);
+  // הצג/הסתר טאבי סינון לפי מצב
+  const tabsEl=document.getElementById('filter-tabs');
+  tabsEl.style.display=(onlyFast||thFast===Infinity)?'none':'flex';
+
+  // בנה כותרת דינמית: כל עמודות המקור + זמן + סטטוס
+  document.getElementById('result-head').innerHTML='<tr>'+
+    headers.map(h=>'<th>'+h+'</th>').join('')+
+    '<th>זמן מהפעולה הקודמת</th>'+(thFast<Infinity?'<th>סטטוס</th>':'')+'</tr>';
+
+  const displayData=onlyFast?allResults.filter(r=>r.status==='fast'):allResults;
+  renderResults(displayData);
   document.getElementById('results-card').classList.remove('hidden');
 }
 
 function renderResults(data){
+  const thVal=parseFloat(document.getElementById('thresh-fast').value);
+  const hasThresh=(!isNaN(thVal)&&thVal>0);
   const maxDiff=Math.max(...data.filter(r=>r.diff).map(r=>r.diff),1);
   document.getElementById('result-body').innerHTML=data.map(r=>{
-    const badgeCls=r.status==='fast'?'b-fast':r.status==='slow'?'b-very-slow':r.status==='first'?'b-normal':'b-normal';
-    const badgeTxt=r.status==='fast'?'⚡ מהיר מדי':r.status==='slow'?'🐢 איטי מדי':r.status==='first'?'ראשון':'✓ תקין';
+    const isFast=r.status==='fast';
+    const badgeCls=isFast?'b-fast':'b-normal';
+    const badgeTxt=isFast?'⚡ מהיר מדי':r.status==='first'?'ראשון':'✓ תקין';
     const pct=r.diff?Math.min(100,r.diff/maxDiff*100):0;
-    return `<tr>
-      <td><strong>${r.emp}</strong></td>
-      <td>${r.ts||''}</td>
-      <td>${fmtDuration(r.diff)}<div class="time-bar"><div class="time-fill" style="width:${pct}%"></div></div></td>
-      <td>${r.action}</td>
-      <td>${r.tx}</td>
-      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
-    </tr>`;
+    const origCells=headers.map((_,i)=>'<td>'+(r.row[i]??'')+'</td>').join('');
+    const timeCell='<td style="'+(isFast?'color:var(--red);font-weight:700':'')+'">'+fmtDuration(r.diff)+'<div class="time-bar"><div class="time-fill" style="width:'+pct+'%;background:'+(isFast?'var(--red)':'var(--blue)')+'"></div></div></td>';
+    const statusCell=hasThresh?'<td><span class="badge '+badgeCls+'">'+badgeTxt+'</span></td>':'';
+    return '<tr class="'+(isFast?'row-fast':'')+'">'+origCells+timeCell+statusCell+'</tr>';
   }).join('');
 }
 
@@ -252,11 +263,18 @@ function filterR(type,btn){
 }
 
 function exportResults(){
-  const rows=[['עובד','חותמת זמן','זמן מהפעולה הקודמת','פעולה','מזהה עסקה','סטטוס'],
-    ...allResults.map(r=>[r.emp,r.ts,fmtDuration(r.diff),r.action,r.tx,
-      r.status==='fast'?'מהיר מדי':r.status==='slow'?'איטי מדי':r.status==='first'?'ראשון':'תקין'])];
+  const thVal=parseFloat(document.getElementById('thresh-fast').value);
+  const hasThresh=(!isNaN(thVal)&&thVal>0);
+  const onlyFast=document.getElementById('only-fast').checked;
+  const exportData=onlyFast?allResults.filter(r=>r.status==='fast'):allResults;
+  const headerRow=[...headers,'זמן מהפעולה הקודמת',...(hasThresh?['סטטוס']:[])];
+  const dataRows=exportData.map(r=>[
+    ...headers.map((_,i)=>r.row[i]??''),
+    fmtDuration(r.diff),
+    ...(hasThresh?[r.status==='fast'?'מהיר מדי':r.status==='first'?'ראשון':'תקין']:[])
+  ]);
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'זמני עיבוד');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([headerRow,...dataRows]),'זמני עיבוד');
   XLSX.writeFile(wb,'זמן_בין_אירועים.xlsx');
 }
 </script>

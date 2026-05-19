@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>איחוד קבצי אקסל לקובץ אחד — קנדל BI</title>
+<meta name="description" content="אחד מספר קבצי אקסל עם מבנה זהה לקובץ אחד — לדוגמה קובץ לכל חודש. מוסיף עמודת מקור לכל שורה. תומך בריבוי קבצים בו-זמנית ומטפל חכם בהבדלי מבנה."/>
+<meta name="keywords" content="איחוד קבצי אקסל, מיזוג קבצים לקובץ אחד, אחד קבצים חודשיים, ריבוי קבצים אקסל, append קבצי אקסל"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-merge-files.html"/>
+<meta property="og:title" content="איחוד קבצי אקסל לקובץ אחד — קנדל BI"/>
+<meta property="og:description" content="אחד קבצי אקסל חודשיים לקובץ אחד. מוסיף עמודת מקור לכל שורה. עובד בדפדפן."/>
+<meta property="og:url" content="https://kandelbi.org/tool-merge-files.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+
+/* Upload */
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover,.upload-box.drag{border-color:var(--blue);background:#eef3fb}
+.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:2rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+
+/* File chips */
+.files-list{margin-top:1rem;display:flex;flex-direction:column;gap:6px}
+.file-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-size:0.84rem;transition:border-color 0.15s}
+.file-chip.warn{border-color:var(--orange);background:#fff8f0}
+.fc-icon{font-size:1rem;flex-shrink:0}
+.fc-name{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-rows{color:var(--muted);font-size:0.76rem;flex-shrink:0}
+.fc-warn{color:var(--orange);font-size:0.76rem;flex-shrink:0;font-weight:600}
+.fc-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:0 2px;line-height:1;flex-shrink:0}
+.fc-remove:hover{color:var(--red)}
+
+/* Form */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select,.form-group input[type=text]{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+
+/* Prefs banner */
+.prefs-banner{background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.prefs-banner.hidden{display:none}
+.pb-text{flex:1;font-size:0.85rem;font-weight:600;color:var(--navy)}
+.pb-date{font-size:0.78rem;color:var(--muted);font-weight:400}
+.pb-apply{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:7px;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer}
+.pb-clear{background:none;border:1px solid var(--border);padding:6px 12px;border-radius:7px;font-family:inherit;font-size:0.82rem;color:var(--muted);cursor:pointer}
+
+/* Alert */
+.alert-box{border-radius:10px;padding:12px 16px;margin-bottom:1rem;font-size:0.85rem;line-height:1.6}
+.alert-warn{background:#fff8f0;border:1px solid #f5c87a;color:#7a4500}
+.alert-ok{background:#edf7f3;border:1px solid #b2ddd0;color:var(--green)}
+.alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue)}
+
+/* Summary */
+.summary-bar{display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.sum-item{flex:1;min-width:100px;background:var(--bg);border-radius:10px;padding:10px 12px;text-align:center;border:1px solid var(--border)}
+.sum-val{font-weight:900;font-size:1.4rem;color:var(--navy);display:block;line-height:1}
+.sum-lbl{font-size:0.7rem;color:var(--muted);margin-top:3px;display:block}
+
+/* Table */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:380px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1}
+th.source-col{background:var(--accent);color:var(--navy)}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg)}
+td.source-cell{font-weight:700;color:var(--blue);font-size:0.78rem;white-space:nowrap}
+
+/* Buttons */
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+.btn-row{display:flex;gap:0.8rem;flex-wrap:wrap;align-items:center;margin-top:1.2rem}
+
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+<div class="tool-title">🗂️ איחוד קבצי אקסל</div>
+<div class="tool-sub">מאחד מספר קבצים עם מבנה זהה לקובץ אחד — ומוסיף עמודה שמציינת מאיזה קובץ הגיעה כל שורה</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה את כל הקבצים שרוצים לאחד (לדוגמה: ינואר, פברואר, מרץ...)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>הגדר את שם עמודת המקור — הכלי יוסיף אותה לכל שורה עם שם הקובץ שממנו הגיעה</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>אם מבנה הקבצים שונה — הכלי יתריע ויאחד בצורה חכמה לפי שמות עמודות</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>קבל קובץ מאוחד אחד מוכן לעבודה</span></div>
+  </div>
+</div>
+
+<!-- Upload -->
+<div class="card">
+  <div class="card-title">📂 טעינת קבצים לאיחוד</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📁</div>
+    <div class="ub-text">לחץ לבחירת קבצים, או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv · ניתן לבחור מספר קבצים בו-זמנית</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
+  <div class="files-list hidden" id="files-list"></div>
+</div>
+
+<!-- Config -->
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרות איחוד</div>
+
+  <div class="prefs-banner hidden" id="prefs-banner">
+    <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
+    <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
+    <button class="pb-clear" onclick="clearPrefs()">מחק</button>
+  </div>
+
+  <div id="header-status"></div>
+
+  <div class="grid2">
+    <div class="form-group">
+      <label>שם עמודת המקור:</label>
+      <input type="text" id="source-col-name" value="מקור" placeholder="לדוגמה: חודש, קובץ, מקור"/>
+    </div>
+    <div class="form-group">
+      <label>מיקום עמודת המקור:</label>
+      <select id="source-col-pos">
+        <option value="first">עמודה ראשונה</option>
+        <option value="last">עמודה אחרונה</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>ערך בעמודת המקור:</label>
+    <select id="source-val-type">
+      <option value="noext">שם קובץ ללא סיומת (מומלץ)</option>
+      <option value="full">שם קובץ מלא</option>
+    </select>
+  </div>
+
+  <button class="btn-primary" onclick="buildMerge()">🗂️ אחד קבצים</button>
+</div>
+
+<!-- Results -->
+<div class="card hidden" id="results-card">
+  <div class="card-title">📊 תוצאת האיחוד</div>
+  <div class="summary-bar" id="summary-bar"></div>
+  <div class="table-wrap" id="preview-table"></div>
+  <div class="btn-row">
+    <button class="btn-accent" onclick="exportMerged()">⬇ ייצוא לאקסל</button>
+    <span style="font-size:0.8rem;color:var(--muted)" id="preview-note"></span>
+  </div>
+</div>
+
+</main>
+<script>
+let filesData = []; // [{name, headers, rawData}]
+let mergedResult = null; // {headers, rows}
+const MERGE_PREFS_KEY = 'kandelbi_merge_prefs_v1';
+
+// ── Upload ──
+document.getElementById('fi').addEventListener('change', e => loadFiles(e.target.files));
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); loadFiles(e.dataTransfer.files); });
+
+function loadFiles(fileList) {
+  if (!fileList || !fileList.length) return;
+  const arr = Array.from(fileList).filter(f => /\.(xlsx|xls|csv)$/i.test(f.name));
+  if (!arr.length) return;
+  // Append to existing list
+  const startIdx = filesData.length;
+  arr.forEach((file, i) => {
+    filesData.push(null); // placeholder
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      const headers = (rows[0] || []).map(h => String(h || '').trim());
+      const rawData = rows.slice(1).filter(r => r.some(c => c !== ''));
+      filesData[startIdx + i] = { name: file.name, headers, rawData };
+      if (filesData.every(Boolean)) onFilesLoaded();
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function removeFile(idx) {
+  filesData.splice(idx, 1);
+  if (!filesData.length) {
+    document.getElementById('files-list').classList.add('hidden');
+    document.getElementById('config-card').classList.add('hidden');
+    document.getElementById('results-card').classList.add('hidden');
+    dz.classList.remove('loaded');
+    dz.querySelector('.ub-icon').textContent = '📁';
+    dz.querySelector('.ub-text').textContent = 'לחץ לבחירת קבצים, או גרור לכאן';
+    return;
+  }
+  onFilesLoaded();
+}
+
+function onFilesLoaded() {
+  filesData = filesData.filter(Boolean);
+  renderFilesList();
+  checkHeaders();
+  showPrefsBanner();
+  dz.classList.add('loaded');
+  dz.querySelector('.ub-icon').textContent = '✅';
+  dz.querySelector('.ub-text').textContent = filesData.length + ' קבצים נטענו — לחץ להוספת עוד';
+  document.getElementById('config-card').classList.remove('hidden');
+}
+
+function renderFilesList() {
+  const fl = document.getElementById('files-list');
+  fl.classList.remove('hidden');
+  const baseHeaders = JSON.stringify(filesData[0]?.headers || []);
+  fl.innerHTML = filesData.map((fd, i) => {
+    const mismatch = JSON.stringify(fd.headers) !== baseHeaders;
+    return `<div class="file-chip ${mismatch ? 'warn' : ''}">
+      <span class="fc-icon">📄</span>
+      <span class="fc-name" title="${fd.name}">${fd.name}</span>
+      <span class="fc-rows">${fd.rawData.length.toLocaleString('he')} שורות · ${fd.headers.length} עמודות</span>
+      ${mismatch ? '<span class="fc-warn">⚠️ מבנה שונה</span>' : ''}
+      <button class="fc-remove" onclick="removeFile(${i})" title="הסר קובץ">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function checkHeaders() {
+  const statusEl = document.getElementById('header-status');
+  if (filesData.length < 2) { statusEl.innerHTML = ''; return; }
+  const base = JSON.stringify(filesData[0].headers);
+  const mismatches = filesData.slice(1).filter(f => JSON.stringify(f.headers) !== base);
+  if (!mismatches.length) {
+    statusEl.innerHTML = '<div class="alert-box alert-ok">✅ מבנה זהה בכל הקבצים — האיחוד יהיה מושלם</div>';
+  } else {
+    const names = mismatches.map(f => f.name).join('، ');
+    statusEl.innerHTML = `<div class="alert-box alert-warn">⚠️ מבנה שונה בקבצים: <strong>${names}</strong><br>הכלי יאחד לפי שמות עמודות — עמודות שלא קיימות בקובץ מסוים יישארו ריקות באותן שורות</div>`;
+  }
+}
+
+// ── Merge logic ──
+function buildMerge() {
+  savePrefs();
+  const sourceColName = document.getElementById('source-col-name').value.trim() || 'מקור';
+  const sourcePos = document.getElementById('source-col-pos').value;
+  const sourceValType = document.getElementById('source-val-type').value;
+
+  // Collect all unique headers (preserving first-file order, then appending extras)
+  const allHeaders = [];
+  const headerSet = new Set();
+  filesData.forEach(fd => {
+    fd.headers.forEach(h => {
+      if (!headerSet.has(h)) { headerSet.add(h); allHeaders.push(h); }
+    });
+  });
+
+  const finalHeaders = sourcePos === 'first'
+    ? [sourceColName, ...allHeaders]
+    : [...allHeaders, sourceColName];
+
+  const rows = [];
+  filesData.forEach(fd => {
+    const srcVal = sourceValType === 'noext' ? fd.name.replace(/\.[^.]+$/, '') : fd.name;
+    fd.rawData.forEach(row => {
+      const newRow = [];
+      if (sourcePos === 'first') newRow.push(srcVal);
+      allHeaders.forEach(h => {
+        const idx = fd.headers.indexOf(h);
+        newRow.push(idx >= 0 ? row[idx] : '');
+      });
+      if (sourcePos === 'last') newRow.push(srcVal);
+      rows.push(newRow);
+    });
+  });
+
+  mergedResult = { headers: finalHeaders, rows, sourceColName, sourcePos };
+  renderResults();
+  document.getElementById('results-card').classList.remove('hidden');
+  setTimeout(() => document.getElementById('results-card').scrollIntoView({ behavior: 'smooth' }), 100);
+}
+
+function renderResults() {
+  const { headers, rows, sourceColName, sourcePos } = mergedResult;
+  const sourceIdx = sourcePos === 'first' ? 0 : headers.length - 1;
+
+  // Summary
+  const totalRows = rows.length;
+  const filesCount = filesData.length;
+  document.getElementById('summary-bar').innerHTML =
+    `<div class="sum-item"><span class="sum-val">${filesCount}</span><span class="sum-lbl">קבצים אוחדו</span></div>` +
+    `<div class="sum-item"><span class="sum-val">${totalRows.toLocaleString('he')}</span><span class="sum-lbl">שורות סה"כ</span></div>` +
+    `<div class="sum-item"><span class="sum-val">${headers.length}</span><span class="sum-lbl">עמודות</span></div>`;
+
+  // Preview table (first 100 rows)
+  const previewRows = rows.slice(0, 100);
+  const thead = '<thead><tr>' + headers.map((h, i) =>
+    `<th${i === sourceIdx ? ' class="source-col"' : ''}>${h}</th>`
+  ).join('') + '</tr></thead>';
+  const tbody = '<tbody>' + previewRows.map(row =>
+    '<tr>' + row.map((cell, i) =>
+      `<td${i === sourceIdx ? ' class="source-cell"' : ''}>${cell ?? ''}</td>`
+    ).join('') + '</tr>'
+  ).join('') + '</tbody>';
+  document.getElementById('preview-table').innerHTML = '<table>' + thead + tbody + '</table>';
+  document.getElementById('preview-note').textContent =
+    rows.length > 100 ? `מוצגות 100 שורות ראשונות מתוך ${rows.length.toLocaleString('he')}` : '';
+}
+
+// ── Export ──
+function exportMerged() {
+  const { headers, rows } = mergedResult;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...rows]), 'מאוחד');
+  XLSX.writeFile(wb, 'קבצים_מאוחדים.xlsx');
+}
+
+// ── Saved prefs ──
+function savePrefs() {
+  const prefs = {
+    sourceColName: document.getElementById('source-col-name').value.trim() || 'מקור',
+    sourcePos: document.getElementById('source-col-pos').value,
+    sourceValType: document.getElementById('source-val-type').value,
+    savedAt: new Date().toLocaleDateString('he-IL')
+  };
+  localStorage.setItem(MERGE_PREFS_KEY, JSON.stringify(prefs));
+}
+
+function loadPrefs() { try { return JSON.parse(localStorage.getItem(MERGE_PREFS_KEY)); } catch { return null; } }
+
+function showPrefsBanner() {
+  const p = loadPrefs();
+  const banner = document.getElementById('prefs-banner');
+  if (p) { document.getElementById('prefs-date').textContent = '(' + p.savedAt + ')'; banner.classList.remove('hidden'); }
+  else banner.classList.add('hidden');
+}
+
+function applyPrefs() {
+  const p = loadPrefs(); if (!p) return;
+  document.getElementById('source-col-name').value = p.sourceColName || 'מקור';
+  document.getElementById('source-col-pos').value = p.sourcePos || 'first';
+  document.getElementById('source-val-type').value = p.sourceValType || 'noext';
+}
+
+function clearPrefs() {
+  localStorage.removeItem(MERGE_PREFS_KEY);
+  document.getElementById('prefs-banner').classList.add('hidden');
+}
+</script>
+</body>
+</html>

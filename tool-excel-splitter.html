@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>מפצל וממיין אקסל — קנדל BI</title>
+<title>פיצול קובץ אקסל גדול לפי תאריך, עמודה או שורות — קנדל BI</title>
+<meta name="description" content="פצל קובץ אקסל כבד לקבצים קטנים לפי תאריך, ערך בעמודה או מספר שורות. בחר עמודות רלוונטיות. עובד בדפדפן ללא העלאה לאינטרנט — גם על קבצים של מאות אלפי שורות."/>
+<meta name="keywords" content="פיצול קובץ אקסל, קובץ אקסל גדול כבד, חיתוך אקסל לפי תאריך, לפצל אקסל, קובץ אקסל תוקע מחשב"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-excel-splitter.html"/>
+<meta property="og:title" content="פיצול קובץ אקסל גדול — קנדל BI"/>
+<meta property="og:description" content="פצל קובץ אקסל כבד לקבצים קטנים לפי תאריך, עמודה או שורות. עובד בדפדפן."/>
+<meta property="og:url" content="https://kandelbi.org/tool-excel-splitter.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
@@ -131,6 +139,14 @@ tr:hover td{background:var(--bg);}
 .alert-warn{background:#fff8ed;border:1px solid #f5d48a;color:#b87400;}
 .alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue);}
 
+/* PREFS BANNER */
+.prefs-banner{background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:10px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.prefs-banner.hidden{display:none;}
+.pb-text{flex:1;font-size:0.85rem;font-weight:600;color:var(--navy);}
+.pb-date{font-size:0.78rem;color:var(--muted);font-weight:400;}
+.pb-apply{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:7px;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer;}
+.pb-clear{background:none;border:1px solid var(--border);padding:6px 12px;border-radius:7px;font-family:inherit;font-size:0.82rem;color:var(--muted);cursor:pointer;}
+
 /* STAT BAR */
 .stat-bar{display:flex;gap:1.5rem;flex-wrap:wrap;padding:1rem 1.2rem;background:var(--bg);border-radius:10px;margin-bottom:1.2rem;}
 .stat-item{text-align:center;}
@@ -205,6 +221,11 @@ tr:hover td{background:var(--bg);}
   <div class="section" id="sec2">
     <div class="card">
       <div class="card-title">🗂️ בחירת עמודות לשמירה</div>
+      <div class="prefs-banner hidden" id="prefs-banner">
+        <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
+        <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
+        <button class="pb-clear" onclick="clearPrefs()">מחק</button>
+      </div>
       <div class="alert alert-info show">סמן את העמודות שתרצה לכלול בקובץ הפלט. עמודות לא מסומנות — יימחקו.</div>
       <div class="cols-header">
         <span style="font-size:0.85rem;color:var(--muted);">נמצאו <strong id="col-count">0</strong> עמודות</span>
@@ -304,6 +325,47 @@ tr:hover td{background:var(--bg);}
 <script>
 let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
 let _dateColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
+let _pendingOutputPrefs = null;
+
+// ── הגדרות שמורות ──
+const SPLITTER_PREFS_KEY = 'kandelbi_splitter_prefs_v1';
+
+function saveSplitterPrefs() {
+  const selColNames = [...selectedCols].map(i => String(headers[i]||'')).filter(Boolean);
+  const outputMode = document.getElementById('output-mode').value;
+  const sbcEl = document.getElementById('split-by-col');
+  const sbdEl = document.getElementById('split-by-date-col');
+  const prefs = {
+    selectedColNames: selColNames,
+    outputMode,
+    splitByColName: sbcEl.options[sbcEl.selectedIndex]?.text || '',
+    splitByDateColName: sbdEl.options[sbdEl.selectedIndex]?.text || '',
+    splitByPeriod: document.getElementById('split-by-period').value,
+    rowsPerFile: document.getElementById('rows-per-file').value,
+    savedAt: new Date().toLocaleDateString('he-IL')
+  };
+  localStorage.setItem(SPLITTER_PREFS_KEY, JSON.stringify(prefs));
+}
+
+function loadSplitterPrefs() { try { return JSON.parse(localStorage.getItem(SPLITTER_PREFS_KEY)); } catch { return null; } }
+
+function showPrefsBanner() {
+  const p = loadSplitterPrefs();
+  const banner = document.getElementById('prefs-banner');
+  if (p) { document.getElementById('prefs-date').textContent = '(' + p.savedAt + ')'; banner.classList.remove('hidden'); }
+  else banner.classList.add('hidden');
+}
+
+function applyPrefs() {
+  const p = loadSplitterPrefs(); if (!p) return;
+  const nameSet = new Set(p.selectedColNames);
+  const newSel = new Set(headers.map((h,i) => nameSet.has(String(h||'')) ? i : -1).filter(i => i >= 0));
+  if (newSel.size) selectedCols = newSel;
+  buildColumnsUI();
+  _pendingOutputPrefs = p;
+}
+
+function clearPrefs() { localStorage.removeItem(SPLITTER_PREFS_KEY); document.getElementById('prefs-banner').classList.add('hidden'); }
 
 // ══ DRAG & DROP ══
 const dz = document.getElementById('drop-zone');
@@ -407,6 +469,7 @@ function buildColumnsUI() {
   }).join('');
 
   buildPreview();
+  showPrefsBanner();
 }
 
 function isDateCol(colIdx) {
@@ -499,6 +562,28 @@ function buildSplitUI() {
   const rowsInput = document.getElementById('rows-per-file');
   rowsInput.replaceWith(rowsInput.cloneNode(true));
   document.getElementById('rows-per-file').addEventListener('input', updateEstRows);
+
+  // החל הגדרות שמורות לפלט (אם הוחלו מ-applyPrefs)
+  if (_pendingOutputPrefs) {
+    const p = _pendingOutputPrefs;
+    document.getElementById('output-mode').value = p.outputMode || 'one';
+    toggleSplitBy();
+    if (p.outputMode === 'split-col' && p.splitByColName) {
+      const sel = document.getElementById('split-by-col');
+      for (const o of sel.options) { if (o.textContent === p.splitByColName) { sel.value = o.value; break; } }
+    }
+    if (p.outputMode === 'split-date') {
+      if (p.splitByDateColName) {
+        const sel = document.getElementById('split-by-date-col');
+        for (const o of sel.options) { if (o.textContent === p.splitByDateColName) { sel.value = o.value; break; } }
+      }
+      document.getElementById('split-by-period').value = p.splitByPeriod || 'month';
+    }
+    if (p.outputMode === 'split-rows' && p.rowsPerFile) {
+      document.getElementById('rows-per-file').value = p.rowsPerFile;
+    }
+    _pendingOutputPrefs = null;
+  }
 
   // הצג placeholder קל — הפילטר הכבד נבנה אחרי שהמסך מתרענן
   document.getElementById('filters-container').innerHTML =
@@ -728,6 +813,7 @@ function updateEstRows() {
 
 // ══ PROCESS ══
 async function processFile() {
+  saveSplitterPrefs();
   outputFiles = [];
   const cols = [...selectedCols].sort((a,b)=>a-b);
   const dataRows = allData.slice(1);

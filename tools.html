@@ -105,6 +105,17 @@
     footer{background:#080f1e;color:rgba(255,255,255,0.5);padding:30px 5vw;text-align:center;font-size:0.85rem}
     footer a{color:rgba(255,255,255,0.4);text-decoration:none}
     @media(max-width:600px){.tools-grid{grid-template-columns:1fr}.search-box input{width:130px}}
+    .articles-section{max-width:1200px;margin:0 auto 4rem;padding:0 5vw}
+    .articles-section h2{font-family:'Heebo';font-weight:900;font-size:1.4rem;color:var(--navy);margin-bottom:1.2rem;padding-bottom:0.6rem;border-bottom:2px solid var(--border)}
+    .articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.2rem}
+    .article-card{background:var(--bg-white);border:1px solid var(--border);border-radius:14px;padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:0.6rem;transition:all 0.22s;text-decoration:none;color:inherit;border-right:4px solid var(--blue)}
+    .article-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(13,31,60,0.09);border-color:var(--blue-light)}
+    .article-card-cat{font-size:0.76rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.03em}
+    .article-card-title{font-family:'Heebo';font-weight:800;font-size:1rem;color:var(--navy);line-height:1.35}
+    .article-card-desc{font-size:0.88rem;color:var(--text-mid);line-height:1.6;flex:1}
+    .article-card-meta{font-size:0.78rem;color:var(--text-muted);display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.2rem}
+    .article-card-read{font-size:0.82rem;font-weight:700;color:var(--blue);margin-top:0.4rem}
+    @media(max-width:600px){.articles-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -174,6 +185,23 @@
     </div>
   </div>
 
+  <!-- ═══ כלי: איחוד קבצים ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="איחוד קבצי אקסל">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">🗂️</div>
+      <div class="card-meta"><div class="card-title">איחוד קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מאחד מספר קבצים עם מבנה זהה לקובץ אחד — לדוגמה: קובץ לכל חודש. מוסיף עמודת מקור שמציינת מאיזה קובץ הגיעה כל שורה. מטפל חכם בהבדלי מבנה.</p>
+      <div class="card-tags"><span class="tag">איחוד</span><span class="tag">חודשי</span><span class="tag">מיזוג</span><span class="tag">עמודת מקור</span></div>
+    </div>
+    <div class="card-footer">
+      <div class="card-price">חינמי <small>/ הרשמה</small></div>
+      <button class="btn-dl btn-member" onclick="handleDL('member','איחוד קבצי אקסל','tool-merge-files.html')">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
   <!-- ═══ כלי 2: השוואת רשימות ═══ -->
   <div class="tool-card" data-tier="member" data-type="excel" data-title="השוואת רשימות התאמה חלקית">
     <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
@@ -192,19 +220,19 @@
   </div>
 
   <!-- ═══ כלי 3: חפיפת שעות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="זיהוי חפיפה בדיווחי שעות">
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="בדיקת תקינות דיווחי שעות">
     <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
-      <div class="card-icon icon-excel">⏰</div>
-      <div class="card-meta"><div class="card-title">זיהוי חפיפה בדיווחי שעות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+      <div class="card-icon icon-excel">🔍</div>
+      <div class="card-meta"><div class="card-title">בדיקת תקינות דיווחי שעות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">זיהוי אוטומטי של עובדים שדיווחו שעות חופפות באותו תאריך — חפיפה מלאה או חלקית, עם פירוט מלא ומשך החפיפה בדקות.</p>
-      <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">ביקורת שכר</span></div>
+      <p class="card-desc">10 בדיקות תקינות לדוחות נוכחות: חפיפות שעות, שעות ארוכות, שעות עגולות, חגים ושבתות, מכסה חודשית, תאריכים עתידיים ועוד.</p>
+      <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">תקינות</span><span class="tag">ביקורת שכר</span></div>
     </div>
     <div class="card-footer">
       <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','זיהוי חפיפה בדיווחי שעות','tool-hours-overlap.html')">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','בדיקת תקינות דיווחי שעות','tool-hours-overlap.html')">🔓 פתיחת הכלי</button>
     </div>
   </div>
 
@@ -380,6 +408,38 @@
 
 </div>
 
+<!-- ══ ARTICLES SECTION ══ -->
+<section class="articles-section">
+  <h2>📝 מאמרים ומדריכים</h2>
+  <div class="articles-grid">
+
+    <a href="article-procurement-audit.html" class="article-card">
+      <span class="article-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <div class="article-card-title">5 בדיקות שכל מנהל רכש ציבורי חייב לבצע על חשבוניות קבלנים</div>
+      <div class="article-card-desc">חפיפות שעות, תעריפים לפי רמה, דיווח בשבת וחג, חשבון מול פירוט ומגמות חודשיות — מדריך מקצועי לביקורת שיטתית.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-hours-overlap.html" class="article-card">
+      <span class="article-card-cat">ביקורת שכר ורכש ציבורי</span>
+      <div class="article-card-title">חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל</div>
+      <div class="article-card-desc">מה הן חפיפות שעות, למה הן מתרחשות ואיך לאתר אותן אוטומטית — מדריך לאנשי רכש וביקורת פנימית.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 5 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-excel-large-files.html" class="article-card">
+      <span class="article-card-cat">ניהול נתונים ואקסל</span>
+      <div class="article-card-title">קובץ אקסל כבד שתוקע את המחשב — 4 פתרונות מהירים</div>
+      <div class="article-card-desc">קובץ שמקרס את Excel? 4 שיטות מעשיות לפיצול, הקטנה ובחירת עמודות — עם כלי חינמי שעובד ישירות בדפדפן.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 4 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+  </div>
+</section>
+
 <!-- ══ MODAL: הרשמה/כניסה ══ -->
 <div class="modal-overlay" id="modal-auth">
   <div class="modal">
@@ -413,74 +473,6 @@
       <p class="modal-switch">עדיין לא רשום? <a onclick="switchTab('reg')">הרשמה חינמית</a></p>
     </div>
   </div>
-  <!-- ═══ בדיקת דוחות תשומות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="בדיקת דוחות תשומות שעות">
-    <div class="card-top">
-      <div class="card-icon icon-excel">⏰</div>
-      <div class="card-meta"><div class="card-title">בדיקת דוחות תשומות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
-    </div>
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-body">
-      <p class="card-desc">חפיפות שעות · תעריפים לפי רמה · בדיקת סבירות (שבתות, שעות חריגות) · דשבורד חודשי עם זיהוי קפיצות. ייצוא לאקסל.</p>
-      <div class="card-tags"><span class="tag">תשומות</span><span class="tag">חפיפות</span><span class="tag">דשבורד</span><span class="tag">סבירות</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','בדיקת דוחות תשומות','tool-hours-audit.html')">🔓 פתיחת הכלי</button>
-    </div>
-  </div>
-
-  <!-- ═══ בדיקת דוחות תפוקות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="בדיקת דוחות תפוקות">
-    <div class="card-top">
-      <div class="card-icon icon-excel">📦</div>
-      <div class="card-meta"><div class="card-title">בדיקת דוחות תפוקות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
-    </div>
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-body">
-      <p class="card-desc">זיהוי תפוקות חדשות · בדיקת סבירות וחריגות · מדגם מבוסס סיכונים · דשבורד חודשי להשוואת מגמות. ייצוא לאקסל.</p>
-      <div class="card-tags"><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span><span class="tag">סיכונים</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleDL('member','בדיקת דוחות תפוקות','tool-outputs-audit.html')">🔓 פתיחת הכלי</button>
-    </div>
-  </div>
-
-  <!-- ═══ כלי VBA: בדיקת דוחות תשומות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת דוחות תשומות">
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-top">
-      <div class="card-icon icon-excel">⏰</div>
-      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת דוחות תשומות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc">קובץ אקסל עם מאקרואים לבדיקת דוחות תשומות — חפיפות, תעריפים לפי רמה, סבירות שעות (שבתות, חגים), ודוח סיכום. עובד לגמרי מקומי ללא אינטרנט.</p>
-      <div class="card-tags"><span class="tag">VBA</span><span class="tag">שעות</span><span class="tag">חפיפות</span><span class="tag">מקומי</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleVBADownload('hours','כלי VBA — בדיקת דוחות תשומות')">⬇ הורדת הכלי</button>
-    </div>
-  </div>
-
-  <!-- ═══ כלי VBA: בדיקת תפוקות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="כלי VBA בדיקת תפוקות">
-    <span class="card-tier"><span class="tier-badge tier-procurement">⚖️ מכרזים</span></span>
-    <div class="card-top">
-      <div class="card-icon icon-excel">📦</div>
-      <div class="card-meta"><div class="card-title">כלי VBA — בדיקת תפוקות</div><div class="card-sub">קובץ Excel+VBA · עובד מקומית</div></div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc">כלי אקסל לבדיקת דוחות תפוקות — זיהוי סוגי תפוקה חדשים, בדיקת סבירות, מדגם מבוסס סיכונים, ודשבורד השוואה חודשית עם זיהוי קפיצות.</p>
-      <div class="card-tags"><span class="tag">VBA</span><span class="tag">תפוקות</span><span class="tag">מדגם</span><span class="tag">דשבורד</span></div>
-    </div>
-    <div class="card-footer">
-      <div class="card-price">חינמי <small>/ הרשמה</small></div>
-      <button class="btn-dl btn-member" onclick="handleVBADownload('outputs','כלי VBA — בדיקת תפוקות')">⬇ הורדת הכלי</button>
-    </div>
-  </div>
-
 </div>
 
 <!-- ══ MODAL: רכישה פרימיום ══ -->

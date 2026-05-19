@@ -2,7 +2,15 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>השוואת רשימות — קנדל BI</title>
+<title>השוואת רשימות עם התאמה חלקית — קנדל BI</title>
+<meta name="description" content="השווה שתי רשימות אקסל גם כשאין זהות מלאה — שמות שגויים, קיצורים, שגיאות כתיב. אלגוריתם מבוסס מילים לשמות עבריים. מציג ציון התאמה לכל שורה וייצוא לאקסל."/>
+<meta name="keywords" content="השוואת רשימות אקסל, מציאת התאמות חלקיות, השוואת שמות עבריים, זיהוי כפילויות רשימות, התאמה מקורבת"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-list-compare.html"/>
+<meta property="og:title" content="השוואת רשימות עם התאמה חלקית — קנדל BI"/>
+<meta property="og:description" content="השווה רשימות אקסל עם שמות שגויים, קיצורים ושגיאות כתיב. ציון התאמה לכל שורה."/>
+<meta property="og:url" content="https://kandelbi.org/tool-list-compare.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
@@ -77,6 +85,12 @@ tr:hover td{background:var(--bg)}
 .score-fill{height:100%;border-radius:3px}
 
 .hidden{display:none}
+.prefs-banner{background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:10px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.prefs-banner.hidden{display:none}
+.pb-text{flex:1;font-size:0.85rem;font-weight:600;color:var(--navy)}
+.pb-date{font-size:0.78rem;color:var(--muted);font-weight:400}
+.pb-apply{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:7px;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer}
+.pb-clear{background:none;border:1px solid var(--border);padding:6px 12px;border-radius:7px;font-family:inherit;font-size:0.82rem;color:var(--muted);cursor:pointer}
 </style>
 </head>
 <body>
@@ -132,6 +146,11 @@ tr:hover td{background:var(--bg)}
 
 <div class="card">
   <div class="card-title">⚙️ הגדרות השוואה</div>
+  <div class="prefs-banner hidden" id="prefs-banner">
+    <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
+    <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
+    <button class="pb-clear" onclick="clearPrefs()">מחק</button>
+  </div>
   <div class="form-group">
     <label>סף התאמה מינימלי: <strong id="thresh-val">75</strong>%</label>
     <div class="slider-wrap">
@@ -143,8 +162,9 @@ tr:hover td{background:var(--bg)}
   <div class="form-group">
     <label>שיטת השוואה:</label>
     <select id="method">
+      <option value="tokens" selected>שמות אנשים (מבוסס מילים — מומלץ)</option>
       <option value="contains">כלול (האם ב' כלול בא' או להיפך)</option>
-      <option value="levenshtein" selected>דמיון טקסט (Levenshtein — מתאים לשמות)</option>
+      <option value="levenshtein">דמיון טקסט (Levenshtein)</option>
       <option value="exact">זהות מלאה בלבד</option>
     </select>
   </div>
@@ -178,6 +198,48 @@ tr:hover td{background:var(--bg)}
 
 <script>
 let dataA=[], dataB=[], allResults=[];
+
+// ── הגדרות שמורות ──
+const COMPARE_PREFS_KEY='kandelbi_compare_prefs_v1';
+
+function saveComparePrefs(){
+  const colAIdx=parseInt(document.getElementById('col-a').value);
+  const colBIdx=parseInt(document.getElementById('col-b').value);
+  const prefs={
+    colNameA:String(dataA.headers?.[colAIdx]||'').trim(),
+    colNameB:String(dataB.headers?.[colBIdx]||'').trim(),
+    threshold:document.getElementById('threshold').value,
+    method:document.getElementById('method').value,
+    savedAt:new Date().toLocaleDateString('he-IL')
+  };
+  localStorage.setItem(COMPARE_PREFS_KEY,JSON.stringify(prefs));
+}
+
+function loadComparePrefs(){try{return JSON.parse(localStorage.getItem(COMPARE_PREFS_KEY));}catch{return null;}}
+
+function showPrefsBanner(){
+  const p=loadComparePrefs();
+  const banner=document.getElementById('prefs-banner');
+  if(p){document.getElementById('prefs-date').textContent='('+p.savedAt+')';banner.classList.remove('hidden');}
+  else banner.classList.add('hidden');
+}
+
+function applyPrefs(){
+  const p=loadComparePrefs();if(!p)return;
+  if(dataA.headers){
+    const idx=dataA.headers.findIndex(h=>String(h||'').trim()===p.colNameA);
+    if(idx>=0)document.getElementById('col-a').value=idx;
+  }
+  if(dataB.headers){
+    const idx=dataB.headers.findIndex(h=>String(h||'').trim()===p.colNameB);
+    if(idx>=0)document.getElementById('col-b').value=idx;
+  }
+  document.getElementById('threshold').value=p.threshold||75;
+  document.getElementById('thresh-val').textContent=p.threshold||75;
+  document.getElementById('method').value=p.method||'tokens';
+}
+
+function clearPrefs(){localStorage.removeItem(COMPARE_PREFS_KEY);document.getElementById('prefs-banner').classList.add('hidden');}
 
 function loadFile(inputId, dzId, colSelId, dataArr) {
   const input = document.getElementById(inputId);
@@ -217,6 +279,7 @@ document.getElementById('dz-b').addEventListener('dragover',e=>{e.preventDefault
 function checkReady(){
   const ok = dataA.data && dataB.data;
   document.getElementById('btn-compare').disabled=!ok;
+  if(ok) showPrefsBanner();
 }
 
 // Levenshtein distance
@@ -231,19 +294,49 @@ function lev(a,b){
   return 1-dp[m][n]/Math.max(m,n);
 }
 
+function tokenSim(a,b){
+  a=String(a).toLowerCase().trim(); b=String(b).toLowerCase().trim();
+  if(a===b)return 1;
+  if(!a||!b)return 0;
+  const tokA=a.split(/\s+/).filter(Boolean);
+  const tokB=b.split(/\s+/).filter(Boolean);
+  if(tokA.length===1&&tokB.length===1)return lev(a,b);
+  const usedB=new Array(tokB.length).fill(false);
+  let total=0;
+  tokA.forEach(ta=>{
+    let best=0,bestIdx=-1;
+    tokB.forEach((tb,i)=>{if(!usedB[i]){const s=lev(ta,tb);if(s>best){best=s;bestIdx=i;}}});
+    if(bestIdx>=0)usedB[bestIdx]=true;
+    total+=best;
+  });
+  const extraA=Math.max(0,tokA.length-tokB.length);
+  const penalty=extraA*0.1/tokA.length;
+  const maxScore=tokA.length===tokB.length?1:0.9;
+  return Math.max(0,Math.min(maxScore,total/tokA.length-penalty));
+}
+
 function containsSim(a,b){
   a=String(a).toLowerCase().trim(); b=String(b).toLowerCase().trim();
   if(a===b)return 1;
+  if(!a||!b)return 0;
   if(a.includes(b)||b.includes(a))return 0.9;
+  // בדיקת כלילה ברמת מילה: האם כל מילות הקצר מופיעות בארוך?
+  const tokA=a.split(/\s+/).filter(Boolean);
+  const tokB=b.split(/\s+/).filter(Boolean);
+  const [shorter,longer]=tokA.length<=tokB.length?[tokA,tokB]:[tokB,tokA];
+  const setLonger=new Set(longer);
+  const matches=shorter.filter(t=>setLonger.has(t)).length;
+  if(matches>0)return 0.5+0.4*(matches/shorter.length);
   return lev(a,b);
 }
 
 function runComparison(){
+  saveComparePrefs();
   const colA=parseInt(document.getElementById('col-a').value);
   const colB=parseInt(document.getElementById('col-b').value);
   const thresh=parseInt(document.getElementById('threshold').value)/100;
   const method=document.getElementById('method').value;
-  const simFn = method==='exact'?(a,b)=>a.trim()===b.trim()?1:0 : method==='contains'?containsSim:lev;
+  const simFn = method==='exact'?(a,b)=>a.trim()===b.trim()?1:0 : method==='contains'?containsSim : method==='tokens'?tokenSim : lev;
 
   const listB=dataB.data.map(r=>String(r[colB]||''));
   allResults=[];

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל | קנדל BI</title>
+<meta name="description" content="מה הן חפיפות שעות בדיווחי עובדים, למה הן מסוכנות, ואיך לזהות אותן אוטומטית. מדריך מלא לאנשי רכש וביקורת פנימית במגזר הציבורי."/>
+<meta name="keywords" content="חפיפות שעות, דיווחי נוכחות, ביקורת שעות עובדים, זיהוי חפיפות אוטומטי, ביקורת פנימית שכר, רכש ציבורי"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/article-hours-overlap.html"/>
+<meta property="og:title" content="חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל"/>
+<meta property="og:description" content="מדריך לזיהוי חפיפות שעות בדוחות נוכחות — מה זה, למה זה קורה, ואיך לאתר אוטומטית."/>
+<meta property="og:url" content="https://kandelbi.org/article-hours-overlap.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
+.article-meta{color:var(--muted);font-size:0.85rem;margin-bottom:2.5rem;display:flex;gap:1.5rem;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.5rem}
+h2{font-size:1.2rem;font-weight:800;color:var(--navy);margin:2.2rem 0 0.8rem}
+h3{font-size:1rem;font-weight:700;color:var(--navy2);margin:1.5rem 0 0.5rem}
+p{margin-bottom:1rem;font-size:0.97rem}
+ul,ol{padding-right:1.4rem;margin-bottom:1rem}
+li{margin-bottom:0.4rem;font-size:0.97rem}
+.highlight-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.danger-box{background:#fef2f2;border-right:4px solid var(--red);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.cta-box{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:1.8rem 2rem;margin:2.5rem 0;color:#fff;text-align:center}
+.cta-box h3{color:var(--accent);margin-top:0}
+.cta-btn{display:inline-block;background:var(--accent);color:var(--navy);padding:12px 28px;border-radius:10px;font-weight:900;font-size:1rem;text-decoration:none;margin-top:1rem}
+.example-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.88rem;border-radius:8px;overflow:hidden}
+.example-table th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right}
+.example-table td{padding:7px 12px;border-bottom:1px solid var(--border);background:#fff}
+.example-table tr.bad td{background:#fef2f2;color:var(--red);font-weight:600}
+footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:0.8rem}
+</style>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+
+<h1>חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל</h1>
+<div class="article-meta">
+  <span>✍️ אור קנדל, רו"ח CISA</span>
+  <span>📂 ביקורת שכר ורכש ציבורי</span>
+  <span>⏱️ קריאה של 5 דקות</span>
+</div>
+
+<p>
+אחת הבעיות הנפוצות ביותר בביקורת דוחות נוכחות של קבלנים היא <strong>חפיפת שעות</strong> — מצב שבו אותו עובד מדווח על שתי פעולות שמתרחשות בו-זמנית. זה עשוי להיות טעות תום-לב, אך לעיתים מדובר בניסיון לנפח שעות. בכל מקרה, תפקיד הביקורת לאתר ולברר.
+</p>
+
+<h2>מה הן חפיפות שעות?</h2>
+<p>
+חפיפת שעות מתרחשת כשעובד מדווח על שני "רצועות זמן" ביום נתון שחופפות זו לזו, באופן חלקי או מלא.
+</p>
+
+<div class="highlight-box">
+  <strong>דוגמה:</strong> עובד מדווח שהיה בעבודה בין 08:00–16:00, ובאותה שורה (או שורה נפרדת) מדווח גם על עבודה בין 14:00–18:00. השעות 14:00–16:00 חופפות — ולא ייתכן שעבד בשני מקומות בו-זמנית.
+</div>
+
+<table class="example-table">
+  <thead><tr><th>עובד</th><th>תאריך</th><th>שעת כניסה</th><th>שעת יציאה</th><th>הערה</th></tr></thead>
+  <tbody>
+    <tr><td>ישראל ישראלי</td><td>01/03/2025</td><td>08:00</td><td>16:00</td><td>שורה 1</td></tr>
+    <tr class="bad"><td>ישראל ישראלי</td><td>01/03/2025</td><td>14:00</td><td>18:00</td><td>⚠️ חפיפה עם שורה 1 (14:00–16:00)</td></tr>
+  </tbody>
+</table>
+
+<h2>מדוע חפיפות מתרחשות?</h2>
+<p>ישנן מספר סיבות — חלקן תמימות וחלקן מדאיגות:</p>
+<ul>
+  <li><strong>טעות הזנה:</strong> עובד או מנהל הכניסו שורה כפולה בטעות</li>
+  <li><strong>מעבר בין פרויקטים:</strong> המערכת מתעדת את שתי הפעילויות כשורות נפרדות, ויש חפיפה בגלל שיטת עיגול</li>
+  <li><strong>ניפוח שעות מכוון:</strong> הדווח על אותן שעות תחת שתי הזמנות עבודה שונות לצורך קבלת תשלום כפול</li>
+  <li><strong>שגיאת מערכת:</strong> ייבוא נתונים כפול ממערכת השעון הנוכחות</li>
+</ul>
+
+<div class="danger-box">
+  <strong>סיכון:</strong> חפיפה מלאה — שבה שורה אחת כלולה לחלוטין בתוך שורה אחרת — היא כמעט תמיד בעייתית ומצריכה בירור מיידי. חפיפה חלקית עשויה להיות שגיאה טכנית, אך גם חשודה.
+</div>
+
+<h2>כיצד לאתר חפיפות ידנית?</h2>
+<p>
+הדרך הידנית לאתר חפיפות היא למיין את הטבלה לפי עובד ותאריך, ואז לבדוק שורה-שורה אם שעת הכניסה של שורה מסוימת קטנה משעת היציאה של השורה הקודמת. עבור קבלן עם עשרות עובדים ומאות שורות — זה כמעט בלתי אפשרי לבצע ידנית.
+</p>
+
+<h2>כיצד לאתר חפיפות אוטומטית?</h2>
+<p>
+הגישה הנכונה היא לכתוב נוסחה או קוד שיעשה את הבדיקה עבורכם. הלוגיקה:
+</p>
+<ol>
+  <li>קבץ את כל השורות לפי שם עובד ותאריך</li>
+  <li>לכל קבוצה — מיין לפי שעת כניסה</li>
+  <li>בדוק כל זוג שורות עוקבות: אם שעת הכניסה של שורה j קטנה משעת היציאה של שורה i — יש חפיפה</li>
+  <li>חשב את גודל החפיפה: <code>min(יציאה_i, יציאה_j) − כניסה_j</code></li>
+</ol>
+
+<div class="highlight-box">
+  <strong>טיפ מקצועי:</strong> בדוח גדול, כדאי לבדוק גם "חפיפות רוחב" — שורות שאינן עוקבות ישירות אך עדיין חופפות. זה קורה כשעובד מדווח על שלוש שורות ביום, ושורה 1 ושורה 3 חופפות למרות שיש ביניהן שורה 2.
+</div>
+
+<h2>מה עושים אחרי שמוצאים חפיפה?</h2>
+<ul>
+  <li><strong>תעדו</strong> את הממצא: עובד, תאריך, שורות המעורבות, גודל החפיפה בדקות</li>
+  <li><strong>הפנו לקבלן</strong> לבירור — בקשו הסבר בכתב</li>
+  <li><strong>נכו מהתשלום</strong> את שעות החפיפה אם לא ניתן הסבר סביר</li>
+  <li><strong>בדקו האם יש דפוס</strong> — האם אותו עובד מופיע שוב ושוב? האם מדובר בתקופה מסוימת?</li>
+</ul>
+
+<h2>בדיקות נוספות שכדאי לבצע במקביל</h2>
+<p>חפיפות שעות הן רק אחת מ-10 בדיקות שמומלץ לבצע על כל דוח נוכחות:</p>
+<ul>
+  <li>דיווח בשבת וחגים</li>
+  <li>שעות ביממה מעל 12 שעות לעובד</li>
+  <li>שעות עגולות לחלוטין (90%+ — מחשיד)</li>
+  <li>שורות כפולות זהות</li>
+  <li>תאריכים עתידיים</li>
+  <li>מכסת שעות חודשית חריגה</li>
+</ul>
+
+<div class="cta-box">
+  <h3>רוצה לבדוק דוח נוכחות עכשיו?</h3>
+  <p>הכלי של קנדל BI מאתר חפיפות ועוד 9 בדיקות אוטומטית — העלה קובץ ותקבל תוצאות בשניות. חינמי, עובד בדפדפן, הנתונים לא עוזבים את המחשב שלך.</p>
+  <a href="tool-hours-overlap.html" class="cta-btn">🔍 פתח את כלי בדיקת השעות</a>
+</div>
+
+<p style="font-size:0.82rem;color:var(--muted);margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1.5rem">
+  קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך | <a href="index.html" style="color:var(--blue)">kandelbi.org</a>
+</p>
+
+</main>
+</body>
+</html>
