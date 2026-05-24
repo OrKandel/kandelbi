@@ -202,7 +202,7 @@ tr:hover td{background:var(--bg);}
       <div class="card-title">📂 טעינת קובץ אקסל</div>
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
         <span class="drop-icon">📊</span>
-        <div class="drop-text">לחץ לבחירת קובץ או גרור לכאן</div>
+        <div class="drop-text">לחץ לבחירת קבצים או גרור לכאן</div>
         <div class="drop-sub">ניתן לבחור מספר קבצים במבנה אחיד · .xlsx / .xls / .csv · עד 100MB לקובץ</div>
       </div>
       <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple />
@@ -1103,7 +1103,7 @@ function reset() {
   document.getElementById('file-input').value='';
   dz.classList.remove('loaded','drag');
   dz.querySelector('.drop-icon').textContent='📊';
-  dz.querySelector('.drop-text').textContent='לחץ לבחירת קובץ או גרור לכאן';
+  dz.querySelector('.drop-text').textContent='לחץ לבחירת קבצים או גרור לכאן';
   document.getElementById('files-list').innerHTML='';
   document.getElementById('file-stats-card').classList.remove('show');
   document.getElementById('btn-next1').disabled=true;

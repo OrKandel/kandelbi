@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SLA בחוזה שירות: איך לדעת שהספק עומד בו — ומה קורה כשהוא לא | קנדל BI</title>
+<meta name="description" content="מדריך מעשי לחשבים ומנהלי חוזים: איך מחשבים SLA, למה ספקים לא עומדים בו, ואיך הופכים את ה-SLA לכלי ניהול אמיתי."/>
+<meta name="keywords" content="SLA חוזה שירות, ניהול ספקים, עיצומים כספיים, רכש ציבורי, מנהל חוזה"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/article-sla-contract.html"/>
+<meta property="og:title" content="SLA בחוזה שירות: איך לדעת שהספק עומד בו — ומה קורה כשהוא לא"/>
+<meta property="og:description" content="מדריך מעשי לחשבים ומנהלי חוזים: איך מחשבים SLA, למה ספקים לא עומדים בו, ואיך הופכים את ה-SLA לכלי ניהול אמיתי."/>
+<meta property="og:url" content="https://kandelbi.org/article-sla-contract.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
+.article-meta{color:var(--muted);font-size:0.85rem;margin-bottom:2.5rem;display:flex;gap:1.5rem;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.5rem}
+h2{font-size:1.15rem;font-weight:800;color:var(--navy);margin:2rem 0 0.8rem}
+h3{font-size:1rem;font-weight:700;color:var(--navy2);margin:1.2rem 0 0.4rem}
+p{margin-bottom:1rem;font-size:0.97rem}
+ul,ol{padding-right:1.4rem;margin-bottom:1rem}
+li{margin-bottom:0.5rem;font-size:0.97rem}
+.highlight-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.check-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 1.6rem;margin:1.2rem 0;border-right:5px solid var(--blue)}
+.cta-box{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:1.8rem 2rem;margin:2.5rem 0;color:#fff;text-align:center}
+.cta-box p{color:rgba(255,255,255,0.85);margin-bottom:0}
+.cta-title{font-weight:900;font-size:1.1rem;color:var(--accent);margin-bottom:0.8rem;display:block}
+.tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:0.8rem 0}
+@media(max-width:500px){.tools-grid{grid-template-columns:1fr}}
+.tool-link{display:block;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 12px;color:#fff;text-decoration:none;font-size:0.85rem;font-weight:600;text-align:center}
+.tool-link:hover{background:rgba(255,255,255,0.2)}
+.danger-box{background:#fef2f2;border-right:4px solid var(--red);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.green-box{background:#f0faf6;border-right:4px solid var(--green);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+@media(max-width:520px){.two-col{grid-template-columns:1fr}}
+.col-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem}
+.col-card strong{display:block;margin-bottom:0.4rem;color:var(--navy);font-size:0.95rem}
+.col-card p{font-size:0.88rem;color:var(--muted);margin:0}
+.divider{border:none;border-top:2px solid var(--border);margin:2.5rem 0}
+.related-section{margin:2.5rem 0;padding:1.4rem 1.6rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px}
+.related-title{font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.related-grid{grid-template-columns:1fr}}
+.related-card{display:block;padding:0.8rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.2s}
+.related-card:hover{border-color:var(--blue);background:#eef3fb}
+.related-card-cat{font-size:0.72rem;color:var(--blue);font-weight:700;display:block;margin-bottom:0.3rem}
+.related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
+.sla-example{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1.2rem 1.4rem;margin:1rem 0}
+.sla-example .label{font-size:0.75rem;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem;display:block}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"SLA בחוזה שירות: איך לדעת שהספק עומד בו — ומה קורה כשהוא לא","description":"מדריך מעשי לחשבים ומנהלי חוזים: איך מחשבים SLA, למה ספקים לא עומדים בו, ואיך הופכים את ה-SLA לכלי ניהול אמיתי.","datePublished":"2025-06-05","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA ובודק שכר מוסמך","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-sla-contract.html","inLanguage":"he"}
+</script>
+</head>
+<body>
+<header>
+  <a href="tools.html" class="back-link">← חזרה לכלים</a>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+</header>
+<main>
+
+<h1>SLA בחוזה שירות: איך לדעת שהספק עומד בו — ומה קורה כשהוא לא</h1>
+<div class="article-meta">
+  <span>✍️ אור קנדל, רו"ח CISA</span>
+  <span>📂 ניהול חוזי שירות ובקרה</span>
+  <span>⏱️ קריאה של 7 דקות</span>
+</div>
+
+<p>
+ה-SLA קיים בכמעט כל חוזה שירות. בפועל — מעטים מחשבים אותו. לא מתוך רשלנות, אלא מתוך מציאות: ה-SLA נכתב בשלב המכרז, ואז "נשאר בחוזה" בלי שמישהו קובע מי אחראי לעקוב אחריו ואיך.
+</p>
+<p>
+התוצאה היא מצב שמוכר לכל מי שניהל חוזי שירות: ספק שמגיש חשבון מלא, מקבל תשלום מלא, ואיש לא בדק האם הוא אכן עמד בהתחייבויות שלו. ה-SLA, שנכתב כדי להגן על האינטרס הציבורי, הפך למסמך קישוט.
+</p>
+
+<hr class="divider"/>
+
+<h2>מה זה SLA בפועל</h2>
+
+<p>
+SLA — Service Level Agreement — הוא מערכת התחייבויות מדידות שהספק מקבל על עצמו כחלק מהחוזה. לא "אנו נספק שירות טוב" — אלא מחויבויות ספציפיות, ניתנות למדידה, עם קנסות ברורים במקרה של אי-עמידה.
+</p>
+
+<p>
+בחוזי שירות ציבוריים, ה-SLA יכול לכסות תחומים שונים מאוד:
+</p>
+
+<div class="two-col">
+  <div class="col-card">
+    <strong>חוזי ניקיון</strong>
+    <p>שטח שיטופל ביום, תדירות ניקיון לפי אזור, זמן תגובה לאירועים</p>
+  </div>
+  <div class="col-card">
+    <strong>חוזי כוח אדם</strong>
+    <p>שעות נוכחות לפי תפקיד, יחס כוח אדם לנפח שירות, זמן מילוי מקום חסר</p>
+  </div>
+</div>
+<div class="two-col">
+  <div class="col-card">
+    <strong>חוזי IT</strong>
+    <p>זמינות מערכת באחוזים, זמן תיקון תקלה לפי רמת חומרה, זמן תגובה ראשונית</p>
+  </div>
+  <div class="col-card">
+    <strong>חוזי שמירה</strong>
+    <p>כיסוי מסלולי סיור, זמן הגעה לאירוע, עמידות ציוד</p>
+  </div>
+</div>
+
+<p>
+המשותף לכולם: <strong>אפשר למדוד אותם</strong>. כל פריט SLA שנכתב נכון הוא נתון מספרי שניתן לבדוק מול הדוח שהספק מגיש.
+</p>
+
+<hr class="divider"/>
+
+<h2>למה ספקים לא עומדים ב-SLA</h2>
+
+<p>
+זו שאלה שחשבים ומנהלי חוזים לפעמים שואלים בתמיהה: "ספק רציני לא יסכן את החוזה בחריגה מה-SLA." בפועל, הסיכון לא קיים — אם לא מודדים, לא יודעים.
+</p>
+
+<p>
+<strong>הסיבה העיקרית לאי-עמידה ב-SLA היא פשוטה: הספק יודע שלא בודקים.</strong> זה לא בהכרח חישוב מניפולטיבי מצד הספק — לפעמים זו פשוט התנהלות שטופלת "לפי הנראה לעין". אם לא מגיעות תלונות, הכל בסדר. אם לא נמצאות חריגות, לא צריך לתקן.
+</p>
+
+<div class="check-card">
+  <p>ספקים לומדים במהרה מה נמדד ומה לא. הם מגישים דוחות בפורמטים שקשה לבדוק אוטומטית — PDF סרוק, טבלאות ללא מבנה אחיד, דוחות מילוליים שאומרים "הכל תקין". אלה לא בהכרח מניפולציה — לפעמים זו פשוט הדרך שנוחה להם. אבל אם הגוף הציבורי לא קובע פורמט ולא בודק, הספק לא ייזום שינוי.</p>
+</div>
+
+<hr class="divider"/>
+
+<h2>איך מחשבים עמידה ב-SLA</h2>
+
+<p>
+החישוב עצמו לרוב פשוט — אם מכירים את הנתונים. השלבים:
+</p>
+
+<ol>
+  <li><strong>זיהוי ההתחייבות החוזית:</strong> מה בדיוק התחייב הספק? שעות נוכחות? כיסוי שטח? זמינות מערכת? מה המספר המחייב מהחוזה?</li>
+  <li><strong>איסוף הנתונים בפועל:</strong> מה הספק דיווח שביצע? זה צריך לבוא מהדוח שהספק מגיש — ולכן חשוב שהדוח יכיל את הנתונים הגולמיים, לא רק מסקנות.</li>
+  <li><strong>חישוב הסטייה:</strong> כמה אחוז עמד הספק מהמחויב? אם מחויב ל-100 שעות נוכחות ביום ודיווח 88 — זו סטייה של 12%.</li>
+  <li><strong>הפעלת סעיף הקנסות:</strong> הקנס החוזי מחושב לפי הסטייה ומופחת מהחשבון.</li>
+</ol>
+
+<div class="sla-example">
+  <span class="label">דוגמה מחושבת</span>
+  <p><strong>חוזה ניקיון:</strong> מחויבות — 500 שעות עובד לחודש. דיווח בפועל: 447 שעות. סטייה: 10.6%. קנס חוזי: 5% מהחשבון החודשי לכל 5% סטייה. חשבון חודשי: 42,000 ₪. <strong>קנס לניכוי: 8,400 ₪</strong> — שלא נוכה כי אף אחד לא חישב.</p>
+</div>
+
+<hr class="divider"/>
+
+<h2>הכסף שנשאר על הרצפה</h2>
+
+<p>
+הדוגמה לעיל היא חוזה קטן יחסית. בחוזים גדולים יותר, המספרים גדלים בהתאם. בואו נסתכל על תרחיש שמרן:
+</p>
+
+<p>
+ספק שמגיע באופן עקבי ל-90% מה-SLA — עשרה אחוז מתחת למחויב — על חוזה של 500,000 ₪ לשנה. אם סעיף הקנסות קובע 5% מהתשלום לכל 5% סטייה, מדובר ב-<strong>25,000 ₪ לשנה</strong> שהגוף הציבורי מחויב לגבות אך לא גובה.
+</p>
+
+<p>
+חמש שנות חוזה? <strong>125,000 ₪</strong> שנשארו על הרצפה. לא בגלל שלא ידעו מה כתוב בחוזה — אלא בגלל שלא היה כלי שיחשב את הפער באופן שוטף.
+</p>
+
+<div class="danger-box">
+  <strong>ממצאי ביקורות:</strong> גופי ביקורת מוצאים שוב ושוב חוזים שבהם קנסות SLA לא הופעלו — לא כי הספק עמד בהתחייבויות, אלא כי מנגנון הבדיקה והחישוב לא היה קיים. זה ממצא שמשפיע על דירוג הניהול הפיננסי של הגוף.
+</div>
+
+<hr class="divider"/>
+
+<h2>איך הופכים SLA לכלי ניהול</h2>
+
+<p>
+ה-SLA הוא לא רק מנגנון עונשי — הוא כלי ניהולי. כשהוא עובד נכון, הוא מספק תמונת מצב אמיתית של ביצועי הספק ומאפשר שיחה מבוססת נתונים.
+</p>
+
+<ul>
+  <li><strong>דוחות חודשיים כתנאי לתשלום:</strong> קבעו בחוזה שהספק לא יקבל תשלום אם לא הגיש דוח ביצועים מפורט בפורמט שנקבע. זה לא עונש — זה הגיוני: אתם משלמים על שירות, אתם זכאים לדעת מה קיבלתם.</li>
+  <li><strong>כלי חישוב אוטומטי:</strong> ברגע שהדוח מגיע בפורמט אחיד, חישוב SLA אוטומטי הופך לעניין של דקות. הכלי קורא את הנתונים, מחשב את הסטייה, ומייצר פלט ברור: עמד / לא עמד / קנס לניכוי.</li>
+  <li><strong>התראה מוקדמת:</strong> מעקב חודשי מאפשר לזהות מגמה לפני שהיא הופכת לבעיה גדולה. ספק שחודש אחרי חודש מגיע ל-92% — ואז ל-88% — ואז ל-84% — מראה מגמה שכדאי לטפל בה לפני שהיא מגיעה ל-75%.</li>
+</ul>
+
+<div class="green-box">
+  <strong>השיחה משתנה:</strong> כשמגיעים לפגישה תקופתית עם הספק עם נתונים — "בחודשים האחרונים עמדת ב-87% מה-SLA בממוצע, עם ירידה מגמתית" — השיחה שונה לגמרי ממה שהיא בלי נתונים. הספק יודע שאתם יודעים. זה משנה את הדיאלוג.
+</div>
+
+<hr class="divider"/>
+
+<h2>מה לכתוב בחוזה הבא</h2>
+
+<p>
+אם אתם עומדים לפני כתיבת חוזה שירות חדש או חידוש חוזה קיים, שלושה דברים שיהפכו את ה-SLA לאכיף:
+</p>
+
+<ol>
+  <li><strong>KPI ספציפיים ומדידים:</strong> לא "שירות איכותי" — אלא "לא פחות מ-X שעות נוכחות ביום" / "זמן תגובה מקסימלי Y שעות" / "זמינות מערכת לא פחות מ-99.5%".</li>
+  <li><strong>פורמט דיווח דיגיטלי:</strong> קבעו שהדוח מוגש כקובץ Excel עם מבנה שנקבע מראש. PDF לא יתקבל. דוח מילולי לא יתקבל. רק נתונים גולמיים שניתן לבדוק אוטומטית.</li>
+  <li><strong>סעיף חישוב קנסות אוטומטי:</strong> קבעו שהחשבון כולל גיליון חישוב SLA שהספק מגיש, ושהגוף הציבורי רשאי לחשב מחדש ולנכות ללא הודעה מיוחדת אם נמצאה אי-התאמה. זה מסיר את הנטל מלנהל "מו"מ" על כל קנס.</li>
+</ol>
+
+<div class="cta-box">
+  <span class="cta-title">כלים לחישוב SLA ובדיקת חשבוניות קבלנים</span>
+  <p>קנדל BI מפתחת כלים מותאמים לבדיקת עמידה ב-SLA בחוזי שירות ציבוריים. <a href="index.html#cta" style="color:var(--accent);font-weight:700;">צור קשר — החל מ-1,900 ₪ + מע"מ ←</a></p>
+  <div class="tools-grid">
+    <a href="tool-hours-overlap.html" class="tool-link">🔍 בדיקת תקינות שעות</a>
+    <a href="tool-reconcile.html" class="tool-link">⚖️ חשבון מול פירוט</a>
+    <a href="tool-hours-audit.html" class="tool-link">📋 בדיקת דוחות תשומות</a>
+    <a href="tool-outputs-audit.html" class="tool-link">📊 בדיקת דוחות תפוקות</a>
+  </div>
+</div>
+
+<div class="related-section">
+  <div class="related-title">📖 קראו גם</div>
+  <div class="related-grid">
+    <a href="article-contract-checklist.html" class="related-card">
+      <span class="related-card-cat">ניהול חוזים</span>
+      <span class="related-card-title">7 שאלות לפני חתימה על חוזה שירות</span>
+    </a>
+    <a href="article-roi-controls.html" class="related-card">
+      <span class="related-card-cat">ניהול פיננסי</span>
+      <span class="related-card-title">בקרה אוטומטית שוטפת — מה זה שווה לחשב?</span>
+    </a>
+    <a href="article-tender-controls.html" class="related-card">
+      <span class="related-card-cat">רכש ציבורי</span>
+      <span class="related-card-title">איך לבנות בקרה אפקטיבית על קבלנים — כבר משלב המכרז</span>
+    </a>
+  </div>
+</div>
+
+<p style="font-size:0.82rem;color:var(--muted);margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1.5rem">
+  © 2025 קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך | <a href="index.html" style="color:var(--blue)">kandelbi.org</a> | כל הזכויות שמורות
+</p>
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור למקרה שלך</strong> — תעריפים, כללי SLA ובדיקות מותאמות להתקשרות הספציפית שלך? <span style="color:#0a7c5e;font-weight:600;">החל מ-1,900 ₪ + מע"מ</span> &nbsp;|&nbsp; <a href="index.html#cta" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
+  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות | חל איסור על העתקת הכלים</span>
+</div>
+
+</main>
+</body>
+</html>

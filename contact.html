@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>צור קשר | קנדל BI — אור קנדל רו"ח CISA</title>
+<meta name="description" content="צרו קשר עם קנדל BI — אור קנדל, רו״ח CISA. שאלות על כלי בקרה, בקרה מותאמת לחוזה, שירות מנוהל או כל שאלה אחרת. נחזור תוך יום עסקים."/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/contact.html"/>
+<meta property="og:title" content="צור קשר — קנדל BI"/>
+<meta property="og:description" content="שאלות על בקרה אוטומטית, כלים מותאמים או שירות מנוהל? נשמח לענות."/>
+<meta property="og:url" content="https://kandelbi.org/contact.html"/>
+<meta property="og:locale" content="he_IL"/>
+<meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--shadow:0 4px 24px rgba(13,31,60,0.10);
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}
+.logo span{color:var(--accent)}
+.header-nav{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;}
+.nav-link{color:rgba(255,255,255,0.7);font-size:0.85rem;text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.2s;}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-link.active{color:#fff;font-weight:700;}
+
+main{max-width:900px;margin:0 auto;padding:3rem 5vw 5rem}
+
+.page-header{margin-bottom:2.5rem;}
+.page-tag{display:inline-block;background:var(--navy);color:var(--accent);font-size:0.78rem;font-weight:900;padding:4px 14px;border-radius:20px;margin-bottom:0.8rem;letter-spacing:0.03em;}
+h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-bottom:0.5rem;line-height:1.25}
+.page-sub{color:var(--muted);font-size:0.97rem;}
+
+.contact-layout{display:grid;grid-template-columns:1fr 340px;gap:2rem;align-items:start;}
+@media(max-width:720px){.contact-layout{grid-template-columns:1fr;}}
+
+/* FORM */
+.form-card{background:var(--white);border:1.5px solid var(--border);border-radius:18px;padding:2rem;box-shadow:var(--shadow);}
+.form-card h2{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.4rem;}
+
+.form-group{margin-bottom:1.1rem;}
+.form-group label{display:block;font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:5px;}
+.form-group label .req{color:var(--red);}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;
+  font-family:inherit;font-size:0.92rem;outline:none;background:var(--white);
+  color:var(--text);transition:border-color 0.2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue);}
+.form-group textarea{resize:vertical;min-height:130px;}
+.form-group select{cursor:pointer;}
+
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+@media(max-width:500px){.form-row-2{grid-template-columns:1fr;}}
+
+.btn-submit{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;
+  font-family:inherit;font-weight:800;font-size:1rem;cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:0.5rem;}
+.btn-submit:hover{background:var(--navy2);}
+.btn-submit:disabled{opacity:0.5;cursor:not-allowed;}
+
+.form-note{font-size:0.78rem;color:var(--muted);text-align:center;margin-top:0.8rem;}
+
+/* SUCCESS STATE */
+.success-msg{display:none;text-align:center;padding:2rem 1rem;}
+.success-msg.show{display:block;}
+.success-icon{font-size:3rem;margin-bottom:1rem;}
+.success-msg h3{font-size:1.2rem;font-weight:900;color:var(--green);margin-bottom:0.5rem;}
+.success-msg p{color:var(--muted);font-size:0.92rem;}
+
+/* ERROR */
+.form-error{display:none;background:#fef2f2;border:1px solid #fca5a5;color:var(--red);
+  border-radius:8px;padding:10px 14px;font-size:0.85rem;margin-bottom:1rem;}
+.form-error.show{display:block;}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:1.2rem;}
+
+.contact-info-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 1.6rem;box-shadow:var(--shadow);}
+.contact-info-card h3{font-size:0.92rem;font-weight:800;color:var(--navy);margin-bottom:1rem;}
+.contact-item{display:flex;align-items:center;gap:10px;margin-bottom:0.9rem;}
+.contact-item:last-child{margin-bottom:0;}
+.c-icon{font-size:1.1rem;flex-shrink:0;width:32px;height:32px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.c-label{font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:1px;}
+.c-val{font-size:0.88rem;font-weight:700;color:var(--navy);}
+.c-val a{color:var(--navy);text-decoration:none;}
+.c-val a:hover{color:var(--blue);}
+
+.response-badge{background:#edf7f3;border:1px solid #b2ddd0;border-radius:10px;padding:0.8rem 1rem;display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--green);font-weight:600;}
+
+.pricing-link-card{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:1.4rem 1.6rem;color:#fff;}
+.pricing-link-card h3{font-size:0.9rem;font-weight:800;color:var(--accent);margin-bottom:0.4rem;}
+.pricing-link-card p{font-size:0.82rem;color:rgba(255,255,255,0.7);margin-bottom:0.9rem;line-height:1.5;}
+.btn-pricing{display:block;text-align:center;background:var(--accent);color:var(--navy);padding:9px 18px;border-radius:9px;font-weight:800;font-size:0.88rem;text-decoration:none;transition:opacity 0.2s;}
+.btn-pricing:hover{opacity:0.88;}
+
+/* FOOTER NOTE */
+.footer-note{font-size:0.8rem;color:var(--muted);margin-top:3rem;border-top:1px solid var(--border);padding-top:1.4rem;text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <div class="header-nav">
+    <a href="tools.html" class="nav-link">כלים חינמיים</a>
+    <a href="pricing.html" class="nav-link">מחירון</a>
+    <a href="about.html" class="nav-link">אודות</a>
+    <a href="contact.html" class="nav-link active">צור קשר</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-header">
+    <span class="page-tag">✉️ צור קשר</span>
+    <h1>נשמח לשמוע מכם</h1>
+    <p class="page-sub">שאלה על כלי, עניין בבקרה מותאמת, או שיחת היכרות — כתבו ונחזור תוך יום עסקים.</p>
+  </div>
+
+  <div class="contact-layout">
+
+    <!-- FORM -->
+    <div class="form-card">
+      <h2>📝 שלחו הודעה</h2>
+
+      <div class="form-error" id="form-error">אירעה שגיאה בשליחה. נסו שוב או פנו ישירות במייל.</div>
+
+      <form id="contact-form" action="https://formspree.io/f/REPLACE_WITH_YOUR_FORMSPREE_ID" method="POST" novalidate>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>שם מלא <span class="req">*</span></label>
+            <input type="text" name="name" placeholder="ישראל ישראלי" required/>
+          </div>
+          <div class="form-group">
+            <label>גוף / משרד</label>
+            <input type="text" name="organization" placeholder="משרד האוצר / עיריית ת״א"/>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>טלפון <span class="req">*</span></label>
+            <input type="tel" name="phone" placeholder="050-0000000" required/>
+          </div>
+          <div class="form-group">
+            <label>מייל <span class="req">*</span></label>
+            <input type="email" name="email" placeholder="name@gov.il" required/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>נושא הפנייה</label>
+          <select name="subject">
+            <option value="">— בחרו נושא —</option>
+            <option value="custom-tool">בקרה מותאמת לחוזה ספציפי</option>
+            <option value="new-system">בניית מערכת בקרה חדשה</option>
+            <option value="managed">שירות בקרה חודשי מנוהל</option>
+            <option value="tool-question">שאלה על כלי חינמי</option>
+            <option value="firms">רישיון למשרד רו״ח / ביקורת</option>
+            <option value="other">אחר</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>הודעה <span class="req">*</span></label>
+          <textarea name="message" placeholder="תארו את הצורך, שם הגוף, סוג החוזה הרלוונטי — כל פרט שיעזור לנו להכין תשובה מדויקת." required></textarea>
+        </div>
+
+        <!-- Honeypot anti-spam -->
+        <input type="text" name="_gotcha" style="display:none"/>
+        <input type="hidden" name="_language" value="he"/>
+
+        <button type="submit" class="btn-submit" id="submit-btn">
+          <span id="btn-text">שלח הודעה ←</span>
+        </button>
+        <p class="form-note">🔒 הפרטים משמשים לחזרה אליכם בלבד ולא יועברו לצד שלישי</p>
+      </form>
+
+      <div class="success-msg" id="success-msg">
+        <div class="success-icon">✅</div>
+        <h3>ההודעה נשלחה בהצלחה!</h3>
+        <p>נחזור אליכם תוך יום עסקים.<br/>בינתיים — מוזמנים לעיין ב<a href="tools.html" style="color:var(--blue)">כלים החינמיים</a>.</p>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <div class="contact-info-card">
+        <h3>פרטי יצירת קשר</h3>
+        <div class="contact-item">
+          <div class="c-icon">📞</div>
+          <div>
+            <div class="c-label">טלפון</div>
+            <div class="c-val"><a href="tel:050-691-4898">050-691-4898</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="c-icon">✉️</div>
+          <div>
+            <div class="c-label">מייל</div>
+            <div class="c-val"><a href="mailto:info@kandelbi.org">info@kandelbi.org</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="c-icon">🌐</div>
+          <div>
+            <div class="c-label">אתר</div>
+            <div class="c-val"><a href="https://kandelbi.org">kandelbi.org</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="response-badge">
+        ⏱️ זמן מענה: עד יום עסקים אחד
+      </div>
+
+      <div class="pricing-link-card">
+        <h3>מחפשים מחירים?</h3>
+        <p>מחירי הכלים המותאמים, השירות המנוהל ובניית מערכות — כולם בדף המחירון.</p>
+        <a href="pricing.html" class="btn-pricing">לדף המחירון ←</a>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="footer-note">
+    © 2025 קנדל BI | אור קנדל, רו"ח CISA ובודק שכר מוסמך |
+    <a href="index.html" style="color:var(--blue)">kandelbi.org</a> |
+    <a href="terms.html" style="color:var(--blue)">תנאי שימוש</a>
+  </p>
+
+</main>
+
+<script>
+const form = document.getElementById('contact-form');
+const successMsg = document.getElementById('success-msg');
+const formError = document.getElementById('form-error');
+const submitBtn = document.getElementById('submit-btn');
+const btnText = document.getElementById('btn-text');
+
+form.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  formError.classList.remove('show');
+
+  // Validation
+  const name = form.querySelector('[name="name"]').value.trim();
+  const phone = form.querySelector('[name="phone"]').value.trim();
+  const email = form.querySelector('[name="email"]').value.trim();
+  const message = form.querySelector('[name="message"]').value.trim();
+
+  if (!name || !phone || !email || !message) {
+    formError.textContent = 'נא למלא את כל השדות המסומנים בכוכבית.';
+    formError.classList.add('show');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    formError.textContent = 'כתובת המייל אינה תקינה.';
+    formError.classList.add('show');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  btnText.textContent = 'שולח...';
+
+  try {
+    const data = new FormData(form);
+    const response = await fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      form.style.display = 'none';
+      successMsg.classList.add('show');
+      // GA event
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'contact_form_submit', { event_category: 'engagement' });
+      }
+    } else {
+      throw new Error('server error');
+    }
+  } catch(err) {
+    formError.textContent = 'אירעה שגיאה. נסו שנית או שלחו מייל ישירות.';
+    formError.classList.add('show');
+    submitBtn.disabled = false;
+    btnText.textContent = 'שלח הודעה ←';
+  }
+});
+</script>
+</body>
+</html>
