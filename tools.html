@@ -129,16 +129,21 @@
   </style>
 </head>
 <body>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
 
 <nav>
-  <a href="index.html" class="logo">קנדל <span>BI</span></button>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
   <ul>
-    <li><a href="index.html">בית</button></li>
-    <li><a href="index.html#services">שירותים</button></li>
-    <li><a href="tools.html" class="active">כלים להורדה</button></li>
-    <li><a href="about.html">אודות</button></li>
-    <li><a href="pricing.html">מחירון</button></li>
-    <li><a href="contact.html" class="nav-cta">צרו קשר</button></li>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="index.html#services">שירותים</a></li>
+    <li><a href="tools.html" class="active">כלים להורדה</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="pricing.html">מחירון</a></li>
+    <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
     <li style="position:relative">
       <a id="nav-auth-btn" class="nav-user" onclick="openAuthModal('login')">כניסה / הרשמה</a>
       <div id="user-dropdown" class="user-dropdown">
@@ -181,19 +186,51 @@
 
 <div class="tools-grid" id="tools-grid">
 
+  <!-- ═══ כלי: בקרת חשבון קבלן — תשומות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="audit" data-title="בקרת חשבון קבלן — תשומות שעות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📋</div>
+      <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תשומות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">בדיקת חשבון ספק מול רשימת עובדים מאושרים, תעריפים ודוחות נוכחות. מזהה עובדים לא מאושרים, חריגות תעריף ואי-התאמות שעות. מייצר אקסל מסומן ✅/❌ לכל שורה.</p>
+      <div class="card-tags"><span class="tag">בקרה</span><span class="tag">חשבון קבלן</span><span class="tag">שעות</span><span class="tag">תעריפים</span><span class="tag">ביקורת</span></div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="location.href='tool-hours-audit.html'">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי: בקרת חשבון קבלן — תפוקות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="audit" data-title="בקרת חשבון קבלן — תפוקות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📊</div>
+      <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תפוקות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">בדיקת חשבון ספק לפי מכרז תפוקות — השוואת שירותים, כמויות ומחירים מול דוח הביצועים החודשי. בודק חריגות מתקרת כמות, תאימות מחיר ועקביות הנתונים.</p>
+      <div class="card-tags"><span class="tag">בקרה</span><span class="tag">תפוקות</span><span class="tag">כמויות</span><span class="tag">מכרז</span><span class="tag">ביקורת</span></div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="location.href='tool-outputs-audit.html'">🔓 פתיחת הכלי</button>
+    </div>
+  </div>
+
   <!-- ═══ כלי 1: מפצל אקסל ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="מפצל ומקטין קבצי אקסל">
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="פיצול והקטנת קבצי אקסל">
     <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
       <div class="card-icon icon-excel">✂️</div>
-      <div class="card-meta"><div class="card-title">מפצל ומקטין קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
+      <div class="card-meta"><div class="card-title">פיצול והקטנת קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
       <p class="card-desc">קובץ אקסל כבד שתוקע את המחשב? בחר עמודות רלוונטיות, חתוך לפי תאריך, מחלקה או מספר שורות — וקבל קבצים קטנים וניתנים לעבודה.</p>
       <div class="card-tags"><span class="tag">ביצועים</span><span class="tag">פיצול</span><span class="tag">ניקוי</span><span class="tag">תאריכים</span></div>
     </div>
     <div class="card-footer">
-<button class="btn-dl btn-member" onclick="handleDL('member','מפצל ומקטין קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
+<button class="btn-dl btn-member" onclick="handleDL('member','פיצול והקטנת קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
     </div>
   </div>
 
@@ -274,6 +311,14 @@
       <div class="article-card-title">קובץ אקסל כבד שתוקע את המחשב — 4 פתרונות מהירים</div>
       <div class="article-card-desc">קובץ שמקרס את Excel? 4 שיטות מעשיות לפיצול, הקטנה ובחירת עמודות — עם כלי חינמי שעובד ישירות בדפדפן.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 4 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-money-no-check.html" class="article-card" style="border-right:4px solid var(--accent)">
+      <span class="article-card-cat" style="color:var(--accent)">🔥 חדש — רכש ציבורי וביקורת פנימית</span>
+      <div class="article-card-title">הכסף שמשולם בלי שמישהו בדק — ומה אפשר לעשות כבר ממחר</div>
+      <div class="article-card-desc">מה רואים שוב ושוב בדוחות ביקורת: ספקים שמבינים שהחשבונות לא נבדקים, יחידות שמאשרות ללא בדיקה — ותהליך שלם לתיקון, מהמכרז ועד החשבון החודשי.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 8 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 

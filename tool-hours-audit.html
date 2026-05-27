@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
@@ -18,6 +18,7 @@
 <meta property="og:url" content="https://kandelbi.org/tool-hours-audit.html"/>
 <meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
@@ -41,7 +42,7 @@ main{max-width:1100px;margin:0 auto;padding:2rem 5vw 5rem}
 .step-num{background:var(--muted);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:900;flex-shrink:0}
 .step-num.done{background:var(--green)}.step-num.active{background:var(--blue)}
 .upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.6rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
-.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:var(--green-bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:var(--green-bg)}.upload-box.checking{border-color:var(--orange);background:#fff8ed;cursor:wait}.upload-box.error{border-color:var(--red);background:#fef2f2}
 .ub-icon{font-size:1.8rem;margin-bottom:4px}.ub-text{font-weight:700;font-size:0.88rem}.ub-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:650px){.grid2{grid-template-columns:1fr}}
@@ -116,18 +117,30 @@ tr.row-issue:hover td{background:#fde8e8}
 </style>
 </head>
 <body>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
 
-<header>
-  <div style="display:flex;gap:1rem;align-items:center">
-    <a href="tools.html" class="back-link">← חזרה לכלים</a>
-    <a href="pricing.html" class="back-link">מחירון</a>
-  </div>
-  <a href="index.html" class="logo">קנדל <span>BI</span></a>
-</header>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="pricing.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מחירון</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
 
 <main>
 <div class="tool-title">📋 בדיקת חשבון קבלן</div>
 <div class="tool-sub">השוואת עובדים מאושרים · תעריפים · שעות מול דוח נוכחות · ייצוא אקסל מסומן</div>
+<div style="background:#edf7f3;border:1.5px solid #0a7c5e;border-radius:8px;padding:9px 16px;margin:0.6rem 0 1rem;text-align:center;font-size:0.87rem;font-weight:700;color:#0a7c5e">
+  ✨ לרגל ההשקה — הכלי פתוח לשימוש חופשי בימים אלו
+</div>
 
 <div class="privacy-bar">
   <span style="font-size:1.1rem;flex-shrink:0">🔒</span>
@@ -166,7 +179,6 @@ tr.row-issue:hover td{background:#fde8e8}
 
   <div id="s2-note-new" class="alert-warn">
     ⚠️ מכרז חדש — יש להעלות רשימת עובדים שאושרו לעבוד, כולל תפקיד ותעריף שעתי מאושר לכל עובד.
-    הרשימה תישמר בדפדפן לשימוש חוזר בחודשים הבאים.
   </div>
 
   <div class="upload-box" id="dz-emp" onclick="document.getElementById('fi-emp').click()">
@@ -178,11 +190,13 @@ tr.row-issue:hover td{background:#fde8e8}
 
   <div id="emp-col-map" class="hidden" style="margin-top:1rem">
     <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.7rem;color:var(--navy)">📌 מיפוי עמודות:</div>
+    <div id="emp-sheet-sel-wrap"></div>
+    <div id="emp-hdr-sel-wrap"></div>
     <div class="grid2">
-      <div class="form-group"><label>ת.ז / מזהה עובד (חובה):</label><select id="emp-col-id"></select></div>
-      <div class="form-group"><label>שם עובד:</label><select id="emp-col-name"></select></div>
-      <div class="form-group"><label>תפקיד / רמה:</label><select id="emp-col-role"></select></div>
-      <div class="form-group"><label>תעריף מאושר לשעה (חובה):</label><select id="emp-col-rate"></select></div>
+      <div class="form-group"><label>ת.ז / מזהה עובד (חובה):</label><select id="emp-col-id" onchange="renderEmpPreview()"></select></div>
+      <div class="form-group"><label>שם עובד:</label><select id="emp-col-name" onchange="renderEmpPreview()"></select></div>
+      <div class="form-group"><label>תפקיד / רמה:</label><select id="emp-col-role" onchange="renderEmpPreview()"></select></div>
+      <div class="form-group"><label>תעריף מאושר לשעה (חובה):</label><select id="emp-col-rate" onchange="renderEmpPreview()"></select></div>
     </div>
     <div id="emp-preview" class="emp-table-wrap"></div>
     <div style="margin-top:0.8rem">
@@ -192,9 +206,13 @@ tr.row-issue:hover td{background:#fde8e8}
 
   <div id="emp-saved-wrap" class="hidden">
     <div id="emp-saved-preview" class="emp-table-wrap"></div>
-    <div style="margin-top:0.8rem;display:flex;gap:0.6rem;flex-wrap:wrap">
-      <button class="btn-primary" onclick="goToStep3()">המשך לשלב הבא ←</button>
+
+    <div style="margin-top:0.8rem">
       <button class="btn-accent btn-sm" onclick="showReplaceEmp()">🔄 עדכן רשימה</button>
+    </div>
+
+    <div style="margin-top:0.8rem">
+      <button class="btn-primary" onclick="goToStep3()">המשך לשלב הבא ←</button>
     </div>
   </div>
 </div>
@@ -221,6 +239,7 @@ tr.row-issue:hover td{background:#fde8e8}
         <div class="ub-sub">xlsx / xls / csv / PDF (לא סרוק)</div>
       </div>
       <input type="file" id="fi-inv" accept=".xlsx,.xls,.csv,.pdf" hidden/>
+      <div id="inv-sheet-sel-wrap"></div>
       <div id="inv-info" style="margin-top:5px;font-size:0.79rem;color:var(--muted)"></div>
     </div>
   </div>
@@ -234,6 +253,8 @@ tr.row-issue:hover td{background:#fde8e8}
   <div class="card-title"><div class="step-num" id="sn4">4</div> מיפוי עמודות</div>
 
   <div style="font-weight:700;font-size:0.87rem;color:var(--navy);margin-bottom:0.7rem">📋 עמודות בדוח הנוכחות:</div>
+  <div id="att-sheet-sel-wrap"></div>
+  <div id="att-hdr-sel-wrap"></div>
   <div class="grid2">
     <div class="form-group"><label>מזהה עובד (ת.ז / שם):</label><select id="col-att-emp"></select></div>
     <div class="form-group"><label>תאריך:</label><select id="col-att-date"></select></div>
@@ -242,8 +263,12 @@ tr.row-issue:hover td{background:#fde8e8}
   </div>
 
   <div style="font-weight:700;font-size:0.87rem;color:var(--navy);margin:0.8rem 0 0.7rem">💵 עמודות בחשבון:</div>
+  <div id="inv-sheet-sel-wrap-step4"></div>
+  <div id="inv-hdr-sel-wrap"></div>
+  <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם בחשבון כתובים שמות עובדים — בחר עמודת שם. אם כתוב רק תפקיד — בחר עמודת תפקיד ואל תבחר שם.</div>
   <div class="grid2">
-    <div class="form-group"><label>מזהה עובד (ת.ז / שם):</label><select id="col-inv-emp"></select></div>
+    <div class="form-group"><label>שם / ת.ז עובד (אם קיים):</label><select id="col-inv-emp"></select></div>
+    <div class="form-group"><label>תפקיד בחשבון (אם קיים):</label><select id="col-inv-role"></select></div>
     <div class="form-group"><label>כמות שעות:</label><select id="col-inv-hours"></select></div>
     <div class="form-group"><label>תעריף לשעה:</label><select id="col-inv-rate"></select></div>
     <div class="form-group"><label>סה"כ לשורה:</label><select id="col-inv-total"></select></div>
@@ -280,9 +305,8 @@ tr.row-issue:hover td{background:#fde8e8}
 
   <div class="tab-panel show" id="tab-summary">
     <div id="summary-content"></div>
-    <div style="margin-top:1.2rem;display:flex;gap:0.7rem;flex-wrap:wrap">
-      <button class="btn-accent" onclick="exportInvoice()">⬇ ייצא חשבון מסומן (אקסל)</button>
-      <button class="btn-green" onclick="exportAttendance()">⬇ ייצא דוח נוכחות עם ממצאים (אקסל)</button>
+    <div style="margin-top:1.2rem">
+      <button style="background:var(--navy);color:#fff;border:none;padding:11px 26px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.95rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא לאקסל (4 גיליונות)</button>
     </div>
   </div>
 
@@ -291,7 +315,7 @@ tr.row-issue:hover td{background:#fde8e8}
       ✓ ירוק = תקין &nbsp;|&nbsp; ✗ אדום = ממצא בשורה &nbsp;|&nbsp; מספר מודגש באדום = הערך הלא תקין
     </div>
     <div class="result-table-wrap" id="invoice-table-wrap"></div>
-    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportInvoice()">⬇ ייצא אקסל</button></div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
   </div>
 
   <div class="tab-panel" id="tab-attendance">
@@ -304,7 +328,7 @@ tr.row-issue:hover td{background:#fde8e8}
       <button class="ftab" onclick="filterAtt('unauth',this)">לא מאושר</button>
     </div>
     <div class="result-table-wrap" id="att-table-wrap"></div>
-    <div style="margin-top:0.8rem"><button class="btn-green" onclick="exportAttendance()">⬇ ייצא אקסל</button></div>
+    <div style="margin-top:0.8rem"><button class="btn-green" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
   </div>
 
   <div class="tab-panel" id="tab-employees">
@@ -321,7 +345,7 @@ tr.row-issue:hover td{background:#fde8e8}
       <table><thead><tr><th>עובד</th><th>תאריך</th><th>שורה 1</th><th>שורה 2</th><th>חפיפה (דק')</th><th>סוג</th></tr></thead>
       <tbody id="overlaps-body"></tbody></table>
     </div>
-    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportOverlaps()">⬇ ייצא</button></div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
   </div>
 
   <div class="tab-panel" id="tab-monthly">
@@ -344,7 +368,24 @@ tr.row-issue:hover td{background:#fde8e8}
       לדוגמה: <strong>תיק קבלן \ [שם ספק] \ [שם עובד]</strong>
     </p>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="closeModal('modal-threshold')">✅ כן, בדקתי — המשך</button>
+      <button class="btn-primary" onclick="closeModal('modal-threshold');goToStep3()">✅ כן, בדקתי — המשך</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: אימות שמות ══ -->
+<div class="modal-overlay" id="modal-alias">
+  <div class="modal">
+    <div class="modal-icon">🔍</div>
+    <h2>התאמת שמות — האם מדובר באותו עובד?</h2>
+    <p style="text-align:right;line-height:1.8">
+      ברשימת העובדים המאושרים: <strong id="alias-emp-approved"></strong><br/>
+      בדוחות הנוכחות: <strong id="alias-emp-att"></strong><br/><br/>
+      האם אלה אותו עובד? <span id="alias-remaining" style="font-size:0.78rem;color:var(--muted)"></span>
+    </p>
+    <div class="modal-actions">
+      <button class="btn-green" onclick="confirmAlias(true)">✅ כן, אותו עובד — חבר ביניהם</button>
+      <button class="btn-primary" onclick="confirmAlias(false)">✗ לא, עובדים שונים</button>
     </div>
   </div>
 </div>
@@ -377,6 +418,10 @@ let auditAttRows = [];
 let overlapResults = [];
 let reasonResults = [];
 let monthlyData = {};
+let roundHoursResult = { daily: null, entry: null, exit: null };
+let attHrById = {}, attHrByName = {}, attHrByRole = {};
+let expectedTotal = 0, actualInvTotal = 0;
+let pendingAliasQueue = [], currentAlias = null;
 
 // ── TENDER STORAGE ──
 function loadTenders() {
@@ -400,9 +445,10 @@ function renderTenderList() {
   list.innerHTML = names.map(n => {
     const emp = (t[n].employees || []).length;
     const sel = currentTender?.name === n ? 'selected' : '';
-    return `<div class="tender-chip ${sel}" onclick="selectTender(${JSON.stringify(n)})">
+    const jsn = escAttr(JSON.stringify(n)); // escape " → &quot; so onclick attr isn't broken
+    return `<div class="tender-chip ${sel}" onclick="selectTender(${jsn})">
       📁 ${escHtml(n)} <span style="font-size:0.72rem;opacity:0.7">(${emp} עובדים)</span>
-      <button class="chip-del" onclick="deleteTender(event,${JSON.stringify(n)})" title="מחק">✕</button>
+      <button class="chip-del" onclick="deleteTender(event,${jsn})" title="מחק">✕</button>
     </div>`;
   }).join('');
 }
@@ -445,6 +491,7 @@ function selectTender(name) {
   document.getElementById('tender-input').value = name;
   onTenderInput();
   renderTenderList();
+  confirmTender();
 }
 
 function deleteTender(e, name) {
@@ -470,14 +517,14 @@ function confirmTender() {
 
   const t = loadTenders();
   if (t[name]) {
-    currentTender.employees = t[name].employees || [];
+    currentTender.employees    = t[name].employees    || [];
+    currentTender.requirements = t[name].requirements || null;
     isNewTender = false;
     showStep2Existing();
   } else {
     isNewTender = true;
     document.getElementById('step2-card').classList.remove('hidden');
     markStep(2, 'active');
-    setTimeout(() => openModal('modal-threshold'), 300);
   }
 }
 
@@ -496,6 +543,7 @@ function showStep2Existing() {
   document.getElementById('emp-saved-preview').innerHTML = `
     <table><thead><tr><th>ת.ז / מזהה</th><th>שם</th><th>תפקיד</th><th>תעריף מאושר</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
+
 }
 
 function showReplaceEmp() {
@@ -523,6 +571,9 @@ document.getElementById('fi-emp').addEventListener('change', e => {
 });
 
 function buildEmpColMap() {
+  const empShWrap=document.getElementById('emp-sheet-sel-wrap');
+  if(empShWrap) empShWrap.innerHTML=sheetSelectorHtml(empFileData.wb,'emp-sh-sel','changeEmpSheet');
+  document.getElementById('emp-hdr-sel-wrap').innerHTML = headerRowSelectorHtml(empFileData,'emp-hdr-row','changeEmpHeaderRow');
   const opts = empFileData.headers.map((h, i) => `<option value="${i}">${escHtml(String(h||'')) || '(עמודה '+(i+1)+')'}</option>`).join('');
   const optsOpt = '<option value="-1">— לא קיים —</option>' + opts;
   document.getElementById('emp-col-id').innerHTML = opts;
@@ -547,15 +598,33 @@ function renderEmpPreview() {
   const rl = +document.getElementById('emp-col-role').value;
   const rt = +document.getElementById('emp-col-rate').value;
   const preview = empFileData.rows.slice(0, 6);
+
+  // Count bad-rate rows across the FULL dataset (not just preview)
+  const badRateRows = empFileData.rows.filter(r => {
+    const v = String(r[rt]||'').trim();
+    return v !== '' && isNaN(parseFloat(v));
+  });
+  const badRateWarn = badRateRows.length > 0
+    ? `<div style="margin-top:6px;padding:7px 12px;background:#fdecea;border-right:3px solid var(--red);border-radius:6px;font-size:0.8rem;color:var(--red);font-weight:600">
+        ⚠️ נמצאו ${badRateRows.length} שורות עם ערך לא מספרי בעמודת התעריף — לדוגמה: "${escHtml(String(badRateRows[0][rt]||''))}" (שורה ראשונה עם בעיה).
+        בדוק שבחרת את העמודה הנכונה.
+       </div>`
+    : '';
+
   document.getElementById('emp-preview').innerHTML = `
     <table><thead><tr><th>ת.ז / מזהה</th><th>שם</th><th>תפקיד</th><th>תעריף</th></tr></thead>
-    <tbody>${preview.map(r => `<tr>
-      <td>${escHtml(String(r[id]||''))}</td>
-      <td>${nm>=0?escHtml(String(r[nm]||'')):'—'}</td>
-      <td>${rl>=0?escHtml(String(r[rl]||'')):'—'}</td>
-      <td>${escHtml(String(r[rt]||''))}</td>
-    </tr>`).join('')}</tbody></table>
-    <div style="font-size:0.72rem;color:var(--muted);padding:3px 8px">מוצגות ${preview.length} שורות ראשונות מתוך ${empFileData.rows.length}</div>`;
+    <tbody>${preview.map(r => {
+      const rateVal = String(r[rt]||'').trim();
+      const badRate = rateVal !== '' && isNaN(parseFloat(rateVal));
+      return `<tr>
+        <td>${escHtml(String(r[id]||''))}</td>
+        <td>${nm>=0?escHtml(String(r[nm]||'')):'—'}</td>
+        <td>${rl>=0?escHtml(String(r[rl]||'')):'—'}</td>
+        <td style="${badRate?'background:#fdecea;color:var(--red);font-weight:700':''}">${escHtml(rateVal||'—')}${badRate?' ⚠️':''}</td>
+      </tr>`;
+    }).join('')}</tbody></table>
+    <div style="font-size:0.72rem;color:var(--muted);padding:3px 8px">מוצגות ${preview.length} שורות ראשונות מתוך ${empFileData.rows.length}</div>
+    ${badRateWarn}`;
 }
 
 function saveEmpList() {
@@ -563,6 +632,32 @@ function saveEmpList() {
   const nmCol  = +document.getElementById('emp-col-name').value;
   const rlCol  = +document.getElementById('emp-col-role').value;
   const rtCol  = +document.getElementById('emp-col-rate').value;
+
+  // ── בדיקת תעריפים: חייבים להיות מספרים ──
+  const badRateRows = empFileData.rows.filter(r => {
+    const id = String(r[idCol]||'').trim();
+    if (!id) return false; // skip empty/header-like rows
+    const v = String(r[rtCol]||'').trim();
+    return v !== '' && isNaN(parseFloat(v));
+  });
+  if (badRateRows.length > 0) {
+    const examples = badRateRows.slice(0,3)
+      .map(r => `"${String(r[rtCol]||'')}" (עובד: ${String(r[idCol]||'')})`)
+      .join('\n');
+    alert(`⚠️ שגיאה בעמודת תעריף — נמצאו ${badRateRows.length} שורות עם ערך שאינו מספר:\n\n${examples}\n\nאנא בדוק שבחרת את עמודת התעריף הנכונה.`);
+    return;
+  }
+
+  // ── אזהרה על תעריף 0 ──
+  const zeroRateRows = empFileData.rows.filter(r => {
+    const id = String(r[idCol]||'').trim();
+    if (!id) return false;
+    return (parseFloat(String(r[rtCol]||'').trim())||0) === 0;
+  });
+  if (zeroRateRows.length > 0 && zeroRateRows.length === empFileData.rows.filter(r=>String(r[idCol]||'').trim()).length) {
+    // ALL rows have rate 0 — probably wrong column
+    if (!confirm(`⚠️ כל השורות בעמודת התעריף מכילות 0 — ייתכן שנבחרה עמודה שגויה.\nהאם להמשיך בכל זאת?`)) return;
+  }
 
   const employees = empFileData.rows.map(r => ({
     id:   String(r[idCol]||'').trim(),
@@ -580,7 +675,12 @@ function saveEmpList() {
   renderTenderList();
 
   showStep2Existing();
-  goToStep3();
+  // Show threshold reminder only for new tenders, after uploading employees
+  if (isNewTender) {
+    openModal('modal-threshold');
+  } else {
+    goToStep3();
+  }
 }
 
 // ── ATTENDANCE FILES ──
@@ -634,6 +734,9 @@ document.getElementById('fi-inv').addEventListener('change', async e => {
     setDZLoaded('dz-inv', '✅', `${file.name} (${invFileData.rows.length} שורות)`);
     info.textContent = '';
     invFileData.isPdf = false;
+    // show sheet selector in step 3
+    const invShWrap=document.getElementById('inv-sheet-sel-wrap');
+    if(invShWrap && invFileData.wb) invShWrap.innerHTML=sheetSelectorHtml(invFileData.wb,'inv-sh-sel','changeInvSheet');
   }
   checkStep3();
 });
@@ -679,6 +782,43 @@ function checkStep3() {
   document.getElementById('btn-step4').disabled = !(attFilesList.length > 0 && invFileData.rows.length > 0);
 }
 
+// ── COLUMN MAPPING MEMORY ──
+function getSelColName(id) {
+  const sel = document.getElementById(id);
+  if (!sel || sel.selectedIndex < 0) return '';
+  return sel.options[sel.selectedIndex]?.text || '';
+}
+function applyColByName(id, name) {
+  if (!name) return;
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const opt = Array.from(sel.options).find(o => o.text.trim() === name.trim());
+  if (opt) sel.value = opt.value;
+}
+function saveColMapping() {
+  if (!currentTender?.name) return;
+  const t = loadTenders();
+  if (!t[currentTender.name]) return;
+  t[currentTender.name].colMapping = {
+    attEmp:    getSelColName('col-att-emp'),
+    attDate:   getSelColName('col-att-date'),
+    attStart:  getSelColName('col-att-start'),
+    attEnd:    getSelColName('col-att-end'),
+    invEmp:    getSelColName('col-inv-emp'),
+    invRole:   getSelColName('col-inv-role'),
+    invHours:  getSelColName('col-inv-hours'),
+    invRate:   getSelColName('col-inv-rate'),
+    invTotal:  getSelColName('col-inv-total'),
+    attHdrRow: attFilesList[0]?.data.headerRowIdx || 0,
+    invHdrRow: invFileData.headerRowIdx || 0,
+  };
+  saveTenders(t);
+}
+function getColMapping() {
+  if (!currentTender?.name) return null;
+  return loadTenders()[currentTender.name]?.colMapping || null;
+}
+
 // ── STEP 4 ──
 function goToStep4() {
   markStep(3, 'done');
@@ -689,7 +829,20 @@ function goToStep4() {
 }
 
 function buildColMaps() {
-  const ah = attFilesList[0]?.data.headers || [];
+  buildAttColSelects();
+  buildInvColSelects();
+}
+
+function buildAttColSelects() {
+  const attData = attFilesList[0]?.data;
+  const mapping = getColMapping();
+  if (mapping && attData && mapping.attHdrRow > 0 && attData.allRows?.length > mapping.attHdrRow) {
+    attFilesList.forEach(f => applyHeaderRow(f.data, mapping.attHdrRow));
+  }
+  const attShWrap=document.getElementById('att-sheet-sel-wrap');
+  if(attShWrap) attShWrap.innerHTML=attData?.wb ? sheetSelectorHtml(attData.wb,'att-sh-sel','changeAttSheet') : '';
+  document.getElementById('att-hdr-sel-wrap').innerHTML = headerRowSelectorHtml(attData,'att-hdr-row','changeAttHeaderRow');
+  const ah = attData?.headers || [];
   const attOpts = ah.map((h, i) => `<option value="${i}">${escHtml(String(h||'')) || '(עמודה '+(i+1)+')'}</option>`).join('');
   ['col-att-emp','col-att-date','col-att-start','col-att-end'].forEach(id => document.getElementById(id).innerHTML = attOpts);
   const ahl = ah.map(x => String(x||'').toLowerCase());
@@ -697,17 +850,62 @@ function buildColMaps() {
   autoSelect('col-att-date',  ahl, ['תאריך','date','יום']);
   autoSelect('col-att-start', ahl, ['כניסה','התחלה','start','from','משעה']);
   autoSelect('col-att-end',   ahl, ['יציאה','סיום','end','to','עד']);
+  if (mapping) {
+    applyColByName('col-att-emp',   mapping.attEmp);
+    applyColByName('col-att-date',  mapping.attDate);
+    applyColByName('col-att-start', mapping.attStart);
+    applyColByName('col-att-end',   mapping.attEnd);
+  }
+}
 
+function buildInvColSelects() {
+  const mapping = getColMapping();
+  if (mapping && !invFileData.isPdf && mapping.invHdrRow > 0 && invFileData.allRows?.length > mapping.invHdrRow) {
+    applyHeaderRow(invFileData, mapping.invHdrRow);
+  }
+  if (!invFileData.isPdf) {
+    ['inv-sheet-sel-wrap','inv-sheet-sel-wrap-step4'].forEach(id=>{
+      const wrap=document.getElementById(id);
+      if(wrap) wrap.innerHTML=invFileData.wb ? sheetSelectorHtml(invFileData.wb,'inv-sh-sel','changeInvSheet') : '';
+    });
+    document.getElementById('inv-hdr-sel-wrap').innerHTML = headerRowSelectorHtml(invFileData,'inv-hdr-row','changeInvHeaderRow');
+  } else {
+    ['inv-sheet-sel-wrap','inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML='';});
+    document.getElementById('inv-hdr-sel-wrap').innerHTML = '';
+  }
   const ih = invFileData.headers;
   const invOpts = ih.map((h, i) => `<option value="${i}">${escHtml(String(h||'')) || '(עמודה '+(i+1)+')'}</option>`).join('');
   const invOptOpt = '<option value="-1">— לא קיים —</option>' + invOpts;
-  ['col-inv-emp','col-inv-hours','col-inv-rate'].forEach(id => document.getElementById(id).innerHTML = invOpts);
-  document.getElementById('col-inv-total').innerHTML = invOptOpt;
+  ['col-inv-hours','col-inv-rate'].forEach(id => document.getElementById(id).innerHTML = invOpts);
+  ['col-inv-emp','col-inv-role','col-inv-total'].forEach(id => document.getElementById(id).innerHTML = invOptOpt);
   const ihl = ih.map(x => String(x||'').toLowerCase());
   autoSelect('col-inv-emp',   ihl, ['עובד','שם','ת.ז','id','מזהה']);
+  autoSelect('col-inv-role',  ihl, ['תפקיד','role','רמה','level','דרגה']);
   autoSelect('col-inv-hours', ihl, ['שעות','כמות','hours','qty']);
   autoSelect('col-inv-rate',  ihl, ['תעריף','rate','מחיר','שכר']);
   autoSelect('col-inv-total', ihl, ['סה"כ','סהכ','total','סכום','לתשלום']);
+  if (mapping) {
+    applyColByName('col-inv-emp',   mapping.invEmp);
+    applyColByName('col-inv-role',  mapping.invRole);
+    applyColByName('col-inv-hours', mapping.invHours);
+    applyColByName('col-inv-rate',  mapping.invRate);
+    applyColByName('col-inv-total', mapping.invTotal);
+  }
+}
+
+function changeEmpHeaderRow(idx) {
+  applyHeaderRow(empFileData, +idx);
+  buildEmpColMap();
+}
+
+function changeAttHeaderRow(idx) {
+  attFilesList.forEach(f => applyHeaderRow(f.data, +idx));
+  buildAttColSelects();
+}
+
+function changeInvHeaderRow(idx) {
+  applyHeaderRow(invFileData, +idx);
+  buildInvColSelects();
 }
 
 // ── MAIN AUDIT ──
@@ -717,11 +915,18 @@ function runFullAudit() {
   const aStart = +document.getElementById('col-att-start').value;
   const aEnd   = +document.getElementById('col-att-end').value;
   const iEmp   = +document.getElementById('col-inv-emp').value;
+  const iRole  = +document.getElementById('col-inv-role').value;
   const iHours = +document.getElementById('col-inv-hours').value;
   const iRate  = +document.getElementById('col-inv-rate').value;
   const iTotal = +document.getElementById('col-inv-total').value;
   const maxH   = parseFloat(document.getElementById('max-hours').value) || 12;
   const warnH  = parseFloat(document.getElementById('warn-hours').value) || 10;
+
+  // Validation: must have at least emp or role column
+  if (iEmp < 0 && iRole < 0) {
+    alert('יש לבחור לפחות עמודת שם עובד או עמודת תפקיד מהחשבון.');
+    return;
+  }
 
   // Merge attendance rows
   const allAtt = attFilesList.flatMap(f => f.data.rows.map(r => ({ ...r, _src: f.name })));
@@ -787,14 +992,48 @@ function runFullAudit() {
   });
 
   // ── 3. Hours per employee (for invoice comparison) ──
-  const attHrById = {}, attHrByName = {};
+  attHrById = {}; attHrByName = {};
+  const aliases = loadAliases();
   allAtt.forEach(row => {
-    const id   = nId(String(row[aEmp]||''));
-    const name = nName(String(row[aEmp]||''));
+    const raw  = String(row[aEmp]||'').trim();
+    const id   = nId(raw);
+    const name = nName(raw);
     const s = toMin(row[aStart]), e = toMin(row[aEnd]);
     const h = (s>=0&&e>s) ? (e-s)/60 : 0;
     attHrById[id]     = (attHrById[id]||0)   + h;
     attHrByName[name] = (attHrByName[name]||0)+ h;
+    // accumulate also by alias → approved employee
+    const aliasId = aliases[raw];
+    if (aliasId) {
+      const ae = employees.find(e => e.id === aliasId);
+      if (ae) {
+        attHrById[nId(ae.id)] = (attHrById[nId(ae.id)]||0) + h;
+        if (ae.name) attHrByName[nName(ae.name)] = (attHrByName[nName(ae.name)]||0) + h;
+      }
+    }
+  });
+
+  // ── 3b. Hours per role (for role-mode invoice comparison) ──
+  attHrByRole = {};
+  const empsByRole = {}; // role → [employee objects]
+  employees.forEach(e => {
+    if (!e.role) return;
+    const rk = String(e.role).trim().toLowerCase();
+    if (!empsByRole[rk]) empsByRole[rk] = [];
+    empsByRole[rk].push(e);
+  });
+  // Sum attendance hours per role via employee lookup
+  allAtt.forEach(row => {
+    const raw  = String(row[aEmp]||'').trim();
+    const id   = nId(raw), nm = nName(raw);
+    const s = toMin(row[aStart]), e = toMin(row[aEnd]);
+    const h = (s>=0&&e>s) ? (e-s)/60 : 0;
+    let emp = empById[id] || empByName[nm] || null;
+    if (!emp && aliases[raw]) emp = employees.find(e2 => e2.id === aliases[raw]) || null;
+    if (emp?.role) {
+      const rk = String(emp.role).trim().toLowerCase();
+      attHrByRole[rk] = (attHrByRole[rk]||0) + h;
+    }
   });
 
   // Monthly totals
@@ -821,8 +1060,9 @@ function runFullAudit() {
       }
     }
     if (employees.length > 0) {
-      const id = nId(String(row[aEmp]||'')), nm = nName(String(row[aEmp]||''));
-      if (!empById[id] && !empByName[nm]) { issues.push('עובד אינו ברשימה המאושרת'); types.push('unauth'); }
+      const raw = String(row[aEmp]||'').trim();
+      const id = nId(raw), nm = nName(raw);
+      if (!empById[id] && !empByName[nm] && !aliases[raw]) { issues.push('עובד אינו ברשימה המאושרת'); types.push('unauth'); }
     }
     return { _orig:row, _src:row._src, _issues:issues, _types:types, _hasIssue:issues.length>0 };
   });
@@ -836,10 +1076,61 @@ function runFullAudit() {
     [id, nm].forEach(k => { attIssuesByEmp[k] = (attIssuesByEmp[k]||0) + 1; });
   });
 
+  const useRoleMode = iEmp < 0 && iRole >= 0;
+
   auditInvoiceRows = invFileData.rows.map(row => {
-    const empRaw  = String(row[iEmp]||'').trim();
     const hoursV  = parseFloat(row[iHours])||0;
     const rateV   = parseFloat(row[iRate])||0;
+
+    if (useRoleMode) {
+      // ── Role mode: invoice row identified by role, not employee name ──
+      const roleRaw = String(row[iRole]||'').trim();
+      if (!roleRaw || hoursV === 0) {
+        return { _orig:row, _skip:true, _issues:[], empIssue:false, hoursIssue:false, rateIssue:false, _roleMode:true };
+      }
+      const rk = roleRaw.toLowerCase();
+      const matchedEmps = empsByRole[rk] || [];
+      const issues = [];
+      let empIssue=false, hoursIssue=false, rateIssue=false;
+
+      // a) Role exists in approved list?
+      if (employees.length > 0 && matchedEmps.length === 0) {
+        issues.push(`תפקיד "${roleRaw}" לא נמצא ברשימת העובדים המאושרים`);
+        empIssue = true;
+      }
+
+      // b) Rate check — all employees in this role should have the same approved rate
+      if (matchedEmps.length > 0 && rateV > 0) {
+        const ratesOk = matchedEmps.filter(e => e.rate > 0 && Math.abs(rateV - e.rate) <= 0.5);
+        const ratesBad = matchedEmps.filter(e => e.rate > 0 && Math.abs(rateV - e.rate) > 0.5);
+        if (ratesBad.length > 0 && ratesOk.length === 0) {
+          const rates = [...new Set(matchedEmps.filter(e=>e.rate>0).map(e=>e.rate.toFixed(2)))].join(', ');
+          issues.push(`התעריף אינו תואם — בחשבון: ${rateV.toFixed(2)}, מאושר: ${rates}`);
+          rateIssue = true;
+        }
+      }
+
+      // c) Hours match sum of attendance hours for this role?
+      const attH = attHrByRole[rk] || 0;
+      if (attH > 0 && hoursV > 0 && Math.abs(hoursV - attH) > 0.5) {
+        issues.push(`אי התאמה בסך השעות לתפקיד — בחשבון: ${hoursV.toFixed(2)}, בדיווח: ${attH.toFixed(2)}`);
+        hoursIssue = true;
+      } else if (attH === 0 && hoursV > 0) {
+        issues.push(`לא נמצאו שעות בדוחות הנוכחות לתפקיד "${roleRaw}"`);
+        hoursIssue = true;
+      }
+
+      const empNames = matchedEmps.map(e=>e.name||e.id||'').filter(Boolean).join(', ');
+      return {
+        _orig:row, _skip:false, _status:issues.length>0?'issue':'ok',
+        _issues:issues, empIssue, hoursIssue, rateIssue,
+        _emp:empNames, _role:roleRaw, _hours:hoursV, _rate:rateV,
+        _approvedRate:matchedEmps[0]?.rate||0, _attH:attH, _roleMode:true
+      };
+    }
+
+    // ── Name mode: existing logic ──
+    const empRaw  = String(row[iEmp]||'').trim();
 
     // Skip summary/total/empty rows
     if (!empRaw || hoursV === 0) {
@@ -851,6 +1142,7 @@ function runFullAudit() {
     const id  = nId(empRaw), nm = nName(empRaw);
 
     let approvedEmp = empById[id] || empByName[nm] || null;
+    if (!approvedEmp && aliases[empRaw]) approvedEmp = employees.find(e => e.id === aliases[empRaw]) || null;
 
     // a) Employee authorized?
     if (employees.length > 0 && !approvedEmp) {
@@ -890,11 +1182,67 @@ function runFullAudit() {
     };
   });
 
+  roundHoursResult = checkRoundHours();
+  saveColMapping();
+
+  // ── Expected vs actual total ──
+  expectedTotal = 0;
+  employees.forEach(e => {
+    const hrs = attHrById[nId(e.id||'')] || attHrByName[nName(e.name||'')] || 0;
+    expectedTotal += hrs * (e.rate||0);
+  });
+  actualInvTotal = 0;
+  invFileData.rows.forEach(row => {
+    const t = iTotal >= 0 ? parseFloat(row[iTotal])||0 : 0;
+    const h = parseFloat(row[iHours])||0;
+    const r = parseFloat(row[iRate])||0;
+    actualInvTotal += t > 0 ? t : h * r;
+  });
+
   renderAllResults();
+  if (!useRoleMode) setTimeout(findPotentialAliases, 600);
   markStep(4, 'done');
   document.getElementById('results-card').classList.remove('hidden');
   document.getElementById('results-card').scrollIntoView({ behavior:'smooth' });
   if (typeof gtag !== 'undefined') gtag('event','audit_run',{tender:currentTender?.name});
+}
+
+// ── ROUND HOURS CHECK ──
+function checkRoundHours() {
+  const aEmp   = +document.getElementById('col-att-emp').value;
+  const aDate  = +document.getElementById('col-att-date').value;
+  const aStart = +document.getElementById('col-att-start').value;
+  const aEnd   = +document.getElementById('col-att-end').value;
+  const allAtt = attFilesList.flatMap(f => f.data.rows);
+
+  // סה"כ שעות יומי עגול
+  const daily = {};
+  allAtt.forEach(row => {
+    const k = `${row[aEmp]}||${dateKey(row[aDate])}`;
+    const s = toMin(row[aStart]), e = toMin(row[aEnd]);
+    const h = (s >= 0 && e > s) ? (e - s) / 60 : 0;
+    daily[k] = (daily[k] || 0) + h;
+  });
+  const dailyVals = Object.values(daily).filter(h => h > 0);
+  const roundDailyCount = dailyVals.filter(h => Math.abs(h - Math.round(h)) < 0.01).length;
+
+  // שעות כניסה עגולות (דקות = 0)
+  const validEntry = allAtt.filter(r => toMin(r[aStart]) >= 0);
+  const roundEntryCount = validEntry.filter(r => toMin(r[aStart]) % 60 === 0).length;
+
+  // שעות יציאה עגולות
+  const validExit = allAtt.filter(r => toMin(r[aEnd]) > 0);
+  const roundExitCount = validExit.filter(r => toMin(r[aEnd]) % 60 === 0).length;
+
+  const pct = (n, t) => t > 0 ? Math.round(n / t * 100) : 0;
+  return {
+    daily: dailyVals.length > 0 && roundDailyCount / dailyVals.length > 0.5
+      ? { count: roundDailyCount, total: dailyVals.length, pct: pct(roundDailyCount, dailyVals.length) } : null,
+    entry: validEntry.length > 0 && roundEntryCount / validEntry.length > 0.5
+      ? { count: roundEntryCount, total: validEntry.length, pct: pct(roundEntryCount, validEntry.length) } : null,
+    exit:  validExit.length  > 0 && roundExitCount  / validExit.length  > 0.5
+      ? { count: roundExitCount,  total: validExit.length,  pct: pct(roundExitCount,  validExit.length)  } : null,
+  };
 }
 
 // ── RENDER ──
@@ -925,6 +1273,21 @@ function renderAllResults() {
   if (reasonResults.filter(r=>r.type==='high').length>0)
     s += `<div class="alert-warn">🟠 ${reasonResults.filter(r=>r.type==='high').length} ימים עם שעות חריגות</div>`;
   if (attIssuesCnt>0)      s += `<div class="alert-warn">⚠️ ${attIssuesCnt} שורות נוכחות עם ממצאים — עבור ל"דוח נוכחות"</div>`;
+  if (expectedTotal > 0 || actualInvTotal > 0) {
+    const diff = actualInvTotal - expectedTotal;
+    const diffAbs = Math.abs(diff);
+    const diffColor = diffAbs < 1 ? 'var(--green)' : diff > 0 ? 'var(--red)' : 'var(--orange)';
+    const diffSign = diff > 0.01 ? '+' : '';
+    s += `<div style="background:#f8faff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.87rem;margin-top:4px">
+      <strong>📊 השוואת סה"כ:</strong>&nbsp;
+      חשבון: <strong>${actualInvTotal.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})} ₪</strong>
+      &nbsp;|&nbsp; ציפייה לפי נוכחות ותעריפים: <strong>${expectedTotal.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})} ₪</strong>
+      &nbsp;|&nbsp; הפרש: <strong style="color:${diffColor}">${diffSign}${diff.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})} ₪</strong>
+    </div>`;
+  }
+  if (roundHoursResult.daily)  s += `<div class="alert-warn">🔵 שעות יומיות עגולות — ${roundHoursResult.daily.pct}% מהימים (${roundHoursResult.daily.count}/${roundHoursResult.daily.total}) מדווחים בשעות שלמות בדיוק</div>`;
+  if (roundHoursResult.entry)  s += `<div class="alert-warn">🔵 שעות כניסה עגולות — ${roundHoursResult.entry.pct}% מהשורות (${roundHoursResult.entry.count}/${roundHoursResult.entry.total}) — כניסה בדיוק על השעה</div>`;
+  if (roundHoursResult.exit)   s += `<div class="alert-warn">🔵 שעות יציאה עגולות — ${roundHoursResult.exit.pct}% מהשורות (${roundHoursResult.exit.count}/${roundHoursResult.exit.total}) — יציאה בדיוק על השעה</div>`;
   s += '</div>';
   document.getElementById('summary-content').innerHTML = s;
 
@@ -947,8 +1310,10 @@ function renderAllResults() {
 function renderInvoiceTable() {
   const ih = invFileData.headers;
   const iEmp   = +document.getElementById('col-inv-emp').value;
+  const iRole  = +document.getElementById('col-inv-role').value;
   const iHours = +document.getElementById('col-inv-hours').value;
   const iRate  = +document.getElementById('col-inv-rate').value;
+  const useRoleMode = iEmp < 0 && iRole >= 0;
 
   let html = `<table><thead><tr>
     ${ih.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}
@@ -963,7 +1328,8 @@ function renderInvoiceTable() {
     const cls = r._status==='issue' ? 'row-issue' : '';
     html += `<tr class="${cls}">`;
     r._orig.forEach((cell, ci) => {
-      const isIssueCell = (ci===iEmp&&r.empIssue)||(ci===iHours&&r.hoursIssue)||(ci===iRate&&r.rateIssue);
+      const empCol = useRoleMode ? iRole : iEmp;
+      const isIssueCell = (ci===empCol&&r.empIssue)||(ci===iHours&&r.hoursIssue)||(ci===iRate&&r.rateIssue);
       html += isIssueCell
         ? `<td><span class="cell-issue">${escHtml(String(cell||''))}</span></td>`
         : `<td>${escHtml(String(cell||''))}</td>`;
@@ -1001,25 +1367,38 @@ function renderEmployeesTab() {
     return;
   }
   const iEmp = +document.getElementById('col-inv-emp').value;
+  const iRole = +document.getElementById('col-inv-role').value;
   const aEmp = +document.getElementById('col-att-emp').value;
-  const invIds   = new Set(invFileData.rows.map(r=>nId(String(r[iEmp]||''))));
-  const invNames = new Set(invFileData.rows.map(r=>nName(String(r[iEmp]||''))));
+  const useRoleMode = iEmp < 0 && iRole >= 0;
+  // Invoice lookup: by name (name mode) or by role (role mode)
+  const invIds   = useRoleMode ? new Set() : new Set(invFileData.rows.map(r=>nId(String(r[iEmp]||''))));
+  const invNames = useRoleMode ? new Set() : new Set(invFileData.rows.map(r=>nName(String(r[iEmp]||''))));
+  const invRoles = useRoleMode ? new Set(invFileData.rows.map(r=>String(r[iRole]||'').trim().toLowerCase()).filter(Boolean)) : new Set();
   const attIds   = new Set(attFilesList.flatMap(f=>f.data.rows.map(r=>nId(String(r[aEmp]||'')))));
   const attNames = new Set(attFilesList.flatMap(f=>f.data.rows.map(r=>nName(String(r[aEmp]||'')))));
 
-  const unauth = [...new Set(invFileData.rows.map(r=>String(r[iEmp]||'').trim()))]
-    .filter(e=>e && !employees.some(ae=>nId(ae.id)===nId(e)||nName(ae.name)===nName(e)));
+  const unauth = useRoleMode ? [] :
+    [...new Set(invFileData.rows.map(r=>String(r[iEmp]||'').trim()))]
+      .filter(e=>e && !employees.some(ae=>nId(ae.id)===nId(e)||nName(ae.name)===nName(e)));
 
   let html = `
     <div style="font-weight:700;font-size:0.88rem;color:var(--navy);margin-bottom:0.7rem">עובדים מאושרים (${employees.length})</div>
+    <div style="margin-bottom:0.7rem"><button class="btn-accent btn-sm" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
     <div class="result-table-wrap">
-    <table><thead><tr><th>ת.ז / מזהה</th><th>שם</th><th>תפקיד</th><th>תעריף מאושר</th><th>בחשבון</th><th>בנוכחות</th></tr></thead>
+    <table><thead><tr><th>ת.ז / מזהה</th><th>שם</th><th>תפקיד</th><th>תעריף מאושר</th><th>שעות בתקופה</th><th>בחשבון</th><th>בנוכחות</th></tr></thead>
     <tbody>${employees.map(e => {
-      const inI = invIds.has(nId(e.id))||invNames.has(nName(e.name));
+      const inI = useRoleMode
+        ? (e.role ? invRoles.has(String(e.role).trim().toLowerCase()) : false)
+        : (invIds.has(nId(e.id))||invNames.has(nName(e.name)));
       const inA = attIds.has(nId(e.id))||attNames.has(nName(e.name));
-      return `<tr>
+      const hrs = attHrById[nId(e.id||'')] || attHrByName[nName(e.name||'')] || 0;
+      const hrsCell = hrs > 0
+        ? `<strong>${hrs.toFixed(2)}</strong>`
+        : `<strong style="color:var(--red)">0.00</strong>`;
+      return `<tr${hrs===0?' class="row-issue"':''}>
         <td>${escHtml(e.id||'')}</td><td>${escHtml(e.name||'')}</td><td>${escHtml(e.role||'')}</td>
         <td><strong>${e.rate?Number(e.rate).toFixed(2)+' ₪':'—'}</strong></td>
+        <td style="text-align:center">${hrsCell}</td>
         <td style="text-align:center">${inI?'✅':'—'}</td>
         <td style="text-align:center">${inA?'✅':'—'}</td>
       </tr>`;
@@ -1052,37 +1431,349 @@ function filterOverlaps(type, btn) {
 }
 
 // ── EXPORTS ──
-function exportInvoice() {
+async function exportAll() {
+  const tName    = currentTender?.name || '';
+  const aStart   = +document.getElementById('col-att-start').value;
+  const aEnd     = +document.getElementById('col-att-end').value;
+  const aEmpCol  = +document.getElementById('col-att-emp').value;
+  const employees = currentTender?.employees || [];
+  const _iEmp    = +document.getElementById('col-inv-emp').value;
+  const _iRole   = +document.getElementById('col-inv-role').value;
+  const _roleMode = _iEmp < 0 && _iRole >= 0;
+
+  // ── Color palette ──
+  const C = {
+    navy:'FF0D1F3C', blue:'FF1E6ABF', green:'FF27AE60', red:'FFC0392B',
+    redBg:'FFFDECEA', greenBg:'FFF0FDF4', altBg:'FFF5F7FA',
+    white:'FFFFFFFF', border:'FFDCE3EF', gray:'FF9AA5BB',
+  };
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'קנדל BI'; wb.created = new Date();
+
+  // ── Style helpers ──
+  function hStyle(cell, bg = C.navy) {
+    cell.font = { bold:true, color:{argb:C.white}, size:10, name:'Arial' };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:bg} };
+    cell.alignment = { horizontal:'right', vertical:'middle', readingOrder:'rtl' };
+    cell.border = { bottom:{style:'medium',color:{argb:bg}}, right:{style:'hair',color:{argb:C.border}} };
+  }
+  function dStyle(cell, o = {}) {
+    cell.font = { size:10, name:'Arial', bold:!!o.bold, ...(o.color?{color:{argb:o.color}}:{}) };
+    cell.alignment = { horizontal:o.align||'right', vertical:'top', wrapText:o.wrap!==false, readingOrder:'rtl' };
+    if (o.bg) cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:o.bg} };
+    cell.border = { bottom:{style:'hair',color:{argb:C.border}}, right:{style:'hair',color:{argb:C.border}} };
+    if (o.fmt) cell.numFmt = o.fmt;
+  }
+  function addTitle(ws, text, cols) {
+    const r = ws.addRow([text]);
+    if (cols>1) ws.mergeCells(r.number,1,r.number,cols);
+    const c = r.getCell(1);
+    c.font = {bold:true,size:13,color:{argb:C.white},name:'Arial'};
+    c.fill = {type:'pattern',pattern:'solid',fgColor:{argb:C.navy}};
+    c.alignment = {horizontal:'center',vertical:'middle',readingOrder:'rtl'};
+    r.height = 28;
+  }
+  function addSec(ws, text, cols, bg = C.blue) {
+    const r = ws.addRow([text]);
+    if (cols>1) ws.mergeCells(r.number,1,r.number,cols);
+    const c = r.getCell(1);
+    c.font = {bold:true,size:11,color:{argb:C.white},name:'Arial'};
+    c.fill = {type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+    c.alignment = {horizontal:'right',vertical:'middle',readingOrder:'rtl'};
+    r.height = 22;
+  }
+  function addHdr(ws, headers, bg = C.navy) {
+    const r = ws.addRow(headers);
+    r.height = 18;
+    headers.forEach((_,i) => hStyle(r.getCell(i+1), bg));
+  }
+  function mxLen(arr, def=8) {
+    if (!arr.length) return def;
+    return Math.max(def, ...arr.map(v=>String(v||'').length));
+  }
+  function uniq(arr) { return [...new Set(arr.filter(Boolean))]; }
+  function asNum(v) {
+    if (v===null||v===undefined||v==='') return v;
+    const n = parseFloat(String(v).replace(/,/g,''));
+    return !isNaN(n) ? n : v;
+  }
+
+  // ═══════════════════════════════════════════════
+  // גיליון 1 — גיליון מרכז
+  // ═══════════════════════════════════════════════
+  const N1 = 6;
+  const ws1 = wb.addWorksheet('גיליון מרכז', {views:[{rightToLeft:true}]});
+  addTitle(ws1, `דוח בדיקת חשבון — ${tName} — ${todayStr()}`, N1);
+  ws1.addRow([]);
+
+  // ── §1: כל שורות החשבון ──
+  addSec(ws1, '▼ ממצאים בחשבון — כל שורות החשבון', N1);
+  addHdr(ws1, [_roleMode?'תפקיד':'שם עובד','שעות בחשבון','תעריף מחויב (₪)','תעריף מאושר (₪)','סטטוס','ממצאים']);
+  auditInvoiceRows.forEach((r, ri) => {
+    if (r._skip) {
+      const row = ws1.addRow([r._orig.join(' | '),'','','','שורת סיכום','']);
+      row.height = 14;
+      [1,2,3,4,5,6].forEach(i => dStyle(row.getCell(i), {color:C.gray, wrap:i===6}));
+      return;
+    }
+    const isIssue = r._status === 'issue';
+    const bg = isIssue ? C.redBg : (ri%2===0 ? C.white : C.altBg);
+    const empOrRole = _roleMode
+      ? (r._role||'') + (r._emp ? `\n(${r._emp})` : '')
+      : (r._emp||'');
+    const row = ws1.addRow([empOrRole, r._hours||0, r._rate||0, r._approvedRate||0, isIssue?'✗':'✓', r._issues.join('; ')]);
+    row.height = 18;
+    dStyle(row.getCell(1), {bg});
+    dStyle(row.getCell(2), {bg, fmt:'#,##0.00', align:'center'});
+    dStyle(row.getCell(3), {bg, fmt:'#,##0.00', align:'center'});
+    dStyle(row.getCell(4), {bg, fmt:'#,##0.00', align:'center'});
+    dStyle(row.getCell(5), {bg, bold:true, color:isIssue?C.red:C.green, align:'center'});
+    dStyle(row.getCell(6), {bg, wrap:true});
+  });
+  ws1.addRow([]);
+
+  // ── §2: ממצאים בדיווחי הנוכחות (לפי סוג ממצא) ──
+  addSec(ws1, '▼ ממצאים בדיווחי הנוכחות', N1);
+  addHdr(ws1, ['מהות הממצא','כמות מופעים','כמות שעות','עובדים מעורבים','הסבר','']);
+  const aFinds = [];
+  const fOvlp = overlapResults.filter(r=>r.type==='full');
+  const pOvlp = overlapResults.filter(r=>r.type==='partial');
+  const shab  = reasonResults.filter(r=>r.type==='shabbat');
+  const high  = reasonResults.filter(r=>r.type==='high');
+  const warn  = reasonResults.filter(r=>r.type==='warn');
+  const uA    = auditAttRows.filter(r=>r._types.includes('unauth'));
+  const uI    = auditInvoiceRows.filter(r=>!r._skip&&r.empIssue);
+  const rateR = auditInvoiceRows.filter(r=>!r._skip&&r.rateIssue);
+  const hrsR  = auditInvoiceRows.filter(r=>!r._skip&&r.hoursIssue);
+
+  // ── שעות עגולות: חישוב עובדים וסך שעות ──
+  const _allAttFlat = attFilesList.flatMap(f=>f.data.rows);
+  const _aDateCol   = +document.getElementById('col-att-date').value;
+
+  // daily round
+  let rdEmps = [], rdHrs = 0;
+  if (roundHoursResult.daily) {
+    const _daily = {};
+    _allAttFlat.forEach(row => {
+      const k = `${row[aEmpCol]}||${dateKey(row[_aDateCol])}`;
+      const s = toMin(row[aStart]), e = toMin(row[aEnd]), h = (s>=0&&e>s)?(e-s)/60:0;
+      if (!_daily[k]) _daily[k] = { emp: String(row[aEmpCol]||''), h: 0 };
+      _daily[k].h += h;
+    });
+    Object.values(_daily).forEach(d => {
+      if (d.h>0 && Math.abs(d.h-Math.round(d.h))<0.01) { rdEmps.push(d.emp); rdHrs+=d.h; }
+    });
+    rdEmps = uniq(rdEmps);
+  }
+  // entry round
+  let reEmps = [], reHrs = 0;
+  if (roundHoursResult.entry) {
+    _allAttFlat.forEach(row => {
+      const s=toMin(row[aStart]), e=toMin(row[aEnd]);
+      if (s>=0 && s%60===0) { reEmps.push(String(row[aEmpCol]||'')); reHrs+=(e>s?(e-s)/60:0); }
+    });
+    reEmps = uniq(reEmps);
+  }
+  // exit round
+  let rxEmps = [], rxHrs = 0;
+  if (roundHoursResult.exit) {
+    _allAttFlat.forEach(row => {
+      const s=toMin(row[aStart]), e=toMin(row[aEnd]);
+      if (e>0 && e%60===0) { rxEmps.push(String(row[aEmpCol]||'')); rxHrs+=(e>s&&s>=0?(e-s)/60:0); }
+    });
+    rxEmps = uniq(rxEmps);
+  }
+
+  if (fOvlp.length) aFinds.push(['חפיפות שעות מלאות',   fOvlp.length, +fOvlp.reduce((s,r)=>s+r.overlap/60,0).toFixed(2), uniq(fOvlp.map(r=>r.emp)).join(', '), 'שני דיווחים חופפים לחלוטין לאותו עובד באותו יום']);
+  if (pOvlp.length) aFinds.push(['חפיפות שעות חלקיות',  pOvlp.length, +pOvlp.reduce((s,r)=>s+r.overlap/60,0).toFixed(2), uniq(pOvlp.map(r=>r.emp)).join(', '), 'שני דיווחים עם חפיפה חלקית לאותו עובד באותו יום']);
+  if (shab.length)  aFinds.push(['עבודה בשבת / חג',      shab.length,  +shab.reduce((s,r)=>s+r.total,0).toFixed(2),        uniq(shab.map(r=>r.emp)).join(', '),  'ימים עם דיווח שעות בשבת או חג']);
+  if (high.length)  aFinds.push(['שעות חריגות ביום',      high.length,  +high.reduce((s,r)=>s+r.total,0).toFixed(2),        uniq(high.map(r=>r.emp)).join(', '),  'ימים שבהם סך השעות עלה על הסף המוגדר']);
+  if (warn.length)  aFinds.push(['שעות גבוהות (אזהרה)',   warn.length,  +warn.reduce((s,r)=>s+r.total,0).toFixed(2),        uniq(warn.map(r=>r.emp)).join(', '),  'ימים שבהם סך השעות גבוה אך מתחת לסף החריגה']);
+  if (uA.length) {
+    const hrs = uA.reduce((s,r)=>{const st=toMin(r._orig[aStart]),en=toMin(r._orig[aEnd]);return s+(st>=0&&en>st?(en-st)/60:0);},0);
+    aFinds.push(['עובדים לא מאושרים — נוכחות', uA.length, +hrs.toFixed(2), uniq(uA.map(r=>String(r._orig[aEmpCol]||''))).join(', '), 'שורות נוכחות עם עובד שאינו ברשימה המאושרת']);
+  }
+  if (roundHoursResult.daily) aFinds.push([`שעות יומיות עגולות (${roundHoursResult.daily.pct}%)`,  roundHoursResult.daily.count,  +rdHrs.toFixed(2), rdEmps.join(', '), 'חשד לדיווח ידני — מעל 50% מהימים מסתיימים בשעות שלמות בדיוק']);
+  if (roundHoursResult.entry) aFinds.push([`שעות כניסה עגולות (${roundHoursResult.entry.pct}%)`,   roundHoursResult.entry.count,  +reHrs.toFixed(2), reEmps.join(', '), 'חשד לדיווח ידני — מעל 50% משעות הכניסה על השעה בדיוק']);
+  if (roundHoursResult.exit)  aFinds.push([`שעות יציאה עגולות (${roundHoursResult.exit.pct}%)`,    roundHoursResult.exit.count,   +rxHrs.toFixed(2), rxEmps.join(', '), 'חשד לדיווח ידני — מעל 50% משעות היציאה על השעה בדיוק']);
+  if (uI.length)    aFinds.push(['עובדים לא מאושרים — חשבון',    uI.length,   +uI.reduce((s,r)=>s+(r._hours||0),0).toFixed(2),   uniq(uI.map(r=>r._emp)).join(', '),   'שורות חשבון עם עובד שאינו ברשימה המאושרת']);
+  if (rateR.length) aFinds.push(['אי-התאמת תעריף',                rateR.length,+rateR.reduce((s,r)=>s+(r._hours||0),0).toFixed(2), uniq(rateR.map(r=>r._emp)).join(', '), 'שורות חשבון שבהן התעריף שחויב שונה מהתעריף המאושר']);
+  if (hrsR.length)  aFinds.push(['אי-התאמת שעות (חשבון מול נוכחות)', hrsR.length,+hrsR.reduce((s,r)=>s+(r._hours||0),0).toFixed(2), uniq(hrsR.map(r=>r._emp)).join(', '), 'שורות חשבון שבהן כמות השעות שחויבה שונה מסך השעות בדוח הנוכחות']);
+  if (expectedTotal > 0 || actualInvTotal > 0) {
+    const d = actualInvTotal - expectedTotal;
+    aFinds.push(['השוואת סה"כ חשבון מול ציפייה', d!==0?1:0, actualInvTotal, '', `ציפייה לפי נוכחות: ${expectedTotal.toFixed(2)} ₪ | הפרש: ${d>=0?'+':''}${d.toFixed(2)} ₪`]);
+  }
+  if (!aFinds.length) aFinds.push(['לא נמצאו ממצאים',0,'','','הבדיקה עברה ללא ממצאים']);
+
+  aFinds.forEach((v, ri) => {
+    const [name,cnt,hrs,emps,expl] = v;
+    const hasIssue = typeof cnt==='number' && cnt>0;
+    const bg = hasIssue ? C.redBg : (ri%2===0 ? C.white : C.altBg);
+    const row = ws1.addRow([name, cnt, hrs, emps, expl, '']);
+    row.height = 20;
+    dStyle(row.getCell(1), {bg, bold:hasIssue, color:hasIssue?C.red:undefined});
+    dStyle(row.getCell(2), {bg, fmt:typeof cnt==='number'?'#,##0':undefined, align:'center'});
+    dStyle(row.getCell(3), {bg, fmt:typeof hrs==='number'?'#,##0.00':undefined, align:'center'});
+    dStyle(row.getCell(4), {bg, wrap:true});
+    dStyle(row.getCell(5), {bg, wrap:true});
+    dStyle(row.getCell(6), {bg});
+  });
+  ws1.addRow([]);
+
+  // ── §3: כל רשימת העובדים ──
+  addSec(ws1, '▼ ממצאים ברשימת העובדים — כל העובדים', N1);
+  addHdr(ws1, ['ת.ז / מזהה','שם','תפקיד','תעריף מאושר (₪)','שעות בתקופה','הערה']);
+  if (employees.length) {
+    employees.forEach((e, ri) => {
+      const hrs = attHrById[nId(e.id||'')] || attHrByName[nName(e.name||'')] || 0;
+      const zero = hrs===0;
+      const bg = zero ? C.redBg : (ri%2===0 ? C.white : C.altBg);
+      const row = ws1.addRow([e.id||'',e.name||'',e.role||'',e.rate||0,+hrs.toFixed(2),zero?'לא נמצאו שעות בתקופה זו':'']);
+      row.height = 16;
+      dStyle(row.getCell(1), {bg});
+      dStyle(row.getCell(2), {bg, bold:zero});
+      dStyle(row.getCell(3), {bg});
+      dStyle(row.getCell(4), {bg, fmt:'#,##0.00', align:'center'});
+      dStyle(row.getCell(5), {bg, fmt:'#,##0.00', align:'center', bold:zero, color:zero?C.red:undefined});
+      dStyle(row.getCell(6), {bg, wrap:true});
+    });
+  } else {
+    ws1.addRow(['אין עובדים ברשימה','','','','','']);
+  }
+
+  // Column widths — sheet 1 (fixed, designed to fit all 3 sections)
+  const empNames = employees.map(e=>e.name||'');
+  ws1.getColumn(1).width = Math.min(50, Math.max(30, mxLen(empNames.concat(aFinds.map(f=>f[0]),'שם עובד'))));
+  ws1.getColumn(2).width = 14;
+  ws1.getColumn(3).width = 16;
+  ws1.getColumn(4).width = Math.min(50, Math.max(20, mxLen(aFinds.map(f=>String(f[3]||'')), 20)+2));
+  // col 5: §1=סטטוס(1chr) | §2=הסבר(long) | §3=שעות בתקופה(num) → driven by §2
+  ws1.getColumn(5).width = Math.min(50, Math.max(14, mxLen(aFinds.map(f=>String(f[4]||'')), 14)+2));
+  // col 6: §1=ממצאים(long) | §2='' | §3=הערה(25chr) → driven by §1 and §3
+  const _emp6Notes = employees.map(e=>{ const h=attHrById[nId(e.id||'')]||attHrByName[nName(e.name||'')]||0; return h===0?'לא נמצאו שעות בתקופה זו':''; });
+  ws1.getColumn(6).width = Math.min(50, Math.max(14, mxLen([...auditInvoiceRows.filter(r=>!r._skip).map(r=>r._issues.join('; ')), ..._emp6Notes], 14)+2));
+
+  // ═══════════════════════════════════════════════
+  // גיליון 2 — חשבון
+  // ═══════════════════════════════════════════════
   const ih = invFileData.headers;
-  const rows = auditInvoiceRows.map(r => [
-    ...r._orig,
-    r._skip ? '' : r._status==='issue' ? '✗' : '✓',
-    r._issues.join('; ')
-  ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[...ih,'סטטוס','הערות'],...rows]), 'חשבון מסומן');
-  XLSX.writeFile(wb, `חשבון_מסומן_${(currentTender?.name||'').replace(/[\/\\]/g,'-')}_${todayStr()}.xlsx`);
-}
+  const N2 = ih.length + 2;
+  const ws2 = wb.addWorksheet('חשבון', {views:[{rightToLeft:true}]});
+  addTitle(ws2, `חשבון — ${tName} — ${todayStr()}`, N2);
+  ws2.addRow([]);
+  addHdr(ws2, [...ih,'סטטוס','ממצאים']);
 
-function exportAttendance() {
+  const inv2Strs = auditInvoiceRows.map(r=>[...r._orig.map(v=>String(v||'')), '', r._issues.join('; ')]);
+  auditInvoiceRows.forEach((r, ri) => {
+    const isIssue = !r._skip && r._status==='issue';
+    const bg = r._skip ? null : isIssue ? C.redBg : (ri%2===0 ? C.white : C.altBg);
+    const vals = [...r._orig.map(v=>asNum(v)), r._skip?'':isIssue?'✗':'✓', r._issues.join('; ')];
+    const row = ws2.addRow(vals);
+    row.height = 18;
+    vals.forEach((v,ci) => {
+      const cell = row.getCell(ci+1);
+      const isStatus = ci===vals.length-2;
+      const isNotes  = ci===vals.length-1;
+      dStyle(cell, {
+        bg: r._skip?null:bg,
+        color: r._skip ? C.gray : isStatus ? (isIssue?C.red:C.green) : undefined,
+        bold: isStatus && !r._skip,
+        fmt:  typeof v==='number' && !isStatus ? '#,##0.00' : undefined,
+        wrap: isNotes,
+        align: typeof v==='number' ? 'center' : isStatus ? 'center' : 'right',
+      });
+    });
+  });
+  // Column widths — sheet 2
+  const all2 = [ih.map(h=>String(h||'')), ...inv2Strs];
+  ih.forEach((_,i) => { ws2.getColumn(i+1).width = Math.min(30, Math.max(8, mxLen(all2.map(r=>r[i]||''))+2)); });
+  ws2.getColumn(N2-1).width = 8;
+  ws2.getColumn(N2).width   = Math.min(50, Math.max(10, mxLen(auditInvoiceRows.map(r=>r._issues.join('; ')))+2));
+
+  // ═══════════════════════════════════════════════
+  // גיליון 3 — דוחות נוכחות (ממצאים בעמודות הראשונות)
+  // ═══════════════════════════════════════════════
   const ah = attFilesList[0]?.data.headers || [];
-  const rows = auditAttRows.map(r => [
-    ...ah.map((_, i) => r._orig[i]||''),
-    r._src||'',
-    r._issues.join('; ')
-  ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[...ah,'מקור קובץ','ממצאים'],...rows]), 'דוח נוכחות עם ממצאים');
-  XLSX.writeFile(wb, `נוכחות_עם_ממצאים_${(currentTender?.name||'').replace(/[\/\\]/g,'-')}_${todayStr()}.xlsx`);
-}
+  const N3 = 3 + ah.length;
+  const ws3 = wb.addWorksheet('דוחות נוכחות', {views:[{rightToLeft:true}]});
+  addTitle(ws3, `דוחות נוכחות — ${tName} — ${todayStr()}`, N3);
+  ws3.addRow([]);
+  // Findings FIRST (cols 1-3), then source data
+  addHdr(ws3, ['סטטוס','ממצאים','מקור קובץ',...ah]);
 
-function exportOverlaps() {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
-    ['עובד','תאריך','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
-    ...overlapResults.map(r=>[r.emp,r.date,r.s1,r.s2,r.overlap,r.type==='full'?'מלאה':'חלקית'])
-  ]), 'חפיפות');
-  XLSX.writeFile(wb, 'חפיפות_שעות.xlsx');
+  const att3Strs = auditAttRows.map(r=>[
+    r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'',
+    ...ah.map((_,i)=>String(r._orig[i]||''))
+  ]);
+  auditAttRows.forEach((r, ri) => {
+    const bg = r._hasIssue ? C.redBg : (ri%2===0 ? C.white : C.altBg);
+    const vals = [r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'', ...ah.map((_,i)=>asNum(r._orig[i]))];
+    const row = ws3.addRow(vals);
+    row.height = 18;
+    vals.forEach((v,ci) => {
+      const cell = row.getCell(ci+1);
+      dStyle(cell, {
+        bg,
+        bold:   ci===0 && r._hasIssue,
+        color:  r._hasIssue && ci<=1 ? C.red : undefined,
+        fmt:    ci>=3 && typeof v==='number' ? '#,##0.00' : undefined,
+        wrap:   ci===1,
+        align:  ci===0 ? 'center' : ci>=3 && typeof v==='number' ? 'center' : 'right',
+      });
+    });
+  });
+  // Column widths — sheet 3: findings first, then att cols
+  ws3.getColumn(1).width = 8;
+  ws3.getColumn(2).width = Math.min(50, Math.max(10, mxLen(att3Strs.map(r=>r[1]))+2));
+  ws3.getColumn(3).width = Math.min(30, Math.max(10, mxLen(att3Strs.map(r=>r[2]))+2));
+  const all3 = [['סטטוס','ממצאים','מקור קובץ',...ah.map(h=>String(h||''))], ...att3Strs];
+  ah.forEach((_,i) => { ws3.getColumn(4+i).width = Math.min(25, Math.max(8, mxLen(all3.map(r=>r[3+i]||''))+2)); });
+
+  // ═══════════════════════════════════════════════
+  // גיליון 4 — רשימת עובדים
+  // ═══════════════════════════════════════════════
+  const ws4 = wb.addWorksheet('רשימת עובדים', {views:[{rightToLeft:true}]});
+  addTitle(ws4, `רשימת עובדים — ${tName} — ${todayStr()}`, 6);
+  ws4.addRow([]);
+  addHdr(ws4, ['ת.ז / מזהה','שם','תפקיד','תעריף מאושר (₪)','שעות בתקופה','הערה']);
+
+  const emp4S = employees.map(e=>{
+    const h = attHrById[nId(e.id||'')] || attHrByName[nName(e.name||'')] || 0;
+    return [String(e.id||''), e.name||'', e.role||'', String(e.rate||0), h.toFixed(2), h===0?'לא נמצאו שעות בתקופה זו':''];
+  });
+  if (employees.length) {
+    employees.forEach((e, ri) => {
+      const hrs = attHrById[nId(e.id||'')] || attHrByName[nName(e.name||'')] || 0;
+      const zero = hrs===0;
+      const bg = zero ? C.redBg : (ri%2===0 ? C.white : C.altBg);
+      const row = ws4.addRow([e.id||'',e.name||'',e.role||'',e.rate||0,+hrs.toFixed(2),zero?'לא נמצאו שעות בתקופה זו':'']);
+      row.height = 16;
+      dStyle(row.getCell(1), {bg});
+      dStyle(row.getCell(2), {bg, bold:zero});
+      dStyle(row.getCell(3), {bg});
+      dStyle(row.getCell(4), {bg, fmt:'#,##0.00', align:'center'});
+      dStyle(row.getCell(5), {bg, fmt:'#,##0.00', align:'center', bold:zero, color:zero?C.red:undefined});
+      dStyle(row.getCell(6), {bg, wrap:true});
+    });
+  } else {
+    ws4.addRow(['אין עובדים ברשימה','','','','','']);
+  }
+  ws4.getColumn(1).width = Math.min(20, Math.max(10, mxLen(emp4S.map(r=>r[0]))+2));
+  ws4.getColumn(2).width = Math.min(30, Math.max(12, mxLen(emp4S.map(r=>r[1]))+2));
+  ws4.getColumn(3).width = Math.min(25, Math.max(10, mxLen(emp4S.map(r=>r[2]))+2));
+  ws4.getColumn(4).width = 16;
+  ws4.getColumn(5).width = 14;
+  ws4.getColumn(6).width = Math.min(40, Math.max(8,  mxLen(emp4S.map(r=>r[5]))+2));
+
+  // ── Save ──
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `בדיקת_חשבון_${tName.replace(/[\/\\:*?"<>|]/g,'-')}_${todayStr()}.xlsx`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
 // ── MONTHLY CHART ──
@@ -1113,6 +1804,89 @@ function buildMonthlyChart() {
   }).join('');
 }
 
+// ── ALIAS / FUZZY MATCHING ──
+function loadAliases() {
+  const t = loadTenders();
+  return t[currentTender?.name]?.aliases || {};
+}
+function saveAlias(attName, empId) {
+  const t = loadTenders();
+  if (!t[currentTender?.name]) return;
+  if (!t[currentTender.name].aliases) t[currentTender.name].aliases = {};
+  t[currentTender.name].aliases[attName] = empId;
+  saveTenders(t);
+}
+
+function nameSimilarity(a, b) {
+  const norm = s => s.replace(/['"״׳]/g,'').trim().toLowerCase();
+  const wa = norm(a).split(/\s+/).filter(w => w.length > 1);
+  const wb = norm(b).split(/\s+/).filter(w => w.length > 1);
+  if (!wa.length || !wb.length) return 0;
+  const matchA = wa.filter(w => wb.some(v => v.includes(w) || w.includes(v))).length;
+  const matchB = wb.filter(w => wa.some(v => v.includes(w) || w.includes(v))).length;
+  return Math.max(matchA / wa.length, matchB / wb.length);
+}
+
+function findPotentialAliases() {
+  const employees = currentTender?.employees || [];
+  if (!employees.length) return;
+  const aliases = loadAliases();
+  const aEmp = +document.getElementById('col-att-emp').value;
+
+  const allAttNames = [...new Set(
+    attFilesList.flatMap(f => f.data.rows.map(r => String(r[aEmp]||'').trim())).filter(Boolean)
+  )];
+
+  // Employees with 0 hours and no alias
+  const zeroEmps = employees.filter(e => {
+    const hrs = attHrById[nId(e.id||'')] || attHrByName[nName(e.name||'')] || 0;
+    return hrs === 0 && !Object.values(aliases).includes(e.id);
+  });
+  // Attendance names that don't match any approved employee
+  const unmatchedAtt = allAttNames.filter(n => {
+    const id = nId(n), nm = nName(n);
+    return !employees.some(e => nId(e.id)===id || nName(e.name||'')===nm) && !aliases[n];
+  });
+
+  pendingAliasQueue = [];
+  for (const emp of zeroEmps) {
+    let best = null, bestScore = 0.42;
+    for (const attName of unmatchedAtt) {
+      const score = nameSimilarity(emp.name||emp.id||'', attName);
+      if (score > bestScore) { best = attName; bestScore = score; }
+    }
+    if (best) pendingAliasQueue.push({ emp, attName: best, score: bestScore });
+  }
+  if (pendingAliasQueue.length) showNextAlias();
+}
+
+function showNextAlias() {
+  if (!pendingAliasQueue.length) return;
+  currentAlias = pendingAliasQueue.shift();
+  document.getElementById('alias-emp-approved').textContent = currentAlias.emp.name || currentAlias.emp.id || '';
+  document.getElementById('alias-emp-att').textContent = currentAlias.attName;
+  document.getElementById('alias-remaining').textContent =
+    pendingAliasQueue.length > 0 ? `(נותרו עוד ${pendingAliasQueue.length})` : '';
+  openModal('modal-alias');
+}
+
+function confirmAlias(yes) {
+  closeModal('modal-alias');
+  if (yes && currentAlias) {
+    saveAlias(currentAlias.attName, currentAlias.emp.id);
+    // Update hours maps immediately
+    const hrs = attHrByName[nName(currentAlias.attName)] || attHrById[nId(currentAlias.attName)] || 0;
+    if (hrs > 0) {
+      attHrById[nId(currentAlias.emp.id)] = (attHrById[nId(currentAlias.emp.id)]||0) + hrs;
+      if (currentAlias.emp.name) attHrByName[nName(currentAlias.emp.name)] = (attHrByName[nName(currentAlias.emp.name)]||0) + hrs;
+    }
+    renderEmployeesTab();
+  }
+  currentAlias = null;
+  if (pendingAliasQueue.length) setTimeout(showNextAlias, 350);
+}
+
+
 // ── HELPERS ──
 function toMin(v){
   try{
@@ -1140,21 +1914,109 @@ function autoSelect(selId, headers, kws){
   if (idx >= 0) document.getElementById(selId).value = idx;
 }
 
+// ── SHEET HELPERS (new) ──
+function sheetSelectorHtml(wb, selId, onchangeFn){
+  if(!wb||!wb.SheetNames||wb.SheetNames.length<=1) return '';
+  const opts = wb.SheetNames.map((name,i)=>{
+    const ws2=wb.Sheets[name];
+    const ref=ws2['!ref']||'A1';
+    const range=XLSX.utils.decode_range(ref);
+    const rows=range.e.r-range.s.r+1;
+    return `<option value="${name}"${i===0?' selected':''}>${escHtml(name)} (${rows} שורות)</option>`;
+  });
+  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
+  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem;font-size:0.82rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div>
+    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+  </div>`;
+}
+function getRowsFromWbAudit(wb, sheetName){
+  if(sheetName==='__ALL__'){
+    let all=[];
+    wb.SheetNames.forEach((n,i)=>{
+      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      if(i===0) all.push(...r);
+      else all.push(...r.slice(1));
+    });
+    return all;
+  }
+  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+}
+
+function changeEmpSheet(sheetName){
+  if(!empFileData.wb) return;
+  const allRows=getRowsFromWbAudit(empFileData.wb, sheetName);
+  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+  empFileData.allRows=allRows; empFileData.selectedSheet=sheetName;
+  applyHeaderRow(empFileData, 0);
+  const wrap=document.getElementById('emp-sheet-sel-wrap');
+  if(wrap) wrap.innerHTML=sheetSelectorHtml(empFileData.wb,'emp-sh-sel','changeEmpSheet');
+  buildEmpColMap();
+}
+function changeAttSheet(sheetName){
+  // Apply to first file only (all files share same column structure)
+  const first=attFilesList[0]; if(!first||!first.data.wb) return;
+  const allRows=getRowsFromWbAudit(first.data.wb, sheetName);
+  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+  first.data.allRows=allRows; first.data.selectedSheet=sheetName;
+  applyHeaderRow(first.data, 0);
+  const wrap=document.getElementById('att-sheet-sel-wrap');
+  if(wrap) wrap.innerHTML=sheetSelectorHtml(first.data.wb,'att-sh-sel','changeAttSheet');
+  buildAttColSelects();
+}
+function changeInvSheet(sheetName){
+  if(!invFileData.wb||invFileData.isPdf) return;
+  const allRows=getRowsFromWbAudit(invFileData.wb, sheetName);
+  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+  invFileData.allRows=allRows; invFileData.selectedSheet=sheetName;
+  applyHeaderRow(invFileData, 0);
+  ['inv-sheet-sel-wrap','inv-sheet-sel-wrap-step4'].forEach(id=>{
+    const wrap=document.getElementById(id);
+    if(wrap) wrap.innerHTML=sheetSelectorHtml(invFileData.wb,'inv-sh-sel','changeInvSheet');
+  });
+  buildInvColSelects();
+}
+
 // ── FILE LOADERS ──
-function loadExcel(file, obj, cb){
+function loadExcel(file, obj, cb, sheetWrapId){
   const r = new FileReader();
   r.onload = ev => {
     const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-    while(rows.length&&rows[0].every(c=>!c)) rows.shift();
-    obj.headers = rows[0]||[];
-    obj.rows    = rows.slice(1).filter(r=>r.some(c=>c!==''));
+    obj.wb = wb;
+    obj.selectedSheet = wb.SheetNames[0];
+    const allRows = getRowsFromWbAudit(wb, wb.SheetNames[0]);
+    while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+    obj.allRows = allRows;
+    applyHeaderRow(obj, 0);
     cb();
   };
   r.readAsArrayBuffer(file);
 }
 function loadExcelAsync(file, obj){ return new Promise(res=>loadExcel(file,obj,res)); }
+
+function applyHeaderRow(obj, idx){
+  idx = +idx;
+  obj.headerRowIdx = idx;
+  obj.headers = (obj.allRows[idx]||[]).map(c=>String(c||''));
+  obj.rows    = obj.allRows.slice(idx+1).filter(r=>r.some(c=>c!==''));
+}
+
+function headerRowSelectorHtml(obj, selId, onchangeFn){
+  if(!obj||!obj.allRows||obj.allRows.length<=1) return '';
+  const n = Math.min(obj.allRows.length, 8);
+  const opts = Array.from({length:n},(_,i)=>{
+    const preview = (obj.allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');
+    const cur = (obj.headerRowIdx||0)===i ? 'selected' : '';
+    return `<option value="${i}" ${cur}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${escHtml(preview)}</option>`;
+  });
+  return `<div style="background:var(--orange-bg);border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.9rem;font-size:0.82rem">
+    <div style="font-weight:700;color:var(--orange);margin-bottom:5px">⚠️ שורת הכותרות בקובץ:</div>
+    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 10px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">
+      ${opts.join('')}
+    </select>
+    <div style="font-size:0.74rem;color:var(--muted);margin-top:4px">אם יש כותרות או שורות ריקות מעל הטבלה — בחר את השורה עם שמות העמודות</div>
+  </div>`;
+}
 
 // ── UI HELPERS ──
 function showTab(name, btn){

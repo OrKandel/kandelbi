@@ -1,0 +1,367 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>הכסף שמשולם בלי שמישהו בדק — ומה אפשר לעשות כבר ממחר | קנדל BI</title>
+<meta name="description" content="מה רואים שוב ושוב בדוחות ביקורת: ספקים שמבינים שהחשבונות לא נבדקים, יחידות שמאשרות ללא בדיקה, וחשבות שמשלמת בהסתמך על אישורים ריקים. ואיך בונים תהליך שמשנה את זה — מהמכרז ועד החשבון החודשי."/>
+<meta name="keywords" content="ביקורת חשבוניות קבלנים, בקרה רכש ציבורי, יחידה מקצועית אישור חשבון, מכרז תנאי בקרה, SLA חוזה קבלן ציבורי"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/article-money-no-check.html"/>
+<meta property="og:title" content="הכסף שמשולם בלי שמישהו בדק — ומה אפשר לעשות כבר ממחר"/>
+<meta property="og:description" content="מה רואים בדוחות ביקורת, למה זה קורה, ואיך בונים תהליך בקרה שלם — מהמכרז ועד החשבון החודשי."/>
+<meta property="og:url" content="https://kandelbi.org/article-money-no-check.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
+.back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
+main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
+.article-meta{color:var(--muted);font-size:0.85rem;margin-bottom:2.5rem;display:flex;gap:1.5rem;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.5rem}
+h2{font-size:1.15rem;font-weight:800;color:var(--navy);margin:2rem 0 0.8rem}
+h3{font-size:1rem;font-weight:700;color:var(--navy2);margin:1.4rem 0 0.5rem}
+p{margin-bottom:1rem;font-size:0.97rem}
+ul,ol{padding-right:1.4rem;margin-bottom:1rem}
+li{margin-bottom:0.5rem;font-size:0.97rem}
+strong{color:var(--navy)}
+em{font-style:normal;font-weight:700;color:var(--blue)}
+.highlight-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.danger-box{background:#fef2f2;border-right:4px solid var(--red);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.green-box{background:#f0faf6;border-right:4px solid var(--green);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.blue-box{background:#eef3fb;border-right:4px solid var(--blue);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.stage-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 1.6rem;margin:1.2rem 0;border-right:5px solid var(--blue)}
+.stage-card.green{border-right-color:var(--green)}
+.stage-card.accent{border-right-color:var(--accent)}
+.stage-card.red{border-right-color:var(--red)}
+.stage-header{display:flex;align-items:center;gap:10px;margin-bottom:0.9rem}
+.stage-num{background:var(--blue);color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.88rem;flex-shrink:0}
+.stage-card.green .stage-num{background:var(--green)}
+.stage-card.accent .stage-num{background:var(--accent);color:var(--navy)}
+.stage-card.red .stage-num{background:var(--red)}
+.stage-title{font-size:1.05rem;font-weight:900;color:var(--navy)}
+.checklist{list-style:none;padding:0;display:flex;flex-direction:column;gap:6px;margin-bottom:0}
+.checklist li{font-size:0.93rem;padding-right:26px;position:relative;line-height:1.55}
+.checklist li::before{content:'☑';position:absolute;right:0;color:var(--green);font-weight:700}
+.quote-block{background:var(--navy);color:rgba(255,255,255,0.9);border-radius:12px;padding:1.4rem 1.8rem;margin:2rem 0;font-size:1.05rem;font-weight:600;line-height:1.6;text-align:center;position:relative}
+.quote-block::before{content:'"';font-size:4rem;color:var(--accent);position:absolute;top:-10px;right:20px;line-height:1;font-family:serif}
+.flow-row{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin:1.2rem 0;justify-content:center}
+.flow-step{background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:700;color:var(--navy);text-align:center}
+.flow-arrow{color:var(--muted);font-size:1.2rem;flex-shrink:0}
+.divider{border:none;border-top:2px solid var(--border);margin:2.5rem 0}
+.cta-box{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:1.8rem 2rem;margin:2.5rem 0;color:#fff;text-align:center}
+.cta-box p{color:rgba(255,255,255,0.85);margin-bottom:0;font-size:0.93rem}
+.cta-title{font-weight:900;font-size:1.1rem;color:var(--accent);margin-bottom:0.8rem;display:block}
+.tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:0.8rem 0}
+@media(max-width:500px){.tools-grid{grid-template-columns:1fr}}
+.tool-link{display:block;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 12px;color:#fff;text-decoration:none;font-size:0.85rem;font-weight:600;text-align:center}
+.tool-link:hover{background:rgba(255,255,255,0.2)}
+.related-section{margin:2.5rem 0;padding:1.4rem 1.6rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px}
+.related-title{font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.related-grid{grid-template-columns:1fr}}
+.related-card{display:block;padding:0.8rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.2s}
+.related-card:hover{border-color:var(--blue);background:#eef3fb}
+.related-card-cat{font-size:0.72rem;color:var(--blue);font-weight:700;display:block;margin-bottom:0.3rem}
+.related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
+.wa-float{position:fixed;bottom:24px;left:24px;z-index:9999;width:56px;height:56px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.5);text-decoration:none;transition:transform 0.2s}
+.wa-float:hover{transform:scale(1.1)}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"הכסף שמשולם בלי שמישהו בדק — ומה אפשר לעשות כבר ממחר","description":"מה רואים שוב ושוב בדוחות ביקורת: ספקים שמבינים שהחשבונות לא נבדקים, ויחידות שמאשרות ללא בדיקה. ואיך בונים תהליך שמשנה את זה.","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-money-no-check.html","inLanguage":"he"}
+</script>
+</head>
+<body>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="pricing.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מחירון</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<main>
+
+<h1>הכסף שמשולם בלי שמישהו בדק — ומה אפשר לעשות כבר ממחר</h1>
+<div class="article-meta">
+  <span>✍️ אור קנדל, רו"ח CISA</span>
+  <span>📂 רכש ציבורי וביקורת פנימית</span>
+  <span>⏱️ קריאה של 8 דקות</span>
+</div>
+
+<p>
+שנים של עבודה עם גופים ציבוריים, חשבויות ויחידות רכש — ושוב ושוב, בדוחות ביקורת ובשיחות עם אנשי שטח, אותה תמונה חוזרת.
+</p>
+<p>
+לא מדובר ברשלנות. לא מדובר בהעדר מקצועיות. מדובר בתהליך שבנוי בצורה שמקשה מלכתחילה לבצע בקרה אמיתית — ואז כולם מסתמכים על כולם, וכשמגיע המבקר, מתברר שאף אחד לא בדק.
+</p>
+
+<div class="quote-block">
+היחידה המקצועית מניחה שהחשבות בודקת. החשבות מניחה שהיחידה המקצועית בדקה. והספק יודע בדיוק שאף אחד לא בדק.
+</div>
+
+<hr class="divider"/>
+
+<h2>מה רואים בשטח — שלוש תופעות שחוזרות על עצמן</h2>
+
+<div class="stage-card red">
+  <div class="stage-header">
+    <div class="stage-num" style="background:var(--red)">1</div>
+    <div class="stage-title">היחידה המקצועית מאשרת — בלי לבדוק</div>
+  </div>
+  <p style="margin-bottom:0.6rem">
+    מי שאמור לאשר שהשירות ניתן בפועל — שהעובדים היו, שהתפוקות בוצעו — הוא <strong>הממונה מטעם הגוף</strong>: מנהל הפרויקט, ראש המחלקה, מפקח הנוכחות.
+    החשבות מקבלת את אישורו ומשלמת.
+  </p>
+  <p style="margin-bottom:0.6rem">
+    הבעיה: האישור הזה ניתן לעיתים קרובות מדי <strong>ללא בדיקה מספקת</strong> — לחץ זמן, עומס עבודה, אמון עיוור שנבנה לאורך שנים עם הספק. חשבון של 40 עובדים מאושר תוך 10 דקות, בלי לפתוח את הקובץ.
+  </p>
+  <div class="danger-box" style="margin:0.8rem 0 0">
+    <strong>מה שנמצא בדוחות ביקורת:</strong> יחידות שאישרו חשבונות עם חפיפות שעות ברורות, עובדים בתעריף שגוי, ואפילו עובדים שלא עבדו בכלל — כי האישור ניתן על סמך "אנחנו סומכים עליהם כבר שלוש שנים".
+  </div>
+</div>
+
+<div class="stage-card red">
+  <div class="stage-header">
+    <div class="stage-num" style="background:var(--red)">2</div>
+    <div class="stage-title">אי-אפשר לבדוק — כי לא ביקשו פירוט</div>
+  </div>
+  <p style="margin-bottom:0.6rem">
+    זו הבעיה השורשית ביותר: <strong>גם כשרוצים לבדוק, לעיתים אי-אפשר</strong> — כי מלכתחילה לא נקבע בחוזה שהספק חייב לצרף פירוט מלא של הכמויות שבחשבון.
+  </p>
+  <p style="margin-bottom:0.6rem">
+    הספק מגיש חשבון עם סכום כולל — "שירותי ניקיון לחודש מאי: 48,500 ₪" — ואין דרך לדעת מה בדיוק בתוכו. כמה שעות? לפי איזה תעריף? באילו אתרים? האם הוצב עובד נוסף שלא אושר?
+  </p>
+  <div class="danger-box" style="margin:0.8rem 0 0">
+    <strong>הפרצה קוראת לגנב:</strong> ספק שמבין שאין מי שיפרק את הסכום — ושאפילו אם יפרקו, אין מה להשוות אליו — יודע שגבול הסיכון שלו נמוך מאוד. לא צריך לשקר גסות; מספיק להגדיל כמויות בשיעור קטן, חודש אחרי חודש.
+  </div>
+</div>
+
+<div class="stage-card red">
+  <div class="stage-header">
+    <div class="stage-num" style="background:var(--red)">3</div>
+    <div class="stage-title">החשבות משלמת — בהסתמך על אישור שניתן ללא בדיקה</div>
+  </div>
+  <p style="margin-bottom:0.6rem">
+    החשבות אינה אמורה לבדוק כל שורה בכל חשבון — זה לא תפקידה ולא בסמכותה הישירה. אבל <strong>היא כן אמורה לוודא שמישהו בדק</strong>.
+  </p>
+  <p style="margin-bottom:0">
+    בפועל, האישור שמגיע אליה הוא לרוב חתימה על טופס. לא תאריך הבדיקה. לא שם המבצע. לא פירוט מה נבדק ומה נמצא. רק חתימה. והחשבות לא יכולה לדעת — מהחתימה בלבד — אם הבדיקה ארכה שלוש שעות או שלושים שניות.
+  </p>
+</div>
+
+<hr class="divider"/>
+
+<h2>הפתרון: לבנות את הבקרה <em>לפני</em> שהחוזה נחתם</h2>
+
+<p>
+הרגע שבו הכי קל לקבוע תנאי שקיפות ובקרה — הוא <strong>שלב המכרז</strong>. לאחר שהחוזה נחתם, כל דרישה חדשה הופכת למשא-ומתן. אבל מה שנכתב במכרז — הספק שזכה מחויב אליו מהרגע הראשון.
+</p>
+
+<div class="flow-row">
+  <div class="flow-step">📋 שלב המכרז</div>
+  <div class="flow-arrow">←</div>
+  <div class="flow-step">📄 ניסוח החוזה</div>
+  <div class="flow-arrow">←</div>
+  <div class="flow-step">📅 תחילת ההתקשרות</div>
+  <div class="flow-arrow">←</div>
+  <div class="flow-step">💵 חשבון חודשי</div>
+  <div class="flow-arrow">←</div>
+  <div class="flow-step">✅ בקרה ותשלום</div>
+</div>
+
+<p>הנה התהליך השלם — מה לדרוש בכל שלב:</p>
+
+<div class="stage-card">
+  <div class="stage-header">
+    <div class="stage-num">א</div>
+    <div class="stage-title">מה לקבוע בגוף המכרז — עוד לפני שמגישים הצעות</div>
+  </div>
+  <p>כל תנאי שלא יופיע במכרז יהיה קשה יותר לאכוף בהמשך. אלו הדרישות שחייבות להופיע:</p>
+  <ul class="checklist">
+    <li><strong>חובת פירוט אקסל כתנאי לסילוק חשבון</strong> — הגשת חשבון ללא פירוט מפורט = אי-עמידה בתנאי תשלום</li>
+    <li><strong>מבנה קובץ אחיד</strong> — יש לקבוע מראש את עמודות הדיווח: שם / ת.ז. / תאריך / שעות / תפקיד / תעריף / אתר. כך כל חשבון ניתן להשוואה אוטומטית</li>
+    <li><strong>SLA כמותי ומוגדר</strong> — לא "עמידה בתנאי ההסכם" בצורה כללית, אלא: X ₪ קנס על כל שעת היעדרות בלתי מדווחת, Y% ניכוי על חפיפת שעות מאושרת, Z ₪ על כל עובד שדווח בתעריף שגוי</li>
+    <li><strong>הצהרת ספק חתומה בכל הגשת חשבון</strong> — הספק מאשר בכתב שהנתונים מדויקים ושלא קיימות אי-תקינות. הצהרה שקרית על מסמכים רשמיים יוצרת חשיפה משפטית הרבה מעבר לקנס חוזי</li>
+    <li><strong>הסכמה מפורשת לדגימה תקופתית</strong> — יש לציין במפורש שהגוף המזמין רשאי לבצע בדיקות אקראיות מלאות, ולדרוש אסמכתאות מקוריות לכל שורה בחשבון</li>
+  </ul>
+</div>
+
+<div class="stage-card green">
+  <div class="stage-header">
+    <div class="stage-num">ב</div>
+    <div class="stage-title">מה לכלול בחוזה — גם אם חלק מהדברים לא הוגדרו במכרז</div>
+  </div>
+  <p>חוזה טוב לא רק מגדיר מה השירות — הוא מגדיר <strong>כיצד יוכח שהשירות ניתן</strong>:</p>
+  <ul class="checklist">
+    <li><strong>רשימת עובדים מאושרים</strong> — תוך כמה ימים מתחילת ההתקשרות יגיש הספק רשימה עם פרטי כל עובד, תפקידו ותעריפו. שינוי ברשימה — רק באישור מראש</li>
+    <li><strong>מנגנון ה-SLA בתוך החשבון עצמו</strong> — הספק אינו רק מגיש חשבון; הוא מגיש גם <strong>חישוב ה-SLA</strong> לאותו חודש. אם היו אי-עמידות — הוא מפרט אותן ומחשב את הניכוי. החשבון הסופי כולל את הניכוי המחושב</li>
+    <li><strong>מועד הגשה וסנקציה על איחור</strong> — חשבון שמוגש לאחר ה-X לחודש אינו נסלק לחודש זה, אלא לחודש הבא. זה מונע חשבונות "מצטברים" שקשה לבדוק</li>
+    <li><strong>זכות עיון ודגימה</strong> — הגוף המזמין רשאי לדרוש, בכל עת, אסמכתאות מקוריות (דוחות כניסה/יציאה, חוזי עובדים, תלושי שכר) לכל שורה שתיבחר</li>
+  </ul>
+</div>
+
+<div class="stage-card accent">
+  <div class="stage-header">
+    <div class="stage-num">ג</div>
+    <div class="stage-title">מה חייב להגיע עם כל חשבון חודשי</div>
+  </div>
+  <p>חשבון חודשי שמוגש כהלכה כולל שלושה מסמכים, לא אחד:</p>
+  <ul class="checklist">
+    <li><strong>חשבונית / דרישת תשלום</strong> — עם הסכום הסופי לאחר ניכויי SLA</li>
+    <li><strong>דוח פירוט מלא באקסל</strong> — לפי המבנה שנקבע מראש. שורה לכל עובד/יחידת שירות, עם כל הפרטים. זהו הבסיס לבדיקה האוטומטית</li>
+    <li><strong>הצהרת ספק חתומה</strong> — שהנתונים מדויקים, שלא קיימות חפיפות שעות, שכל עובד דווח בתעריף הנכון לרמתו</li>
+  </ul>
+  <div class="highlight-box" style="margin:0.8rem 0 0">
+    <strong>למה שלושה מסמכים ולא אחד?</strong> כי ספק שצריך לחתום בכתב שהנתונים מדויקים — לאחר שהגיש פירוט שניתן לאמת — נמצא בסיכון משפטי אמיתי אם יכזב. זה לא רק בקרה; זו הרתעה.
+  </div>
+</div>
+
+<div class="stage-card">
+  <div class="stage-header">
+    <div class="stage-num">ד</div>
+    <div class="stage-title">תהליך הבדיקה החודשי — של היחידה המקצועית</div>
+  </div>
+  <p>
+    היחידה המקצועית היא זו שאמורה לאשר שהשירות ניתן. אבל אישור מהימן דורש <strong>ראיות, לא רק חתימה</strong>.
+    על האישור שמגיע לחשבות לכלול:
+  </p>
+  <ul class="checklist">
+    <li>תאריך ביצוע הבדיקה ושם המבצע</li>
+    <li>פירוט קצר: מה נבדק, מה הושוה, מה נמצא</li>
+    <li>אם בוצעה השוואה לדוח נוכחות / תפוקות — ציון הכלי שבו השתמשו</li>
+    <li>אם נמצאו חריגות — כיצד טופלו לפני אישור החשבון</li>
+  </ul>
+  <div class="blue-box" style="margin:0.8rem 0 0">
+    <strong>תפקיד החשבות בשלב זה:</strong> לא לבדוק מחדש כל שורה — אלא לוודא שהאישור שקיבלה <em>הוא ראיה לבדיקה</em>, ולא רק חתימה. אם האישור מגיע בלי תאריך, בלי פירוט, ובלי שם — יש לדרוש השלמה לפני סילוק.
+  </div>
+</div>
+
+<div class="stage-card green">
+  <div class="stage-header">
+    <div class="stage-num">ה</div>
+    <div class="stage-title">דגימות תקופתיות — ההרתעה שעובדת</div>
+  </div>
+  <p>
+    אין ציפייה לבצע בדיקה מלאה כל חודש — זה לא ריאלי ולא נדרש. אבל <strong>דגימה אקראית, שהספק יודע עליה מראש</strong>, היא אחד האמצעים האפקטיביים ביותר.
+  </p>
+  <p>
+    ספק שיודע שמדי רבעון ייבחרו באקראי 2–3 חודשים לבדיקה מלאה — כולל דרישת אסמכתאות מקוריות — ינהג בזהירות <strong>בכל</strong> החודשים. הוא לא יודע מתי יבדקו אותו.
+  </p>
+  <ul class="checklist">
+    <li>בחרו חודשים באקראי אמיתי — לא תמיד "ינואר" (ספק חכם מכין את ינואר)</li>
+    <li>דרשו אסמכתאות לשורות ספציפיות — דוחות כניסה/יציאה, חוזי עובדים, תיעוד ביצועים</li>
+    <li>תעדו את ממצאי הדגימה — גם "לא נמצאו ממצאים". תיעוד שלילי הוא ראיה שהבדיקה בוצעה</li>
+    <li>הודיעו לספק על ממצאי הדגימה בכתב — זה מחזק את ההרתעה לטווח הארוך</li>
+  </ul>
+</div>
+
+<hr class="divider"/>
+
+<h2>מה שמשנה את המשחק: כלים שהופכים את הבדיקה לעניין של דקות</h2>
+
+<p>
+הסיבה שבדיקות לא מתבצעות היא לרוב לא חוסר רצון — היא <strong>חוסר כלים</strong>. בדיקה ידנית של חשבון עם 40 עובדים, השוואה לדוח נוכחות, בדיקת תעריפים ורמות — לוקחת שעות. אין לאיש הזמן לעשות זאת כל חודש.
+</p>
+<p>
+כלי בקרה אוטומטיים מבצעים את אותה הבדיקה <strong>בפחות מדקה</strong> — ומייצרים דוח אקסל מסומן עם ✅/❌ לכל שורה, שמוכן לצרף לתיק החשבון. הבדיקה מתועדת, הממצאים ברורים, וניתן להציג אותם בפני הספק או בפני המבקר.
+</p>
+
+<div class="green-box">
+  <strong>הנקודה החשובה על פרטיות:</strong> כלי הבקרה של קנדל BI פועלים <strong>ישירות בדפדפן</strong>, על המחשב שלכם בלבד. הנתונים לא עולים לשום שרת, לא עוברים דרך האינטרנט, ולא נשמרים בשום מקום חוץ מהדפדפן. אפשר לעבוד עם קבצי שכר ונוכחות אמיתיים ללא שום חשש.
+</div>
+
+<div class="cta-box">
+  <span class="cta-title">🔧 הכלים לבדיקת החשבונות — זמינים עכשיו, בחינם</span>
+  <p>כל הכלים זמינים לשימוש חופשי, ישירות בדפדפן, ללא הרשמה.</p>
+  <div class="tools-grid">
+    <a href="tool-hours-audit.html" class="tool-link">📋 בדיקת חשבון קבלן — תשומות</a>
+    <a href="tool-outputs-audit.html" class="tool-link">📊 בדיקת חשבון — תפוקות</a>
+    <a href="tool-hours-overlap.html" class="tool-link">🔍 זיהוי חפיפות שעות</a>
+    <a href="tool-reconcile.html" class="tool-link">⚖️ חשבון מול פירוט</a>
+  </div>
+  <p style="margin-top:0.8rem;font-size:0.85rem">צריכים כלי מותאם להתקשרות הספציפית שלכם? <a href="contact.html" style="color:var(--accent);font-weight:700;">צרו קשר ←</a></p>
+</div>
+
+<hr class="divider"/>
+
+<h2>סיכום — רשימת פעולות</h2>
+
+<p><strong>בשלב המכרז:</strong></p>
+<ul class="checklist" style="margin-bottom:1rem">
+  <li>דרשו פירוט אקסל במבנה אחיד כתנאי לסילוק חשבון</li>
+  <li>הגדירו SLA כמותי ומחושב — לא כללי</li>
+  <li>חייבו הצהרת ספק חתומה בכל הגשת חשבון</li>
+  <li>קבעו במפורש את זכות הדגימה והעיון באסמכתאות</li>
+</ul>
+
+<p><strong>בחוזה:</strong></p>
+<ul class="checklist" style="margin-bottom:1rem">
+  <li>כללו חישוב SLA בתוך החשבון עצמו — הספק מחשב, לא אתם</li>
+  <li>הגדירו מועד הגשה ברור וסנקציה על איחור</li>
+  <li>קבעו רשימת עובדים מאושרת ומנגנון שינוי מבוקר</li>
+</ul>
+
+<p><strong>בבדיקה החודשית:</strong></p>
+<ul class="checklist" style="margin-bottom:1rem">
+  <li>דרשו מהיחידה המקצועית אישור עם תאריך, שם ופירוט — לא רק חתימה</li>
+  <li>הריצו בדיקה אוטומטית — השוואת החשבון לדוח הנוכחות ולרשימת העובדים</li>
+  <li>תעדו את הממצאים בתיק החשבון</li>
+</ul>
+
+<p><strong>בדגימה תקופתית:</strong></p>
+<ul class="checklist">
+  <li>בחרו חודשים באקראי — לפחות פעמיים בשנה</li>
+  <li>דרשו אסמכתאות מקוריות לשורות שנבחרו</li>
+  <li>הודיעו לספק על ממצאי הדגימה בכתב</li>
+</ul>
+
+<div class="related-section">
+  <div class="related-title">📖 קראו גם</div>
+  <div class="related-grid">
+    <a href="article-tender-controls.html" class="related-card">
+      <span class="related-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <span class="related-card-title">איך לבנות בקרה אפקטיבית — כבר משלב המכרז</span>
+    </a>
+    <a href="article-sla-contract.html" class="related-card">
+      <span class="related-card-cat">חוזי קבלנים</span>
+      <span class="related-card-title">SLA בחוזה קבלן: איך קובעים קנסות שבאמת עובדים</span>
+    </a>
+    <a href="article-procurement-audit.html" class="related-card">
+      <span class="related-card-cat">ביקורת פנימית</span>
+      <span class="related-card-title">5 בדיקות חובה על חשבוניות קבלנים</span>
+    </a>
+    <a href="article-professional-unit-trust.html" class="related-card">
+      <span class="related-card-cat">ניהול חוזים</span>
+      <span class="related-card-title">עד כמה מותר לסמוך על היחידה המקצועית?</span>
+    </a>
+  </div>
+</div>
+
+</main>
+
+<a href="https://wa.me/972506914898" class="wa-float" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+</body>
+</html>

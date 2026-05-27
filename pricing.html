@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -115,16 +115,23 @@ footer-note{display:block;font-size:0.8rem;color:var(--muted);margin-top:2.5rem;
 </style>
 </head>
 <body>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
 
-<header>
-  <a href="index.html" class="logo">קנדל <span>BI</span></a>
-  <div class="header-nav">
-    <a href="tools.html" class="nav-link">כלים חינמיים</a>
-    <a href="about.html" class="nav-link">אודות</a>
-    <a href="pricing.html" class="nav-link active">מחירון</a>
-    <a href="index.html#cta" class="nav-cta-link">צרו קשר ←</a>
-  </div>
-</header>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="pricing.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מחירון</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
 
 <main>
 
@@ -133,6 +140,17 @@ footer-note{display:block;font-size:0.8rem;color:var(--muted);margin-top:2.5rem;
     <h1>מה כולל כל מסלול — <em>ובכמה</em></h1>
     <p class="page-sub">כל הכלים הבסיסיים חינמיים תמיד. מחירי השירותים המותאמים מפורטים כאן.</p>
     <span class="vat-note">⚠️ כל המחירים אינם כוללים מע"מ</span>
+  </div>
+
+  <!-- LAUNCH PROMO BOX -->
+  <div style="background:linear-gradient(135deg,#fff8ed 0%,#fff3d6 100%);border:2.5px solid #f0a500;border-radius:16px;padding:1.4rem 2rem;margin-bottom:1.8rem;text-align:center;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#f0a500,#ffc940,#f0a500);"></div>
+    <div style="font-size:1.6rem;margin-bottom:0.4rem">🎉</div>
+    <div style="font-size:1.1rem;font-weight:900;color:#0d1f3c;margin-bottom:0.4rem">לרגל ההשקה — כל השירותים פתוחים בחינם!</div>
+    <div style="font-size:0.93rem;color:#5a4000;line-height:1.6;max-width:540px;margin:0 auto">
+      בימים אלו, לרגל ההשקה הרשמית של קנדל BI, <strong>כל הכלים וכל השירותים זמינים לשימוש חופשי וחינמי לגמרי</strong> — ללא הרשמה, ללא כרטיס אשראי, ללא התחייבות.<br/>
+      <span style="color:#b87400;font-size:0.85rem;margin-top:0.4rem;display:block">המחירים המפורטים להלן יכנסו לתוקף בתום תקופת ההשקה.</span>
+    </div>
   </div>
 
   <!-- TIER 0: חינמי -->

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -73,10 +73,22 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
 </script>
 </head>
 <body>
-<header>
-  <a href="tools.html" class="back-link">← חזרה לכלים</a>
-  <a href="index.html" class="logo">קנדל <span>BI</span></a>
-</header>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="pricing.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מחירון</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
 <main>
 
 <h1>האם תמיד אפשר לסמוך על הבקרה של היחידה המקצועית?</h1>
@@ -224,7 +236,7 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
 
 <div class="cta-box">
   <span class="cta-title">כלים לבדיקה עצמאית — שאינה תלויה בדיווח היחידה המקצועית</span>
-  <p>קנדל BI מפתחת כלים שמאפשרים לחשב לבדוק פיננסית — מהנתונים הגולמיים, לא מהסיכום שהגיע מהיחידה. <a href="index.html#cta" style="color:var(--accent);font-weight:700;">צור קשר — החל מ-1,900 ₪ + מע"מ ←</a></p>
+  <p>קנדל BI מפתחת כלים שמאפשרים לחשב לבדוק פיננסית — מהנתונים הגולמיים, לא מהסיכום שהגיע מהיחידה. <a href="index.html#cta" style="color:var(--accent);font-weight:700;">רוצה כלי מותאם להתקשרות שלך? נשמח לסייע ←</a></p>
   <div class="tools-grid">
     <a href="tool-hours-overlap.html" class="tool-link">🔍 בדיקת תקינות שעות</a>
     <a href="tool-reconcile.html" class="tool-link">⚖️ חשבון מול פירוט</a>

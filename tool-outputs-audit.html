@@ -1,7 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -10,424 +9,889 @@
   gtag('config', 'G-FR9DZSW3M4');
 </script>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>בדיקת דוחות תפוקות קבלנים — קנדל BI</title>
-<meta name="description" content="בדיקת דוחות תפוקות: זיהוי תפוקות חדשות, בדיקת סבירות וחריגות, מדגם מבוסס סיכונים, דשבורד חודשי להשוואת מגמות. מתאים לביקורת קבלנים לפי תפוקות."/>
-<meta name="keywords" content="בדיקת דוחות תפוקות, ביקורת קבלן תפוקות, מדגם מבוסס סיכון, חריגות תפוקה, רכש ציבורי"/>
+<title>בדיקת חשבון תפוקות — קנדל BI</title>
+<meta name="description" content="בדיקת חשבון מכרז תפוקות: השוואת שירותים מאושרים, מחירים, כמויות מול דוח ביצועים. ייצוא אקסל מסומן עם ממצאים."/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="https://kandelbi.org/tool-outputs-audit.html"/>
-<meta property="og:title" content="בדיקת דוחות תפוקות קבלנים — קנדל BI"/>
-<meta property="og:description" content="זיהוי תפוקות חדשות, בדיקת סבירות, מדגם מבוסס סיכונים ודשבורד חודשי לביקורת קבלנים."/>
-<meta property="og:url" content="https://kandelbi.org/tool-outputs-audit.html"/>
-<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22;--purple:#7c3aed}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025;--orange:#e67e22;--green-bg:#edf7f3;--red-bg:#fef2f2;--orange-bg:#fff8ed}
 body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
 header{background:var(--navy);padding:14px 5vw;display:flex;align-items:center;justify-content:space-between}
 .logo{font-weight:900;font-size:1.2rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
 .back-link{color:rgba(255,255,255,0.6);font-size:0.82rem;text-decoration:none}.back-link:hover{color:#fff}
-main{max-width:1100px;margin:0 auto;padding:2rem 5vw 4rem}
+main{max-width:1100px;margin:0 auto;padding:2rem 5vw 5rem}
 .tool-title{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
 .tool-sub{color:var(--muted);font-size:0.92rem;margin-bottom:1.2rem}
-.privacy-bar{background:#edf7f3;border:1px solid #b2ddd0;border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#0a7c5e}
-.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;color:#fff}
-.inst-title{font-weight:800;font-size:0.95rem;margin-bottom:0.7rem;color:var(--accent)}
-.inst-steps{display:flex;flex-direction:column;gap:5px}
-.inst-step{display:flex;align-items:flex-start;gap:9px;font-size:0.85rem;color:rgba(255,255,255,0.85)}
-.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.72rem;flex-shrink:0;margin-top:1px}
-.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:1.5rem;margin-bottom:1.2rem;box-shadow:0 3px 16px rgba(13,31,60,0.07)}
-.card-title{font-size:0.95rem;font-weight:800;color:var(--navy);margin-bottom:1rem}
-.upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.8rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
-.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
-.ub-icon{font-size:1.8rem;margin-bottom:5px}.ub-text{font-weight:700;font-size:0.88rem}.ub-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
+.privacy-bar{background:var(--green-bg);border:1px solid #b2ddd0;border-radius:10px;padding:10px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:var(--green)}
+.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:1.5rem;margin-bottom:1.2rem;box-shadow:0 3px 16px rgba(13,31,60,0.06)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.step-num{background:var(--muted);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:900;flex-shrink:0}
+.step-num.done{background:var(--green)}.step-num.active{background:var(--blue)}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.6rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:var(--green-bg)}.upload-box.error{border-color:var(--red);background:#fef2f2}
+.ub-icon{font-size:1.8rem;margin-bottom:4px}.ub-text{font-weight:700;font-size:0.88rem}.ub-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:650px){.grid2{grid-template-columns:1fr}}
 .form-group{margin-bottom:0.8rem}
 .form-group label{display:block;font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
-.form-group select,.form-group input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;outline:none;background:var(--white)}
+.form-group select,.form-group input[type=text],.form-group input[type=number]{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;outline:none;background:var(--white);transition:border-color 0.2s}
 .form-group select:focus,.form-group input:focus{border-color:var(--blue)}
-.btn-primary{background:var(--navy);color:#fff;border:none;padding:11px 26px;border-radius:9px;font-family:inherit;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.2s}
+.tender-input-wrap{position:relative}
+.tender-input-wrap input{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:9px;font-family:inherit;font-size:1rem;font-weight:700;outline:none;background:var(--white);direction:rtl;transition:border-color 0.2s}
+.tender-input-wrap input:focus{border-color:var(--blue)}
+.tender-badge{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:0.72rem;font-weight:900;padding:2px 8px;border-radius:10px;pointer-events:none}
+.badge-new{background:var(--red-bg);color:var(--red);border:1px solid #fca5a5}
+.badge-exist{background:var(--green-bg);color:var(--green);border:1px solid #b2ddd0}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:11px 26px;border-radius:9px;font-family:inherit;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px}
 .btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
-.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:9px 20px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.88rem;cursor:pointer}
-.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.2rem;flex-wrap:wrap}
-.tab-btn{padding:9px 16px;border:none;background:none;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:9px 20px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.88rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-green{background:var(--green);color:#fff;border:none;padding:9px 20px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.88rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-sm{padding:5px 12px;font-size:0.8rem;border-radius:7px}
+.hidden{display:none}
+.alert-info{background:#eef3fb;border:1px solid #c8d9f2;border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--blue);margin-bottom:0.8rem}
+.alert-warn{background:var(--orange-bg);border:1px solid #f5d48a;border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--orange);margin-bottom:0.8rem}
+.alert-danger{background:var(--red-bg);border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--red);margin-bottom:0.8rem}
+.alert-ok{background:var(--green-bg);border:1px solid #b2ddd0;border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--green);margin-bottom:0.8rem}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.2rem;flex-wrap:wrap;overflow-x:auto}
+.tab-btn{padding:9px 13px;border:none;background:none;font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.2s}
 .tab-btn.active{color:var(--navy);border-bottom-color:var(--accent)}
 .tab-panel{display:none}.tab-panel.show{display:block}
-.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.8rem;margin-bottom:1.2rem}
-.kpi{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.9rem;text-align:center}
-.kpi-val{font-weight:900;font-size:1.5rem;color:var(--navy);display:block;line-height:1}
-.kpi-lbl{font-size:0.7rem;color:var(--muted);margin-top:3px}
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:0.7rem;margin-bottom:1.2rem}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.85rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.4rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.67rem;color:var(--muted);margin-top:3px;line-height:1.3}
 .kpi.danger .kpi-val{color:var(--red)}.kpi.warn .kpi-val{color:var(--orange)}.kpi.ok .kpi-val{color:var(--green)}
-.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:420px;overflow-y:auto}
+.result-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:480px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:0.81rem}
-th{background:var(--navy);color:#fff;padding:8px 11px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1}
-td{padding:7px 11px;border-bottom:1px solid var(--border)}
+th{background:var(--navy);color:#fff;padding:8px 10px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:hover td{background:var(--bg)}
+tr.row-issue{background:#fff8f8}
+tr.row-issue:hover td{background:#fde8e8}
+.status-ok{color:var(--green);font-weight:900;font-size:1.05rem}
+.status-issue{color:var(--red);font-weight:900;font-size:1.05rem}
+.comment-cell{font-size:0.77rem;color:var(--red);line-height:1.45;max-width:300px}
+.cell-issue{color:var(--red);font-weight:900;background:#fde8e8;padding:1px 4px;border-radius:3px;display:inline-block}
 .badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:0.7rem;font-weight:700}
-.b-new{background:#f3e8ff;color:var(--purple)}.b-high{background:#fef2f2;color:var(--red)}.b-low{background:#fff3e0;color:var(--orange)}.b-ok{background:#edf7f3;color:var(--green)}
-.b-risk-high{background:#fef2f2;color:var(--red)}.b-risk-med{background:#fff3e0;color:var(--orange)}.b-risk-low{background:#eef3fb;color:var(--blue)}
-.month-chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding-bottom:8px;border-bottom:2px solid var(--border);margin-bottom:0.8rem;overflow-x:auto}
-.month-bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:50px}
+.b-full{background:var(--red-bg);color:var(--red)}.b-partial{background:var(--orange-bg);color:var(--orange)}.b-ok{background:var(--green-bg);color:var(--green)}
+.filter-tabs{display:flex;gap:5px;margin-bottom:0.8rem;flex-wrap:wrap}
+.ftab{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:var(--white);font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.ftab:hover{border-color:var(--blue);color:var(--blue)}.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tender-list{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.8rem}
+.tender-chip{background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;font-size:0.83rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px}
+.tender-chip:hover{border-color:var(--blue);background:#eef3fb}.tender-chip.selected{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip-del{background:none;border:none;cursor:pointer;color:inherit;opacity:0.6;font-size:0.85rem;font-family:inherit;padding:0 2px}.chip-del:hover{opacity:1}
+.svc-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:240px;overflow-y:auto;margin-top:0.8rem}
+.files-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.file-item{background:var(--green-bg);border:1px solid #b2ddd0;border-radius:7px;padding:5px 12px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem}
+.fi-remove{color:var(--red);cursor:pointer;font-weight:900;font-size:0.85rem;background:none;border:none;font-family:inherit;padding:0}
+.month-chart{display:flex;align-items:flex-end;gap:6px;height:130px;padding-bottom:8px;border-bottom:2px solid var(--border);margin-bottom:0.8rem;overflow-x:auto}
+.month-bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px}
 .month-bar{width:100%;border-radius:4px 4px 0 0;transition:height 0.4s}
-.month-label{font-size:0.68rem;color:var(--muted);text-align:center;white-space:nowrap}
-.month-val{font-size:0.68rem;font-weight:700;color:var(--navy)}
-.hidden{display:none}
+.month-label{font-size:0.67rem;color:var(--muted);text-align:center;white-space:nowrap}
+.month-val{font-size:0.67rem;font-weight:700;color:var(--navy)}
+.modal-overlay{display:none;position:fixed;inset:0;z-index:3000;background:rgba(13,31,60,0.65);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:18px;padding:2rem;max-width:500px;width:100%;text-align:center;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:1.2rem;font-weight:900;color:var(--navy);margin-bottom:0.7rem}
+.modal p{font-size:0.9rem;color:var(--text);line-height:1.7;margin-bottom:1.2rem;text-align:right}
+.modal-icon{font-size:2.5rem;margin-bottom:0.8rem}
+.modal-actions{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<header>
-  <a href="tools.html" class="back-link">← חזרה לכלים</a>
-  <a href="index.html" class="logo">קנדל <span>BI</span></a>
-</header>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="pricing.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מחירון</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
 <main>
-<div class="tool-title">📦 בדיקת דוחות תפוקות</div>
-<div class="tool-sub">זיהוי תפוקות חדשות · סבירות · מדגם סיכונים · דשבורד חודשי</div>
-
+<div class="tool-title">📦 בדיקת חשבון תפוקות</div>
+<div class="tool-sub">השוואת שירותים מאושרים · מחירים · כמויות מול דוח ביצועים · ייצוא אקסל מסומן</div>
+<div style="background:#edf7f3;border:1.5px solid #0a7c5e;border-radius:8px;padding:9px 16px;margin:0.6rem 0 1rem;text-align:center;font-size:0.87rem;font-weight:700;color:#0a7c5e">
+  ✨ לרגל ההשקה — הכלי פתוח לשימוש חופשי בימים אלו
+</div>
 <div class="privacy-bar">
   <span style="font-size:1.1rem;flex-shrink:0">🔒</span>
-  <span><strong>הנתונים שלך לא עוזבים את המחשב שלך.</strong> הכלי עובד לגמרי בדפדפן שבמחשב שלך — ללא שרת, ללא העלאה לאינטרנט. ניתן לעבוד גם ללא חיבור לרשת.</span>
+  <span><strong>כל הנתונים נשארים במחשב שלך.</strong> הכלי עובד בדפדפן בלבד — ללא שרת, ללא העלאה לאינטרנט. רשימת השירותים המאושרים נשמרת בדפדפן לשימוש חוזר בחודשים הבאים.</span>
 </div>
 
-<div class="instructions">
-  <div class="inst-title">📖 הוראות שימוש</div>
-  <div class="inst-steps">
-    <div class="inst-step"><div class="inst-num">1</div><span>העלה דוח תפוקות — כל שורה = תפוקה של עובד (עם חודש, סוג תפוקה, כמות)</span></div>
-    <div class="inst-step"><div class="inst-num">2</div><span>הגדר עמודות והרץ — הכלי מזהה תפוקות חדשות, חריגות סבירות ומדגם סיכונים</span></div>
-    <div class="inst-step"><div class="inst-num">3</div><span>ראה דשבורד חודשי — השוואה לאורך זמן עם זיהוי קפיצות חשודות</span></div>
-    <div class="inst-step"><div class="inst-num">4</div><span>ייצא את המדגם לאקסל לצורך בדיקה מפורטת ואישור</span></div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-title">📂 העלאת דוח תפוקות</div>
-  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
-    <div class="ub-icon">📦</div>
-    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
-    <div class="ub-sub">xlsx / xls / csv</div>
-  </div>
-  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
-</div>
-
-<div class="card hidden" id="config-card">
-  <div class="card-title">⚙️ הגדרת עמודות</div>
-  <div class="grid2">
-    <div class="form-group"><label>מזהה עובד / שם:</label><select id="col-emp"></select></div>
-    <div class="form-group"><label>סוג תפוקה:</label><select id="col-type"></select></div>
-    <div class="form-group"><label>חודש / תאריך:</label><select id="col-month"></select></div>
-    <div class="form-group"><label>כמות תפוקות:</label><select id="col-qty"></select></div>
-  </div>
-  <div style="background:var(--bg);border-radius:9px;padding:1rem;border:1px solid var(--border);margin-bottom:1rem">
-    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.7rem">🎯 סף חריגות</div>
-    <div class="grid2">
-      <div class="form-group"><label>קפיצה חריגה (% מעל ממוצע):</label><input type="number" id="thresh-high" value="100" min="20"/></div>
-      <div class="form-group"><label>ירידה חריגה (% מתחת ממוצע):</label><input type="number" id="thresh-low" value="50" min="10"/></div>
+<!-- STEP 1 -->
+<div class="card" id="step1-card">
+  <div class="card-title"><div class="step-num active" id="sn1">1</div> בחירת מכרז / התקשרות</div>
+  <div class="form-group">
+    <label>שם המכרז / ההתקשרות:</label>
+    <div class="tender-input-wrap">
+      <input type="text" id="tender-input" list="tender-dl" placeholder="הקלד או בחר מהרשימה..." autocomplete="off" oninput="onTenderInput()" onchange="onTenderInput()"/>
+      <datalist id="tender-dl"></datalist>
+      <span class="tender-badge hidden" id="tender-badge"></span>
     </div>
   </div>
-  <button class="btn-primary" onclick="runAudit()">🔍 הרץ בדיקה מלאה</button>
+  <div id="saved-wrap" class="hidden">
+    <div style="font-size:0.79rem;color:var(--muted);margin-bottom:0.4rem">📂 מכרזים שמורים:</div>
+    <div class="tender-list" id="tender-list"></div>
+  </div>
+  <div id="tip-new" class="hidden alert-info" style="margin-top:0.8rem">🆕 מכרז חדש — בשלב הבא תעלה רשימת שירותים מאושרים + מחירים</div>
+  <div id="tip-exist" class="hidden alert-ok" style="margin-top:0.8rem"><span id="tip-exist-text"></span></div>
+  <div style="margin-top:1rem">
+    <button class="btn-primary" onclick="confirmTender()" id="btn-confirm-tender" disabled>המשך ←</button>
+  </div>
 </div>
 
+<!-- STEP 2 -->
+<div class="card hidden" id="step2-card">
+  <div class="card-title"><div class="step-num" id="sn2">2</div> רשימת שירותים מאושרים + מחירים</div>
+  <div id="s2-note-new" class="alert-warn">⚠️ מכרז חדש — יש להעלות רשימת שירותים שאושרו, כולל קוד/שם השירות ומחיר מאושר ליחידה.</div>
+  <div class="upload-box" id="dz-svc" onclick="document.getElementById('fi-svc').click()">
+    <div class="ub-icon">📋</div>
+    <div class="ub-text">העלה רשימת שירותים מאושרים</div>
+    <div class="ub-sub">אקסל עם עמודות: קוד/שם שירות · מחיר מאושר ליחידה · (אופציונלי: כמות מקס' לחודש)</div>
+  </div>
+  <input type="file" id="fi-svc" accept=".xlsx,.xls,.csv" hidden/>
+  <div id="svc-col-map" class="hidden" style="margin-top:1rem">
+    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.7rem;color:var(--navy)">📌 מיפוי עמודות:</div>
+    <div id="svc-sheet-sel-wrap"></div>
+    <div id="svc-hdr-sel-wrap"></div>
+    <div class="grid2">
+      <div class="form-group"><label>קוד / שם שירות (חובה — ישמש לזיהוי):</label><select id="svc-col-id" onchange="renderSvcPreview()"></select></div>
+      <div class="form-group"><label>מחיר מאושר ליחידה (חובה):</label><select id="svc-col-rate" onchange="renderSvcPreview()"></select></div>
+      <div class="form-group"><label>כמות מקסימלית לחודש (אופציונלי):</label><select id="svc-col-maxqty" onchange="renderSvcPreview()"></select></div>
+    </div>
+    <div id="svc-preview" class="svc-table-wrap"></div>
+    <div style="margin-top:0.8rem"><button class="btn-primary" onclick="saveSvcList()">💾 שמור רשימת שירותים והמשך</button></div>
+  </div>
+  <div id="svc-saved-wrap" class="hidden">
+    <div id="svc-saved-preview" class="svc-table-wrap"></div>
+    <div style="margin-top:0.8rem"><button class="btn-accent btn-sm" onclick="showReplaceSvc()">🔄 עדכן רשימה</button></div>
+    <div style="margin-top:0.8rem"><button class="btn-primary" onclick="goToStep3()">המשך לשלב הבא ←</button></div>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div class="card hidden" id="step3-card">
+  <div class="card-title"><div class="step-num" id="sn3">3</div> העלאת קבצי החודש</div>
+  <div class="grid2">
+    <div>
+      <div style="font-weight:700;margin-bottom:6px;color:var(--blue);font-size:0.87rem">📊 דוחות ביצועים / תפוקות (חובה)</div>
+      <div class="upload-box" id="dz-act" onclick="document.getElementById('fi-act').click()">
+        <div class="ub-icon">📊</div>
+        <div class="ub-text">העלה דוח/דוחות ביצועים</div>
+        <div class="ub-sub">xlsx / xls / csv · ניתן להעלות מספר קבצים</div>
+      </div>
+      <input type="file" id="fi-act" accept=".xlsx,.xls,.csv" multiple hidden/>
+      <div class="files-list" id="act-files-list"></div>
+    </div>
+    <div>
+      <div style="font-weight:700;margin-bottom:6px;color:var(--blue);font-size:0.87rem">💵 חשבון הספק (חובה)</div>
+      <div class="upload-box" id="dz-inv" onclick="document.getElementById('fi-inv').click()">
+        <div class="ub-icon">💵</div>
+        <div class="ub-text">העלה חשבון</div>
+        <div class="ub-sub">xlsx / xls / csv / PDF (לא סרוק)</div>
+      </div>
+      <input type="file" id="fi-inv" accept=".xlsx,.xls,.csv,.pdf" hidden/>
+      <div id="out-inv-sheet-sel-wrap"></div>
+      <div id="inv-info" style="margin-top:5px;font-size:0.79rem;color:var(--muted)"></div>
+    </div>
+  </div>
+  <div style="margin-top:1rem">
+    <button class="btn-primary" onclick="goToStep4()" id="btn-step4" disabled>המשך ←</button>
+  </div>
+</div>
+
+<!-- STEP 4 -->
+<div class="card hidden" id="step4-card">
+  <div class="card-title"><div class="step-num" id="sn4">4</div> מיפוי עמודות</div>
+  <div style="font-weight:700;font-size:0.87rem;color:var(--navy);margin-bottom:0.7rem">📊 עמודות בדוח הביצועים:</div>
+  <div id="act-sheet-sel-wrap"></div>
+  <div id="act-hdr-sel-wrap"></div>
+  <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם כל שורה = יחידת שירות אחת — אל תבחר עמודת כמות. אם יש עמודת כמות — בחר אותה.</div>
+  <div class="grid2">
+    <div class="form-group"><label>סוג שירות / קוד (חובה):</label><select id="col-act-svc"></select></div>
+    <div class="form-group"><label>תאריך (אופציונלי):</label><select id="col-act-date"></select></div>
+    <div class="form-group"><label>כמות לשורה (אופציונלי — ריק = כל שורה=1):</label><select id="col-act-qty"></select></div>
+    <div class="form-group"><label>מבצע / ספק (אופציונלי):</label><select id="col-act-provider"></select></div>
+    <div class="form-group"><label>מספר אסמכתא / מזהה (לאיתור כפילויות):</label><select id="col-act-ref"></select></div>
+  </div>
+  <div style="font-weight:700;font-size:0.87rem;color:var(--navy);margin:0.8rem 0 0.7rem">💵 עמודות בחשבון:</div>
+  <div id="out-inv-sheet-sel-wrap-step4"></div>
+  <div id="inv-hdr-sel-wrap"></div>
+  <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם בחשבון יש שורה לכל שירות עם כמות — בחר עמודת כמות. אם יש רק סה"כ — בחר עמודת סה"כ.</div>
+  <div class="grid2">
+    <div class="form-group"><label>סוג שירות / קוד (חובה):</label><select id="col-inv-svc"></select></div>
+    <div class="form-group"><label>מבצע / ספק בחשבון (אופציונלי):</label><select id="col-inv-provider"></select></div>
+    <div class="form-group"><label>כמות יחידות (אופציונלי):</label><select id="col-inv-qty"></select></div>
+    <div class="form-group"><label>מחיר ליחידה (אופציונלי):</label><select id="col-inv-rate"></select></div>
+    <div class="form-group"><label>סה"כ לשורה (אופציונלי):</label><select id="col-inv-total"></select></div>
+  </div>
+  <button class="btn-primary" onclick="runFullAudit()">🔍 הרץ בדיקה מלאה</button>
+</div>
+
+<!-- STEP 5: Results -->
 <div class="card hidden" id="results-card">
+  <div class="card-title">
+    <div class="step-num done">✓</div>
+    תוצאות — <span id="results-tender-lbl" style="color:var(--blue)"></span>
+  </div>
+  <div class="kpi-bar" id="kpi-bar"></div>
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('summary',this)">📊 סיכום</button>
-    <button class="tab-btn" onclick="showTab('new-types',this)">🆕 תפוקות חדשות</button>
-    <button class="tab-btn" onclick="showTab('reasonableness',this)">🔍 סבירות</button>
-    <button class="tab-btn" onclick="showTab('sample',this)">🎯 מדגם סיכונים</button>
-    <button class="tab-btn" onclick="showTab('monthly',this)">📈 דשבורד חודשי</button>
+    <button class="tab-btn" onclick="showTab('invoice',this)">💵 בדיקת חשבון</button>
+    <button class="tab-btn" onclick="showTab('activity',this)">📊 דוח ביצועים</button>
+    <button class="tab-btn" onclick="showTab('services',this)">📋 שירותים</button>
+    <button class="tab-btn" onclick="showTab('duplicates',this)">⚠️ כפילויות</button>
+    <button class="tab-btn" onclick="showTab('monthly',this)">📈 מגמות</button>
   </div>
-
   <div class="tab-panel show" id="tab-summary">
-    <div class="kpi-bar" id="kpi-bar"></div>
-    <div id="summary-details"></div>
+    <div id="summary-content"></div>
+    <div style="margin-top:1.2rem">
+      <button style="background:var(--navy);color:#fff;border:none;padding:11px 26px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.95rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא לאקסל (4 גיליונות)</button>
+    </div>
   </div>
-
-  <div class="tab-panel" id="tab-new-types">
+  <div class="tab-panel" id="tab-invoice">
+    <div class="alert-info" style="margin-bottom:0.8rem">✓ ירוק = תקין &nbsp;|&nbsp; ✗ אדום = ממצא בשורה &nbsp;|&nbsp; ערך מודגש באדום = הערך הלא תקין</div>
+    <div class="result-table-wrap" id="invoice-table-wrap"></div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
+  </div>
+  <div class="tab-panel" id="tab-activity">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="filterAct('all',this)">הכל</button>
+      <button class="ftab" onclick="filterAct('issue',this)">ממצאים בלבד</button>
+      <button class="ftab" onclick="filterAct('unauth',this)">שירות לא מאושר</button>
+      <button class="ftab" onclick="filterAct('dup',this)">כפילויות</button>
+    </div>
+    <div class="result-table-wrap" id="act-table-wrap"></div>
+    <div style="margin-top:0.8rem"><button class="btn-green" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
+  </div>
+  <div class="tab-panel" id="tab-services"><div id="services-content"></div></div>
+  <div class="tab-panel" id="tab-duplicates">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="filterDups('all',this)">הכל</button>
+      <button class="ftab" onclick="filterDups('ref',this)">כפילות אסמכתא</button>
+      <button class="ftab" onclick="filterDups('date-svc',this)">כפילות תאריך+שירות</button>
+    </div>
     <div class="result-table-wrap">
-      <table><thead><tr><th>סוג תפוקה</th><th>חודש ראשון שהופיע</th><th>כמות שורות</th><th>הערה</th></tr></thead>
-      <tbody id="new-types-body"></tbody></table>
+      <table><thead><tr><th>שירות</th><th>תאריך</th><th>מבצע</th><th>אסמכתא / מפתח</th><th>כמות כפילויות</th><th>סוג</th></tr></thead>
+      <tbody id="duplicates-body"></tbody></table>
     </div>
-    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('new-types')">⬇ ייצא</button></div>
+    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
   </div>
-
-  <div class="tab-panel" id="tab-reasonableness">
-    <div class="result-table-wrap">
-      <table><thead><tr><th>עובד</th><th>סוג תפוקה</th><th>חודש</th><th>כמות</th><th>ממוצע</th><th>סטיה %</th><th>ממצא</th></tr></thead>
-      <tbody id="reason-body"></tbody></table>
-    </div>
-    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('reasonableness')">⬇ ייצא</button></div>
-  </div>
-
-  <div class="tab-panel" id="tab-sample">
-    <div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:1rem">
-      🎯 <strong>עקרון המדגם:</strong> סיכון גבוה = כמות גבוהה פי 2+ מהממוצע · סיכון בינוני = ירידה חריגה · סיכון נמוך = מדגם אקראי 10%
-    </div>
-    <div class="result-table-wrap">
-      <table><thead><tr><th>עובד</th><th>סוג תפוקה</th><th>חודש</th><th>כמות</th><th>ממוצע</th><th>רמת סיכון</th><th>סיבה</th></tr></thead>
-      <tbody id="sample-body"></tbody></table>
-    </div>
-    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('sample')">⬇ ייצא מדגם</button></div>
-  </div>
-
   <div class="tab-panel" id="tab-monthly">
     <div id="monthly-chart-wrap"></div>
     <div class="result-table-wrap" style="margin-top:1rem">
       <table><thead id="monthly-head"></thead><tbody id="monthly-body"></tbody></table>
     </div>
-    <div style="margin-top:0.8rem"><button class="btn-accent" onclick="exportTable('monthly')">⬇ ייצא דשבורד</button></div>
   </div>
 </div>
 
-<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
-  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור למקרה שלך</strong> — תעריפים, כללי SLA ובדיקות מותאמות להתקשרות הספציפית שלך? <span style="color:#0a7c5e;font-weight:600;">החל מ-1,900 ₪ + מע"מ</span> &nbsp;|&nbsp; <a href="index.html#cta" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
-  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות | חל איסור על העתקת הכלים</span>
+<!-- Modal -->
+<div class="modal-overlay" id="modal-threshold">
+  <div class="modal">
+    <div class="modal-icon">⚠️</div>
+    <h2>תזכורת: אימות תנאי החוזה</h2>
+    <p>לפני שממשיכים — <strong>האם בדקתם שכל שירות ברשימה אכן מאושר במסגרת החוזה / המכרז</strong>?<br/><br/>וכן — <strong>האם המחיר שהוגדר לכל שירות תואם לתנאי ההסכם</strong>?<br/><br/><span style="color:var(--blue);font-weight:700">💡 המלצה:</span> שמרו את אישורי המחירים בתיקייה ייעודית — לדוגמה: <strong>תיק קבלן \ [שם ספק] \ אישור מחירים</strong></p>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('modal-threshold');goToStep3()">✅ כן, בדקתי — המשך</button>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 0;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong>כלי שתפור להתקשרות הספציפית שלך</strong>? <span style="color:var(--green);font-weight:600;">החל מ-1,900 ₪ + מע"מ</span> &nbsp;|&nbsp; <a href="contact.html" style="color:var(--blue);font-weight:700;">צור קשר ←</a></span>
+  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות</span>
 </div>
 </main>
 
 <script>
-let rawData={headers:[],rows:[]};
-let newTypesRes=[], reasonRes=[], sampleRes=[], monthlyData={};
+if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
-const dz=document.getElementById('dz');
-dz.addEventListener('dragover',e=>{e.preventDefault()});
-dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
+const TENDER_KEY = 'kbi_output_tenders_v1';
+let currentTender = null, isNewTender = false;
+let svcFileData = { headers:[], rows:[] };
+let actFilesList = [];
+let invFileData  = { headers:[], rows:[], isPdf:false };
+let auditInvoiceRows=[], auditActRows=[], duplicateResults=[], monthlyData={};
+let actQtyBySvc={}, expectedTotal=0, actualInvTotal=0;
 
-function loadFile(file){
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',raw:false});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-    while(rows.length&&rows[0].every(c=>!c)) rows.shift();
-    rawData.headers=rows[0]||[];
-    rawData.rows=rows.slice(1).filter(r=>r.some(c=>c!==''));
-    dz.classList.add('loaded');
-    dz.querySelector('.ub-icon').textContent='✅';
-    dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.rows.length.toLocaleString('he')+' שורות)';
-    buildConfig();
-  };
-  reader.readAsArrayBuffer(file);
+// ── TENDER STORAGE ──
+function loadTenders(){ try{return JSON.parse(localStorage.getItem(TENDER_KEY)||'{}');}catch{return {};} }
+function saveTenders(obj){ try{localStorage.setItem(TENDER_KEY,JSON.stringify(obj));}catch(e){console.warn('localStorage full');} }
+
+function renderTenderList(){
+  const t=loadTenders(), names=Object.keys(t);
+  const wrap=document.getElementById('saved-wrap'), list=document.getElementById('tender-list'), dl=document.getElementById('tender-dl');
+  dl.innerHTML=names.map(n=>`<option value="${escAttr(n)}"/>`).join('');
+  if(!names.length){wrap.classList.add('hidden');return;}
+  wrap.classList.remove('hidden');
+  list.innerHTML=names.map(n=>{
+    const cnt=(t[n].services||[]).length, sel=currentTender?.name===n?'selected':'', jsn=escAttr(JSON.stringify(n));
+    return `<div class="tender-chip ${sel}" onclick="selectTender(${jsn})">📁 ${escHtml(n)} <span style="font-size:0.72rem;opacity:0.7">(${cnt} שירותים)</span><button class="chip-del" onclick="deleteTender(event,${jsn})" title="מחק">✕</button></div>`;
+  }).join('');
 }
 
-function buildConfig(){
-  const opts=rawData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
-  ['col-emp','col-type','col-month','col-qty'].forEach(id=>document.getElementById(id).innerHTML=opts);
-  const g={
-    'col-emp':['עובד','שם','id'],
-    'col-type':['סוג תפוקה','תפוקה','שירות','type','output'],
-    'col-month':['חודש','תאריך','month','date'],
-    'col-qty':['כמות','qty','quantity','count','מספר']
-  };
-  Object.entries(g).forEach(([sel,kws])=>{
-    const i=rawData.headers.findIndex(h=>kws.some(k=>String(h).toLowerCase().includes(k)));
-    if(i>=0) document.getElementById(sel).value=i;
+function onTenderInput(){
+  const val=document.getElementById('tender-input').value.trim(), t=loadTenders();
+  const btn=document.getElementById('btn-confirm-tender'), badge=document.getElementById('tender-badge');
+  if(!val){badge.classList.add('hidden');document.getElementById('tip-new').classList.add('hidden');document.getElementById('tip-exist').classList.add('hidden');btn.disabled=true;return;}
+  btn.disabled=false;
+  if(t[val]){
+    const cnt=(t[val].services||[]).length;
+    badge.textContent='✓ קיים'; badge.className='tender-badge badge-exist'; badge.classList.remove('hidden');
+    document.getElementById('tip-new').classList.add('hidden'); document.getElementById('tip-exist').classList.remove('hidden');
+    document.getElementById('tip-exist-text').textContent=`✅ מכרז קיים — ${cnt} שירותים מאושרים שמורים`; isNewTender=false;
+  } else {
+    badge.textContent='+ חדש'; badge.className='tender-badge badge-new'; badge.classList.remove('hidden');
+    document.getElementById('tip-new').classList.remove('hidden'); document.getElementById('tip-exist').classList.add('hidden'); isNewTender=true;
+  }
+}
+
+function selectTender(name){ document.getElementById('tender-input').value=name; onTenderInput(); renderTenderList(); confirmTender(); }
+
+function deleteTender(e,name){
+  e.stopPropagation(); if(!confirm(`למחוק את "${name}"?`))return;
+  const t=loadTenders(); delete t[name]; saveTenders(t); renderTenderList();
+  if(document.getElementById('tender-input').value===name){document.getElementById('tender-input').value='';onTenderInput();}
+}
+
+function confirmTender(){
+  const name=document.getElementById('tender-input').value.trim(); if(!name)return;
+  currentTender={name}; document.getElementById('results-tender-lbl').textContent=name; markStep(1,'done');
+  const t=loadTenders();
+  if(t[name]){currentTender.services=t[name].services||[]; isNewTender=false; showStep2Existing();}
+  else{isNewTender=true; document.getElementById('step2-card').classList.remove('hidden'); markStep(2,'active');}
+}
+
+function showStep2Existing(){
+  const svcs=currentTender.services||[];
+  document.getElementById('step2-card').classList.remove('hidden');
+  document.getElementById('s2-note-new').classList.add('hidden');
+  document.getElementById('svc-col-map').classList.add('hidden');
+  document.getElementById('svc-saved-wrap').classList.remove('hidden');
+  markStep(2,'active');
+  const rows=svcs.slice(0,100).map(s=>`<tr><td>${escHtml(s.id||'')}</td><td><strong>${s.rate?Number(s.rate).toFixed(2)+' ₪':'—'}</strong></td><td>${s.maxQty!=null?s.maxQty:'—'}</td></tr>`).join('');
+  document.getElementById('svc-saved-preview').innerHTML=`<table><thead><tr><th>קוד / שם שירות</th><th>מחיר מאושר</th><th>כמות מקס'</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function showReplaceSvc(){
+  document.getElementById('svc-saved-wrap').classList.add('hidden');
+  document.getElementById('svc-col-map').classList.add('hidden');
+  document.getElementById('s2-note-new').classList.remove('hidden');
+  resetDZ('dz-svc','📋','העלה רשימת שירותים מאושרים');
+  svcFileData={headers:[],rows:[]};
+}
+
+function goToStep3(){ markStep(2,'done'); document.getElementById('step3-card').classList.remove('hidden'); markStep(3,'active'); document.getElementById('step3-card').scrollIntoView({behavior:'smooth'}); }
+
+// ── SERVICES FILE ──
+document.getElementById('fi-svc').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file)return;
+  loadExcel(file,svcFileData,()=>{ setDZLoaded('dz-svc','✅',`${file.name} (${svcFileData.rows.length} שורות)`); buildSvcColMap(); });
+});
+
+function buildSvcColMap(){
+  const svcShWrap=document.getElementById('svc-sheet-sel-wrap');
+  if(svcShWrap)svcShWrap.innerHTML=svcFileData.wb?sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet'):'';
+  document.getElementById('svc-hdr-sel-wrap').innerHTML=headerRowSelectorHtml(svcFileData,'svc-hdr-row','changeSvcHeaderRow');
+  const opts=svcFileData.headers.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
+  document.getElementById('svc-col-id').innerHTML=opts;
+  document.getElementById('svc-col-rate').innerHTML=opts;
+  document.getElementById('svc-col-maxqty').innerHTML=optsOpt;
+  const h=svcFileData.headers.map(x=>String(x||'').toLowerCase());
+  autoSelect('svc-col-id',h,['קוד','שירות','service','code','מזהה','שם']);
+  autoSelect('svc-col-rate',h,['מחיר','תעריף','rate','price','עלות','ליחידה']);
+  autoSelect('svc-col-maxqty',h,['מקס','maximum','max','תקרה']);
+  renderSvcPreview();
+  document.getElementById('svc-col-map').classList.remove('hidden');
+  document.getElementById('svc-saved-wrap').classList.add('hidden');
+}
+
+function renderSvcPreview(){
+  const id=+document.getElementById('svc-col-id').value, rt=+document.getElementById('svc-col-rate').value, mq=+document.getElementById('svc-col-maxqty').value;
+  const preview=svcFileData.rows.slice(0,6);
+  const badRate=svcFileData.rows.filter(r=>{const v=String(r[rt]||'').trim();return v!==''&&isNaN(parseFloat(v));});
+  const badWarn=badRate.length>0?`<div style="margin-top:6px;padding:7px 12px;background:#fdecea;border-right:3px solid var(--red);border-radius:6px;font-size:0.8rem;color:var(--red);font-weight:600">⚠️ נמצאו ${badRate.length} שורות עם ערך לא מספרי בעמודת המחיר.</div>`:'';
+  document.getElementById('svc-preview').innerHTML=`<table><thead><tr><th>קוד / שם שירות</th><th>מחיר מאושר</th><th>כמות מקס'</th></tr></thead><tbody>${preview.map(r=>{const rv=String(r[rt]||'').trim(),bad=rv!==''&&isNaN(parseFloat(rv));return`<tr><td>${escHtml(String(r[id]||''))}</td><td style="${bad?'background:#fdecea;color:var(--red);font-weight:700':''}">${escHtml(rv||'—')}${bad?' ⚠️':''}</td><td>${mq>=0?escHtml(String(r[mq]||'')):'—'}</td></tr>`;}).join('')}</tbody></table><div style="font-size:0.72rem;color:var(--muted);padding:3px 8px">מוצגות ${preview.length} שורות ראשונות מתוך ${svcFileData.rows.length}</div>${badWarn}`;
+}
+
+function saveSvcList(){
+  const idCol=+document.getElementById('svc-col-id').value, rtCol=+document.getElementById('svc-col-rate').value, mqCol=+document.getElementById('svc-col-maxqty').value;
+  const badRate=svcFileData.rows.filter(r=>{const id=String(r[idCol]||'').trim();if(!id)return false;const v=String(r[rtCol]||'').trim();return v!==''&&isNaN(parseFloat(v));});
+  if(badRate.length>0){alert(`⚠️ שגיאה בעמודת מחיר — נמצאו ${badRate.length} שורות עם ערך שאינו מספר.`);return;}
+  const services=svcFileData.rows.map(r=>({id:String(r[idCol]||'').trim(),rate:parseFloat(r[rtCol])||0,maxQty:mqCol>=0?(parseFloat(r[mqCol])||null):null})).filter(s=>s.id);
+  if(!services.length){alert('לא נמצאו שירותים — בדוק את מיפוי העמודות');return;}
+  currentTender.services=services;
+  const t=loadTenders(); t[currentTender.name]={name:currentTender.name,services,updated:new Date().toLocaleDateString('he-IL')}; saveTenders(t); renderTenderList();
+  showStep2Existing();
+  if(isNewTender)openModal('modal-threshold'); else goToStep3();
+}
+
+// ── ACTIVITY FILES ──
+document.getElementById('fi-act').addEventListener('change',async e=>{
+  for(const file of Array.from(e.target.files)){const data={headers:[],rows:[]};await loadExcelAsync(file,data);actFilesList.push({name:file.name,data});}
+  renderActList(); checkStep3();
+});
+function renderActList(){
+  const wrap=document.getElementById('act-files-list');
+  wrap.innerHTML=actFilesList.map((f,i)=>`<div class="file-item"><span>📊 ${escHtml(f.name)} (${f.data.rows.length} שורות)</span><button class="fi-remove" onclick="removeAct(${i})">✕</button></div>`).join('');
+  if(actFilesList.length)setDZLoaded('dz-act','✅',`${actFilesList.length} קובץ/קבצים נטענו`);
+  else resetDZ('dz-act','📊','העלה דוח/דוחות ביצועים');
+}
+function removeAct(idx){actFilesList.splice(idx,1);renderActList();checkStep3();}
+
+// ── INVOICE FILE ──
+document.getElementById('fi-inv').addEventListener('change',async e=>{
+  const file=e.target.files[0]; if(!file)return;
+  const info=document.getElementById('inv-info');
+  if(file.name.toLowerCase().endsWith('.pdf')){
+    info.textContent='⏳ מעבד PDF...';
+    try{await loadPdfInvoice(file);setDZLoaded('dz-inv','✅',file.name);info.textContent=`📄 PDF נטען — ${invFileData.rows.length} שורות זוהו.`;invFileData.isPdf=true;}
+    catch(err){info.textContent='❌ שגיאה: '+err.message;}
+  } else {
+    await loadExcelAsync(file,invFileData);setDZLoaded('dz-inv','✅',`${file.name} (${invFileData.rows.length} שורות)`);info.textContent='';invFileData.isPdf=false;
+    const outInvShWrap=document.getElementById('out-inv-sheet-sel-wrap');
+    if(outInvShWrap&&invFileData.wb)outInvShWrap.innerHTML=sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet');
+  }
+  checkStep3();
+});
+
+async function loadPdfInvoice(file){
+  if(typeof pdfjsLib==='undefined')throw new Error('ספריית PDF לא נטענה');
+  const buf=await file.arrayBuffer(), pdf=await pdfjsLib.getDocument({data:buf}).promise, allLines=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p), tc=await page.getTextContent(), lineMap={};
+    tc.items.forEach(item=>{const y=Math.round(item.transform[5]/5)*5;if(!lineMap[y])lineMap[y]=[];lineMap[y].push(item.str);});
+    Object.keys(lineMap).sort((a,b)=>b-a).forEach(y=>{const line=lineMap[y].join(' ').trim();if(line)allLines.push(line);});
+  }
+  const kwsHdr=['שירות','כמות','מחיר','סה"כ','סהכ','rate','total','qty','service'];
+  let hdrIdx=allLines.findIndex(l=>kwsHdr.filter(k=>l.toLowerCase().includes(k.toLowerCase())).length>=2);
+  if(hdrIdx<0)hdrIdx=0;
+  const headers=allLines[hdrIdx].split(/\s{2,}|\t/).filter(Boolean), rows=[];
+  for(let i=hdrIdx+1;i<allLines.length;i++){const line=allLines[i].trim();if(!line||!/\d/.test(line))continue;const cells=line.split(/\s{2,}|\t/).filter(Boolean);if(cells.length>=2)rows.push(cells);}
+  invFileData.headers=headers; invFileData.rows=rows;
+}
+
+function checkStep3(){ document.getElementById('btn-step4').disabled=!(actFilesList.length>0&&invFileData.rows.length>0); }
+
+// ── COLUMN MAPPING MEMORY ──
+function getSelColName(id){const sel=document.getElementById(id);if(!sel||sel.selectedIndex<0)return '';return sel.options[sel.selectedIndex]?.text||'';}
+function applyColByName(id,name){if(!name)return;const sel=document.getElementById(id);if(!sel)return;const opt=Array.from(sel.options).find(o=>o.text.trim()===name.trim());if(opt)sel.value=opt.value;}
+function saveColMapping(){
+  if(!currentTender?.name)return;const t=loadTenders();if(!t[currentTender.name])return;
+  t[currentTender.name].colMapping={actSvc:getSelColName('col-act-svc'),actDate:getSelColName('col-act-date'),actQty:getSelColName('col-act-qty'),actProvider:getSelColName('col-act-provider'),actRef:getSelColName('col-act-ref'),invSvc:getSelColName('col-inv-svc'),invProvider:getSelColName('col-inv-provider'),invQty:getSelColName('col-inv-qty'),invRate:getSelColName('col-inv-rate'),invTotal:getSelColName('col-inv-total'),actHdrRow:actFilesList[0]?.data.headerRowIdx||0,invHdrRow:invFileData.headerRowIdx||0};
+  saveTenders(t);
+}
+function getColMapping(){if(!currentTender?.name)return null;return loadTenders()[currentTender.name]?.colMapping||null;}
+
+// ── STEP 4 ──
+function goToStep4(){markStep(3,'done');document.getElementById('step4-card').classList.remove('hidden');markStep(4,'active');buildColMaps();document.getElementById('step4-card').scrollIntoView({behavior:'smooth'});}
+function buildColMaps(){buildActColSelects();buildInvColSelects();}
+
+function buildActColSelects(){
+  const actData=actFilesList[0]?.data, mapping=getColMapping();
+  if(mapping&&actData&&mapping.actHdrRow>0&&actData.allRows?.length>mapping.actHdrRow)actFilesList.forEach(f=>applyHeaderRow(f.data,mapping.actHdrRow));
+  const actShWrap=document.getElementById('act-sheet-sel-wrap');
+  if(actShWrap)actShWrap.innerHTML=actData?.wb?sheetSelectorHtml(actData.wb,'act-sh-sel','changeActSheet'):'';
+  document.getElementById('act-hdr-sel-wrap').innerHTML=headerRowSelectorHtml(actData,'act-hdr-row','changeActHeaderRow');
+  const ah=actData?.headers||[];
+  const opts=ah.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
+  document.getElementById('col-act-svc').innerHTML=opts;
+  ['col-act-date','col-act-qty','col-act-provider','col-act-ref'].forEach(id=>document.getElementById(id).innerHTML=optsOpt);
+  const ahl=ah.map(x=>String(x||'').toLowerCase());
+  autoSelect('col-act-svc',ahl,['שירות','service','קוד','code','סוג']);
+  autoSelect('col-act-date',ahl,['תאריך','date','יום']);
+  autoSelect('col-act-qty',ahl,['כמות','qty','quantity','מספר']);
+  autoSelect('col-act-provider',ahl,['מבצע','ספק','provider','רופא','מטפל']);
+  autoSelect('col-act-ref',ahl,['אסמכתא','מזהה','ref','id','מספר פנייה']);
+  if(mapping){applyColByName('col-act-svc',mapping.actSvc);applyColByName('col-act-date',mapping.actDate);applyColByName('col-act-qty',mapping.actQty);applyColByName('col-act-provider',mapping.actProvider);applyColByName('col-act-ref',mapping.actRef);}
+}
+
+function buildInvColSelects(){
+  const mapping=getColMapping();
+  if(mapping&&!invFileData.isPdf&&mapping.invHdrRow>0&&invFileData.allRows?.length>mapping.invHdrRow)applyHeaderRow(invFileData,mapping.invHdrRow);
+  ['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=(!invFileData.isPdf&&invFileData.wb)?sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet'):'';});
+  document.getElementById('inv-hdr-sel-wrap').innerHTML=!invFileData.isPdf?headerRowSelectorHtml(invFileData,'inv-hdr-row','changeInvHeaderRow'):'';
+  const ih=invFileData.headers;
+  const opts=ih.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
+  document.getElementById('col-inv-svc').innerHTML=opts;
+  ['col-inv-provider','col-inv-qty','col-inv-rate','col-inv-total'].forEach(id=>document.getElementById(id).innerHTML=optsOpt);
+  const ihl=ih.map(x=>String(x||'').toLowerCase());
+  autoSelect('col-inv-svc',ihl,['שירות','service','קוד','code','סוג']);
+  autoSelect('col-inv-provider',ihl,['מבצע','ספק','provider','רופא','מטפל']);
+  autoSelect('col-inv-qty',ihl,['כמות','qty','quantity','מספר יחידות']);
+  autoSelect('col-inv-rate',ihl,['מחיר','תעריף','rate','price','ליחידה']);
+  autoSelect('col-inv-total',ihl,['סה"כ','סהכ','total','סכום','לתשלום']);
+  if(mapping){applyColByName('col-inv-svc',mapping.invSvc);applyColByName('col-inv-provider',mapping.invProvider);applyColByName('col-inv-qty',mapping.invQty);applyColByName('col-inv-rate',mapping.invRate);applyColByName('col-inv-total',mapping.invTotal);}
+}
+
+function changeSvcHeaderRow(idx){applyHeaderRow(svcFileData,+idx);buildSvcColMap();}
+function changeActHeaderRow(idx){actFilesList.forEach(f=>applyHeaderRow(f.data,+idx));buildActColSelects();}
+function changeInvHeaderRow(idx){applyHeaderRow(invFileData,+idx);buildInvColSelects();}
+
+// ── MAIN AUDIT ──
+function runFullAudit(){
+  const acsvc=+document.getElementById('col-act-svc').value;
+  const acdate=+document.getElementById('col-act-date').value;
+  const acqty=+document.getElementById('col-act-qty').value;
+  const acprov=+document.getElementById('col-act-provider').value;
+  const acref=+document.getElementById('col-act-ref').value;
+  const isvc=+document.getElementById('col-inv-svc').value;
+  const iqty=+document.getElementById('col-inv-qty').value;
+  const irate=+document.getElementById('col-inv-rate').value;
+  const itotal=+document.getElementById('col-inv-total').value;
+
+  const allAct=actFilesList.flatMap(f=>f.data.rows.map(r=>({...r,_src:f.name})));
+  const services=currentTender?.services||[];
+  const svcById={};
+  services.forEach(s=>{svcById[nSvc(s.id)]=s;});
+
+  // 1. Qty per service from activity
+  actQtyBySvc={};
+  allAct.forEach(row=>{
+    const sk=nSvc(String(row[acsvc]||'').trim()); if(!sk)return;
+    const qty=acqty>=0?(parseFloat(row[acqty])||1):1;
+    actQtyBySvc[sk]=(actQtyBySvc[sk]||0)+qty;
   });
-  document.getElementById('config-card').classList.remove('hidden');
-}
 
-function getMonthKey(v){
-  try{const d=new Date(v);if(!isNaN(d))return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}catch{}
-  return String(v).slice(0,7);
-}
-
-function runAudit(){
-  const ce=parseInt(document.getElementById('col-emp').value);
-  const ct=parseInt(document.getElementById('col-type').value);
-  const cm=parseInt(document.getElementById('col-month').value);
-  const cq=parseInt(document.getElementById('col-qty').value);
-  const thHigh=parseFloat(document.getElementById('thresh-high').value)/100||1;
-  const thLow=parseFloat(document.getElementById('thresh-low').value)/100||0.5;
-
-  const rows=rawData.rows;
-
-  // אסוף נתונים
-  const firstMonth={}, typeCounts={};
-  const byEmpType={}, byMonth={}, allMonths=new Set(), allTypes=new Set();
-
-  rows.forEach((row,idx)=>{
-    const emp=String(row[ce]||'');
-    const tp=String(row[ct]||'');
-    const mn=getMonthKey(row[cm]);
-    const qty=parseFloat(row[cq])||0;
-    if(!emp||!tp) return;
-
-    allMonths.add(mn); allTypes.add(tp);
-
-    // חודש ראשון לסוג
-    if(!firstMonth[tp]||mn<firstMonth[tp]) firstMonth[tp]=mn;
-    typeCounts[tp]=(typeCounts[tp]||0)+1;
-
-    // לפי עובד+סוג
-    const k=`${emp}||${tp}`;
-    if(!byEmpType[k]) byEmpType[k]={emp,tp,total:0,count:0,months:{}};
-    byEmpType[k].total+=qty; byEmpType[k].count++;
-    byEmpType[k].months[mn]=(byEmpType[k].months[mn]||0)+qty;
-
-    // לפי חודש+סוג (לדשבורד)
-    if(!byMonth[mn]) byMonth[mn]={};
-    byMonth[mn][tp]=(byMonth[mn][tp]||0)+qty;
-    monthlyData=byMonth;
+  // 2. Monthly
+  monthlyData={};
+  allAct.forEach(row=>{
+    const mn=acdate>=0?monthKey(row[acdate]):'לא ידוע';
+    const sk=nSvc(String(row[acsvc]||'').trim()); if(!sk)return;
+    const qty=acqty>=0?(parseFloat(row[acqty])||1):1;
+    if(!monthlyData[mn])monthlyData[mn]={};
+    monthlyData[mn][sk]=(monthlyData[mn][sk]||0)+qty;
   });
 
-  // מצא חודש ראשון בקובץ
-  const sortedMonths=[...allMonths].sort();
-  const minMonth=sortedMonths[0]||'';
-
-  // ── 1. תפוקות חדשות ──
-  newTypesRes=Object.entries(firstMonth)
-    .filter(([tp,m])=>m>minMonth)
-    .map(([tp,m])=>({tp,firstMonth:m,count:typeCounts[tp]}))
-    .sort((a,b)=>a.firstMonth.localeCompare(b.firstMonth));
-
-  // ── 2. סבירות ──
-  reasonRes=[];
-  Object.values(byEmpType).forEach(d=>{
-    const avg=d.total/d.count;
-    Object.entries(d.months).forEach(([mn,qty])=>{
-      const dev=(qty-avg)/avg;
-      if(dev>thHigh){
-        reasonRes.push({emp:d.emp,tp:d.tp,mn,qty,avg:avg.toFixed(1),devPct:Math.round(dev*100),type:'high',label:'קפיצה חריגה'});
-      } else if(dev<-thLow){
-        reasonRes.push({emp:d.emp,tp:d.tp,mn,qty,avg:avg.toFixed(1),devPct:Math.round(dev*100),type:'low',label:'ירידה חריגה'});
+  // 3. Duplicates
+  duplicateResults=[];
+  const dupIdxs=new Set();
+  if(acref>=0){
+    const refMap={};
+    allAct.forEach((row,idx)=>{const ref=String(row[acref]||'').trim();if(!ref)return;if(!refMap[ref])refMap[ref]=[];refMap[ref].push(idx);});
+    Object.entries(refMap).forEach(([ref,idxs])=>{
+      if(idxs.length>1){
+        const fr=allAct[idxs[0]];
+        duplicateResults.push({svc:String(fr[acsvc]||''),date:acdate>=0?dateKey(fr[acdate]):'—',prov:acprov>=0?String(fr[acprov]||''):'—',key:ref,count:idxs.length,type:'ref'});
+        idxs.forEach(i=>dupIdxs.add(i));
       }
     });
-  });
-  reasonRes.sort((a,b)=>Math.abs(b.devPct)-Math.abs(a.devPct));
-
-  // ── 3. מדגם סיכונים ──
-  sampleRes=[];
-  Object.values(byEmpType).forEach(d=>{
-    const avg=d.total/d.count;
-    let idx=0;
-    Object.entries(d.months).forEach(([mn,qty])=>{
-      idx++;
-      const dev=(qty-avg)/avg;
-      let risk='', reason='';
-      if(dev>thHigh){risk='גבוה';reason='כמות גבוהה פי '+(1+dev).toFixed(1)+' מהממוצע';}
-      else if(dev<-thLow){risk='בינוני';reason='ירידה של '+Math.abs(Math.round(dev*100))+'% מהממוצע';}
-      else if(idx%10===0){risk='נמוך';reason='מדגם אקראי 10%';}
-      if(risk) sampleRes.push({emp:d.emp,tp:d.tp,mn,qty,avg:avg.toFixed(1),risk,reason});
+  } else if(acdate>=0){
+    const keyMap={};
+    allAct.forEach((row,idx)=>{
+      const svc=String(row[acsvc]||'').trim(), date=dateKey(row[acdate]), prov=acprov>=0?String(row[acprov]||'').trim():'';
+      const key=`${svc}||${date}||${prov}`; if(!svc)return;
+      if(!keyMap[key])keyMap[key]={svc,date,prov,idxs:[]};
+      keyMap[key].idxs.push(idx);
     });
-  });
-  sampleRes.sort((a,b)=>['גבוה','בינוני','נמוך'].indexOf(a.risk)-['גבוה','בינוני','נמוך'].indexOf(b.risk));
+    Object.values(keyMap).forEach(g=>{
+      if(g.idxs.length>1){duplicateResults.push({svc:g.svc,date:g.date,prov:g.prov||'—',key:`${g.svc} / ${g.date}`,count:g.idxs.length,type:'date-svc'});g.idxs.forEach(i=>dupIdxs.add(i));}
+    });
+  }
 
-  renderResults();
+  // 4. Annotate activity rows
+  auditActRows=allAct.map((row,idx)=>{
+    const issues=[],types=[];
+    const svcRaw=String(row[acsvc]||'').trim();
+    if(dupIdxs.has(idx)){issues.push('כניסה כפולה אפשרית בדוח הביצועים');types.push('dup');}
+    if(services.length>0&&svcRaw&&!svcById[nSvc(svcRaw)]){issues.push(`שירות "${svcRaw}" אינו ברשימה המאושרת`);types.push('unauth');}
+    return{_orig:row,_src:row._src,_issues:issues,_types:types,_hasIssue:issues.length>0};
+  });
+
+  // 5. Invoice audit
+  auditInvoiceRows=invFileData.rows.map(row=>{
+    const svcRaw=String(row[isvc]||'').trim();
+    const qtyV=iqty>=0?(parseFloat(row[iqty])||null):null;
+    const rateV=irate>=0?(parseFloat(row[irate])||null):null;
+    const totalV=itotal>=0?(parseFloat(row[itotal])||null):null;
+    if(!svcRaw)return{_orig:row,_skip:true,_issues:[],svcIssue:false,qtyIssue:false,rateIssue:false};
+    const issues=[]; let svcIssue=false,qtyIssue=false,rateIssue=false;
+    const sk=nSvc(svcRaw), approvedSvc=svcById[sk]||null;
+    // a) authorized?
+    if(services.length>0&&!approvedSvc){issues.push(`שירות "${svcRaw}" אינו ברשימת השירותים המאושרים`);svcIssue=true;}
+    // b) rate match?
+    if(approvedSvc&&rateV!==null&&rateV>0&&approvedSvc.rate>0&&Math.abs(rateV-approvedSvc.rate)>0.5){issues.push(`המחיר ליחידה אינו תואם (בחשבון: ${rateV.toFixed(2)} ₪, מאושר: ${approvedSvc.rate.toFixed(2)} ₪)`);rateIssue=true;}
+    // c) qty match?
+    const actQ=actQtyBySvc[sk]||0;
+    if(qtyV!==null&&qtyV>0){
+      if(actQ>0&&Math.abs(qtyV-actQ)>0.01){issues.push(`הכמות אינה תואמת — בחשבון: ${qtyV.toFixed(2)}, בדוח ביצועים: ${actQ.toFixed(2)}`);qtyIssue=true;}
+      else if(actQ===0){issues.push(`לא נמצאו ביצועים בדוח לשירות "${svcRaw}"`);qtyIssue=true;}
+    }
+    // d) max qty?
+    if(!qtyIssue&&approvedSvc?.maxQty!=null&&qtyV!==null&&qtyV>approvedSvc.maxQty+0.01){issues.push(`הכמות (${qtyV.toFixed(2)}) עולה על התקרה החודשית (${approvedSvc.maxQty})`);qtyIssue=true;}
+    // e) total = qty*rate?
+    if(!rateIssue&&!qtyIssue&&qtyV!==null&&rateV!==null&&totalV!==null&&qtyV>0&&rateV>0&&totalV>0){const exp=qtyV*rateV;if(Math.abs(totalV-exp)>0.5)issues.push(`סה"כ שורה (${totalV.toFixed(2)} ₪) אינו תואם כמות × מחיר (${exp.toFixed(2)} ₪)`);}
+    return{_orig:row,_skip:false,_status:issues.length>0?'issue':'ok',_issues:issues,svcIssue,qtyIssue,rateIssue,_svc:svcRaw,_qty:qtyV,_rate:rateV,_total:totalV,_approvedRate:approvedSvc?.rate||0,_actQ:actQ};
+  });
+
+  saveColMapping();
+
+  // 6. Totals
+  expectedTotal=0; services.forEach(s=>{const q=actQtyBySvc[nSvc(s.id)]||0;expectedTotal+=q*(s.rate||0);});
+  actualInvTotal=0; invFileData.rows.forEach(row=>{const tv=itotal>=0?parseFloat(row[itotal])||0:0,qv=iqty>=0?parseFloat(row[iqty])||0:0,rv=irate>=0?parseFloat(row[irate])||0:0;actualInvTotal+=tv>0?tv:qv*rv;});
+
+  renderAllResults();
+  markStep(4,'done');
   document.getElementById('results-card').classList.remove('hidden');
   document.getElementById('results-card').scrollIntoView({behavior:'smooth'});
+  if(typeof gtag!=='undefined')gtag('event','audit_run',{tender:currentTender?.name,type:'outputs'});
 }
 
-function renderResults(){
-  // KPIs
+// ── RENDER ──
+function renderAllResults(){
+  const invIssues=auditInvoiceRows.filter(r=>!r._skip&&r._status==='issue').length;
+  const invOk=auditInvoiceRows.filter(r=>!r._skip&&r._status==='ok').length;
+  const svcIssues=auditInvoiceRows.filter(r=>r.svcIssue).length;
+  const actIssues=auditActRows.filter(r=>r._hasIssue).length;
   document.getElementById('kpi-bar').innerHTML=`
-    <div class="kpi ${newTypesRes.length>0?'warn':'ok'}"><span class="kpi-val">${newTypesRes.length}</span><span class="kpi-lbl">סוגי תפוקה חדשים</span></div>
-    <div class="kpi ${reasonRes.filter(r=>r.type==='high').length>0?'danger':'ok'}"><span class="kpi-val">${reasonRes.filter(r=>r.type==='high').length}</span><span class="kpi-lbl">קפיצות חריגות</span></div>
-    <div class="kpi ${reasonRes.filter(r=>r.type==='low').length>0?'warn':'ok'}"><span class="kpi-val">${reasonRes.filter(r=>r.type==='low').length}</span><span class="kpi-lbl">ירידות חריגות</span></div>
-    <div class="kpi"><span class="kpi-val">${sampleRes.filter(r=>r.risk==='גבוה').length}</span><span class="kpi-lbl">במדגם סיכון גבוה</span></div>
-    <div class="kpi"><span class="kpi-val">${rawData.rows.length.toLocaleString('he')}</span><span class="kpi-lbl">שורות</span></div>
-  `;
-
-  // Summary
-  document.getElementById('summary-details').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:8px">
-      ${newTypesRes.length>0?`<div style="background:#f3e8ff;border:1px solid #c4b5fd;border-radius:8px;padding:10px 14px;font-size:0.85rem">🟣 <strong>נמצאו ${newTypesRes.length} סוגי תפוקה חדשים</strong> שלא היו בחודשים הראשונים</div>`:'<div style="background:#edf7f3;border:1px solid #b2ddd0;border-radius:8px;padding:10px 14px;font-size:0.85rem">✅ לא נמצאו סוגי תפוקה חדשים</div>'}
-      ${reasonRes.filter(r=>r.type==='high').length>0?`<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.85rem">🔴 <strong>${reasonRes.filter(r=>r.type==='high').length} קפיצות חריגות</strong> בכמות תפוקות</div>`:''}
-      <div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:8px;padding:10px 14px;font-size:0.85rem">🎯 <strong>${sampleRes.length} שורות נבחרו למדגם</strong> (${sampleRes.filter(r=>r.risk==='גבוה').length} גבוה, ${sampleRes.filter(r=>r.risk==='בינוני').length} בינוני, ${sampleRes.filter(r=>r.risk==='נמוך').length} נמוך)</div>
-    </div>`;
-
-  // New types
-  document.getElementById('new-types-body').innerHTML=newTypesRes.map(r=>`
-    <tr><td><strong>${r.tp}</strong></td><td>${r.firstMonth}</td><td>${r.count}</td>
-    <td><span class="badge b-new">סוג חדש</span></td></tr>`).join('')||
-    '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו סוגי תפוקה חדשים</td></tr>';
-
-  // Reasonableness
-  document.getElementById('reason-body').innerHTML=reasonRes.map(r=>`
-    <tr><td>${r.emp}</td><td>${r.tp}</td><td>${r.mn}</td>
-    <td><strong>${r.qty}</strong></td><td>${r.avg}</td>
-    <td style="color:${r.type==='high'?'var(--red)':'var(--orange)'};font-weight:700">${r.devPct>0?'+':''}${r.devPct}%</td>
-    <td><span class="badge ${r.type==='high'?'b-high':'b-low'}">${r.label}</span></td></tr>`).join('')||
-    '<tr><td colspan="7" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו חריגות סבירות</td></tr>';
-
-  // Sample
-  document.getElementById('sample-body').innerHTML=sampleRes.map(r=>`
-    <tr><td>${r.emp}</td><td>${r.tp}</td><td>${r.mn}</td>
-    <td>${r.qty}</td><td>${r.avg}</td>
-    <td><span class="badge ${r.risk==='גבוה'?'b-risk-high':r.risk==='בינוני'?'b-risk-med':'b-risk-low'}">${r.risk}</span></td>
-    <td>${r.reason}</td></tr>`).join('');
-
+    <div class="kpi ${invIssues>0?'danger':'ok'}"><span class="kpi-val">${invIssues}</span><span class="kpi-lbl">שורות עם ממצא בחשבון</span></div>
+    <div class="kpi ok"><span class="kpi-val">${invOk}</span><span class="kpi-lbl">שורות תקינות</span></div>
+    <div class="kpi ${duplicateResults.length>0?'danger':'ok'}"><span class="kpi-val">${duplicateResults.length}</span><span class="kpi-lbl">קבוצות כפילויות</span></div>
+    <div class="kpi ${svcIssues>0?'danger':'ok'}"><span class="kpi-val">${svcIssues}</span><span class="kpi-lbl">שירותים לא מאושרים</span></div>
+    <div class="kpi"><span class="kpi-val">${auditActRows.length.toLocaleString('he')}</span><span class="kpi-lbl">שורות דוח ביצועים</span></div>`;
+  let s='<div style="display:flex;flex-direction:column;gap:8px">';
+  if(!invIssues&&!duplicateResults.length&&!svcIssues)s+=`<div class="alert-ok">✅ לא נמצאו ממצאים — החשבון תואם את דוחות הביצועים</div>`;
+  if(invIssues>0)s+=`<div class="alert-danger">🔴 ${invIssues} שורות עם ממצאים בחשבון — עבור ל"בדיקת חשבון" לפירוט</div>`;
+  if(svcIssues>0)s+=`<div class="alert-danger">🔴 ${svcIssues} שורות עם שירותים שאינם ברשימה המאושרת</div>`;
+  if(duplicateResults.length>0)s+=`<div class="alert-danger">🔴 ${duplicateResults.length} קבוצות כפילויות בדוח הביצועים</div>`;
+  if(actIssues>0)s+=`<div class="alert-warn">⚠️ ${actIssues} שורות דוח ביצועים עם ממצאים</div>`;
+  if(expectedTotal>0||actualInvTotal>0){
+    const diff=actualInvTotal-expectedTotal, diffColor=Math.abs(diff)<1?'var(--green)':diff>0?'var(--red)':'var(--orange)', diffSign=diff>0.01?'+':'';
+    s+=`<div style="background:#f8faff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.87rem;margin-top:4px"><strong>📊 השוואת סה"כ:</strong>&nbsp; חשבון: <strong>${actualInvTotal.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})} ₪</strong> &nbsp;|&nbsp; ציפייה לפי ביצועים ומחירים: <strong>${expectedTotal.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})} ₪</strong> &nbsp;|&nbsp; הפרש: <strong style="color:${diffColor}">${diffSign}${diff.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})} ₪</strong></div>`;
+  }
+  s+='</div>';
+  document.getElementById('summary-content').innerHTML=s;
+  renderInvoiceTable(); renderActTable(); renderServicesTab();
+  document.getElementById('duplicates-body').innerHTML=duplicateResults.map(r=>`<tr data-type="${r.type}"><td><strong>${escHtml(String(r.svc||''))}</strong></td><td>${escHtml(r.date||'—')}</td><td>${escHtml(r.prov||'—')}</td><td>${escHtml(r.key||'')}</td><td style="text-align:center"><strong style="color:var(--red)">${r.count}</strong></td><td><span class="badge b-full">${r.type==='ref'?'כפילות אסמכתא':'כפילות תאריך+שירות'}</span></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--green);padding:2rem">✅ לא נמצאו כפילויות</td></tr>';
   buildMonthlyChart();
 }
 
+function renderInvoiceTable(){
+  const ih=invFileData.headers, isvc=+document.getElementById('col-inv-svc').value, iqty=+document.getElementById('col-inv-qty').value, irate=+document.getElementById('col-inv-rate').value;
+  let html=`<table><thead><tr>${ih.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}<th>סטטוס</th><th>הערות</th></tr></thead><tbody>`;
+  auditInvoiceRows.forEach(r=>{
+    if(r._skip){html+=`<tr>${r._orig.map(c=>`<td>${escHtml(String(c||''))}</td>`).join('')}<td></td><td></td></tr>`;return;}
+    const cls=r._status==='issue'?'row-issue':'';
+    html+=`<tr class="${cls}">`;
+    r._orig.forEach((cell,ci)=>{const isIssueCell=(ci===isvc&&r.svcIssue)||(ci===iqty&&r.qtyIssue)||(ci===irate&&r.rateIssue);html+=isIssueCell?`<td><span class="cell-issue">${escHtml(String(cell||''))}</span></td>`:`<td>${escHtml(String(cell||''))}</td>`;});
+    html+=`<td class="${r._status==='issue'?'status-issue':'status-ok'}">${r._status==='issue'?'✗':'✓'}</td>`;
+    html+=`<td class="comment-cell">${r._issues.map(i=>escHtml(i)).join('<br/>')}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('invoice-table-wrap').innerHTML=html;
+}
+
+function renderActTable(){
+  const ah=actFilesList[0]?.data.headers||[];
+  let html=`<table><thead><tr>${ah.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}<th>מקור קובץ</th><th>ממצאים</th></tr></thead><tbody>`;
+  auditActRows.forEach(r=>{
+    const cls=r._hasIssue?'row-issue':'';
+    html+=`<tr class="${cls}" data-issue="${r._hasIssue}" data-types="${r._types.join(' ')}">`;
+    ah.forEach((_,ci)=>{html+=`<td>${escHtml(String(r._orig[ci]||''))}</td>`;});
+    html+=`<td style="font-size:0.75rem;color:var(--muted)">${escHtml(r._src||'')}</td>`;
+    html+=`<td class="comment-cell">${r._issues.map(i=>escHtml(i)).join('<br/>')}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('act-table-wrap').innerHTML=html;
+}
+
+function renderServicesTab(){
+  const services=currentTender?.services||[];
+  if(!services.length){document.getElementById('services-content').innerHTML='<div class="alert-info">לא הועלתה רשימת שירותים מאושרים</div>';return;}
+  const isvc=+document.getElementById('col-inv-svc').value;
+  const invSvcs=new Set(invFileData.rows.map(r=>nSvc(String(r[isvc]||'').trim())));
+  const unauth=[...new Set(invFileData.rows.map(r=>String(r[isvc]||'').trim()))].filter(s=>s&&!services.some(sv=>nSvc(sv.id)===nSvc(s)));
+  let html=`<div style="font-weight:700;font-size:0.88rem;color:var(--navy);margin-bottom:0.7rem">שירותים מאושרים (${services.length})</div>
+    <div style="margin-bottom:0.7rem"><button class="btn-accent btn-sm" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
+    <div class="result-table-wrap"><table><thead><tr><th>קוד / שם שירות</th><th>מחיר מאושר</th><th>כמות מקס'</th><th>כמות בדוח ביצועים</th><th>בחשבון</th></tr></thead>
+    <tbody>${services.map(s=>{
+      const sk=nSvc(s.id), qty=actQtyBySvc[sk]||0, inI=invSvcs.has(sk), maxOk=s.maxQty==null||qty<=s.maxQty;
+      return `<tr${qty===0?' class="row-issue"':''}><td><strong>${escHtml(s.id||'')}</strong></td><td style="text-align:center"><strong>${s.rate?Number(s.rate).toFixed(2)+' ₪':'—'}</strong></td><td style="text-align:center">${s.maxQty!=null?s.maxQty:'—'}</td><td style="text-align:center;font-weight:700;color:${qty===0?'var(--red)':!maxOk?'var(--orange)':'var(--green)'}">${qty%1===0?qty:qty.toFixed(2)}${!maxOk?' ⚠️':qty===0?' (אין)':''}</td><td style="text-align:center">${inI?'✅':'—'}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+  if(unauth.length)html+=`<div style="margin-top:1rem;font-weight:700;font-size:0.88rem;color:var(--red);margin-bottom:0.5rem">⚠️ שירותים בחשבון שאינם ברשימה המאושרת (${unauth.length})</div><div class="alert-danger">${unauth.map(s=>`<div>• ${escHtml(s)}</div>`).join('')}</div>`;
+  document.getElementById('services-content').innerHTML=html;
+}
+
+// ── FILTERS ──
+function filterAct(type,btn){btn.parentElement.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('#act-table-wrap tbody tr').forEach(tr=>{let show=true;if(type==='issue')show=tr.dataset.issue==='true';else if(type!=='all')show=(tr.dataset.types||'').includes(type);tr.style.display=show?'':'none';});}
+function filterDups(type,btn){btn.parentElement.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('#duplicates-body tr').forEach(tr=>tr.style.display=(type==='all'||tr.dataset.type===type)?'':'none');}
+
+// ── MONTHLY CHART ──
 function buildMonthlyChart(){
-  const months=Object.keys(monthlyData).sort();
-  const types=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
-  if(!months.length) return;
-
-  const totals=months.map(m=>Object.values(monthlyData[m]).reduce((s,v)=>s+v,0));
-  const maxTotal=Math.max(...totals,1);
-
-  const chartHTML=months.map((m,i)=>{
-    const total=totals[i];
-    const h=Math.round((total/maxTotal)*130);
-    const isHigh=i>0&&totals[i-1]>0&&total>totals[i-1]*1.3;
-    return `<div class="month-bar-group">
-      <div class="month-val">${total.toFixed(0)}</div>
-      <div class="month-bar" style="height:${h}px;background:${isHigh?'var(--red)':'var(--blue)'}" title="${m}: ${total.toFixed(0)}${isHigh?' ⚠️':''}"></div>
-      <div class="month-label">${m}</div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('monthly-chart-wrap').innerHTML=`
-    <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;color:var(--navy)">סה"כ תפוקות לחודש <span style="font-size:0.72rem;color:var(--muted);font-weight:400">| אדום = קפיצה מעל 30%</span></div>
-    <div class="month-chart">${chartHTML}</div>`;
-
-  document.getElementById('monthly-head').innerHTML=`<tr><th>סוג תפוקה</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>סה"כ</th></tr>`;
-  document.getElementById('monthly-body').innerHTML=types.map(tp=>{
-    const vals=months.map(m=>monthlyData[m][tp]||0);
-    const total=vals.reduce((s,v)=>s+v,0);
-    const cells=vals.map((v,i)=>{
-      const isHigh=i>0&&vals[i-1]>0&&v>vals[i-1]*1.3;
-      return `<td style="${isHigh?'background:#fef2f2;color:var(--red);font-weight:700':''}">${v>0?v.toFixed(0):'—'}</td>`;
-    }).join('');
-    return `<tr><td><strong>${tp}</strong></td>${cells}<td><strong>${total.toFixed(0)}</strong></td></tr>`;
+  const months=Object.keys(monthlyData).sort(), svcs=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
+  if(!months.length)return;
+  const totals=months.map(m=>Object.values(monthlyData[m]).reduce((s,v)=>s+v,0)), maxT=Math.max(...totals,1);
+  document.getElementById('monthly-chart-wrap').innerHTML=`<div style="font-weight:700;font-size:0.84rem;margin-bottom:0.5rem;color:var(--navy)">סה"כ יחידות לחודש <span style="font-size:0.7rem;color:var(--muted);font-weight:400">| אדום = קפיצה >30%</span></div><div class="month-chart">${months.map((m,i)=>{const tot=totals[i],h=Math.round(tot/maxT*120),isH=i>0&&tot>totals[i-1]*1.3;return`<div class="month-bar-group"><div class="month-val">${tot%1===0?tot:tot.toFixed(1)}</div><div class="month-bar" style="height:${h}px;background:${isH?'var(--red)':'var(--blue)'}" title="${m}: ${tot}${isH?' ⚠️':''}"></div><div class="month-label">${m}</div></div>`;}).join('')}</div>`;
+  document.getElementById('monthly-head').innerHTML=`<tr><th>שירות</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>סה"כ</th></tr>`;
+  document.getElementById('monthly-body').innerHTML=svcs.map(sk=>{
+    const vals=months.map(m=>monthlyData[m][sk]||0), tot=vals.reduce((s,v)=>s+v,0);
+    const label=currentTender?.services?.find(s=>nSvc(s.id)===sk)?.id||sk;
+    return`<tr><td><strong>${escHtml(label)}</strong></td>${vals.map((v,i)=>{const isH=i>0&&vals[i-1]>0&&v>vals[i-1]*1.3;return`<td style="${isH?'background:var(--red-bg);color:var(--red);font-weight:700':''}">${v>0?(v%1===0?v:v.toFixed(2)):'—'}</td>`;}).join('')}<td><strong>${tot%1===0?tot:tot.toFixed(2)}</strong></td></tr>`;
   }).join('');
 }
 
-function showTab(name,btn){
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('show');
-  btn.classList.add('active');
+// ── EXPORT ──
+async function exportAll(){
+  const tName=currentTender?.name||'', services=currentTender?.services||[];
+  const isvc=+document.getElementById('col-inv-svc').value, iqty=+document.getElementById('col-inv-qty').value, irate=+document.getElementById('col-inv-rate').value;
+  const C={navy:'FF0D1F3C',blue:'FF1E6ABF',green:'FF27AE60',red:'FFC0392B',redBg:'FFFDECEA',greenBg:'FFF0FDF4',altBg:'FFF5F7FA',white:'FFFFFFFF',border:'FFDCE3EF',gray:'FF9AA5BB'};
+  const wb=new ExcelJS.Workbook(); wb.creator='קנדל BI'; wb.created=new Date();
+  function hStyle(cell,bg=C.navy){cell.font={bold:true,color:{argb:C.white},size:10,name:'Arial'};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};cell.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};cell.border={bottom:{style:'medium',color:{argb:bg}},right:{style:'hair',color:{argb:C.border}}};}
+  function dStyle(cell,o={}){cell.font={size:10,name:'Arial',bold:!!o.bold,...(o.color?{color:{argb:o.color}}:{})};cell.alignment={horizontal:o.align||'right',vertical:'top',wrapText:o.wrap!==false,readingOrder:'rtl'};if(o.bg)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.bg}};cell.border={bottom:{style:'hair',color:{argb:C.border}},right:{style:'hair',color:{argb:C.border}}};if(o.fmt)cell.numFmt=o.fmt;}
+  function addTitle(ws,text,cols){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:13,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.navy}};c.alignment={horizontal:'center',vertical:'middle',readingOrder:'rtl'};r.height=28;}
+  function addSec(ws,text,cols,bg=C.blue){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:11,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};c.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};r.height=22;}
+  function addHdr(ws,headers,bg=C.navy){const r=ws.addRow(headers);r.height=18;headers.forEach((_,i)=>hStyle(r.getCell(i+1),bg));}
+  function mxLen(arr,def=8){if(!arr.length)return def;return Math.max(def,...arr.map(v=>String(v||'').length));}
+  function uniq(arr){return[...new Set(arr.filter(Boolean))];}
+  function asNum(v){if(v===null||v===undefined||v==='')return v;const n=parseFloat(String(v).replace(/,/g,''));return!isNaN(n)?n:v;}
+
+  // Sheet 1
+  const N1=6, ws1=wb.addWorksheet('גיליון מרכז',{views:[{rightToLeft:true}]});
+  addTitle(ws1,`דוח בדיקת חשבון תפוקות — ${tName} — ${todayStr()}`,N1); ws1.addRow([]);
+  addSec(ws1,'▼ ממצאים בחשבון — כל שורות החשבון',N1);
+  addHdr(ws1,['שירות','כמות בחשבון','מחיר ליחידה (₪)','מחיר מאושר (₪)','סטטוס','ממצאים']);
+  auditInvoiceRows.forEach((r,ri)=>{
+    if(r._skip){const row=ws1.addRow([r._orig.join(' | '),'','','','שורת סיכום','']);row.height=14;[1,2,3,4,5,6].forEach(i=>dStyle(row.getCell(i),{color:C.gray,wrap:i===6}));return;}
+    const isIssue=r._status==='issue', bg=isIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+    const row=ws1.addRow([r._svc||'',r._qty!=null?r._qty:0,r._rate!=null?r._rate:0,r._approvedRate||0,isIssue?'✗':'✓',r._issues.join('; ')]);
+    row.height=18;
+    dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(5),{bg,bold:true,color:isIssue?C.red:C.green,align:'center'});dStyle(row.getCell(6),{bg,wrap:true});
+  });
+  ws1.addRow([]);
+  addSec(ws1,'▼ ממצאים בדוח הביצועים',N1);
+  addHdr(ws1,['מהות הממצא','כמות מופעים','כמות יחידות','שירותים מעורבים','הסבר','']);
+  const aFinds=[];
+  const uI=auditInvoiceRows.filter(r=>!r._skip&&r.svcIssue), rateR=auditInvoiceRows.filter(r=>!r._skip&&r.rateIssue), qtyR=auditInvoiceRows.filter(r=>!r._skip&&r.qtyIssue);
+  const unauth2=auditActRows.filter(r=>r._types.includes('unauth'));
+  if(duplicateResults.length)aFinds.push(['כפילויות בדוח הביצועים',duplicateResults.reduce((s,d)=>s+d.count,0),'',uniq(duplicateResults.map(d=>d.svc)).join(', '),'כניסות עם אסמכתא או תאריך+שירות זהים']);
+  if(unauth2.length){const acsvc=+document.getElementById('col-act-svc').value;aFinds.push(['שירותים לא מאושרים — דוח',unauth2.length,'',uniq(unauth2.map(r=>String(r._orig[acsvc]||''))).join(', '),'שירותים בדוח שאינם ברשימה המאושרת']);}
+  if(uI.length)aFinds.push(['שירותים לא מאושרים — חשבון',uI.length,+uI.reduce((s,r)=>s+(r._qty||0),0).toFixed(2),uniq(uI.map(r=>r._svc)).join(', '),'שירותים בחשבון שאינם ברשימה המאושרת']);
+  if(rateR.length)aFinds.push(['אי-התאמת מחיר',rateR.length,'',uniq(rateR.map(r=>r._svc)).join(', '),'שורות חשבון שבהן המחיר ליחידה שונה מהמאושר']);
+  if(qtyR.length)aFinds.push(['אי-התאמת כמות',qtyR.length,'',uniq(qtyR.map(r=>r._svc)).join(', '),'שורות חשבון שבהן הכמות שחויבה שונה מדוח הביצועים']);
+  if(expectedTotal>0||actualInvTotal>0){const d=actualInvTotal-expectedTotal;aFinds.push(['השוואת סה"כ',d!==0?1:0,actualInvTotal,'',`ציפייה לפי ביצועים: ${expectedTotal.toFixed(2)} ₪ | הפרש: ${d>=0?'+':''}${d.toFixed(2)} ₪`]);}
+  if(!aFinds.length)aFinds.push(['לא נמצאו ממצאים',0,'','','הבדיקה עברה ללא ממצאים']);
+  aFinds.forEach((v,ri)=>{
+    const[name,cnt,qty,svcs,expl]=v, hasIssue=typeof cnt==='number'&&cnt>0, bg=hasIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+    const row=ws1.addRow([name,cnt,qty,svcs,expl,'']); row.height=20;
+    dStyle(row.getCell(1),{bg,bold:hasIssue,color:hasIssue?C.red:undefined});dStyle(row.getCell(2),{bg,fmt:typeof cnt==='number'?'#,##0':undefined,align:'center'});dStyle(row.getCell(3),{bg,fmt:typeof qty==='number'?'#,##0.##':undefined,align:'center'});dStyle(row.getCell(4),{bg,wrap:true});dStyle(row.getCell(5),{bg,wrap:true});dStyle(row.getCell(6),{bg});
+  });
+  ws1.addRow([]);
+  addSec(ws1,'▼ רשימת שירותים מאושרים',N1);
+  addHdr(ws1,['קוד / שם שירות','מחיר מאושר (₪)','כמות מקס\'','כמות בדוח ביצועים','בחשבון','הערה']);
+  if(services.length){services.forEach((s,ri)=>{const sk=nSvc(s.id),qty=actQtyBySvc[sk]||0,zero=qty===0,maxEx=s.maxQty!=null&&qty>s.maxQty,bg=zero||maxEx?C.redBg:(ri%2===0?C.white:C.altBg),note=zero?'לא נמצאו ביצועים':maxEx?`חריגה מתקרה (${s.maxQty})`:'';const row=ws1.addRow([s.id||'',s.rate||0,s.maxQty??'',+qty.toFixed(2),'✅',note]);row.height=16;dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.##',align:'center',bold:zero||maxEx,color:zero||maxEx?C.red:undefined});dStyle(row.getCell(5),{bg,align:'center'});dStyle(row.getCell(6),{bg,wrap:true});});}
+  else ws1.addRow(['אין שירותים ברשימה','','','','','']);
+  ws1.getColumn(1).width=Math.min(50,Math.max(28,mxLen(services.map(s=>s.id||'').concat(aFinds.map(f=>f[0])))));
+  ws1.getColumn(2).width=14;ws1.getColumn(3).width=14;ws1.getColumn(4).width=24;
+  ws1.getColumn(5).width=Math.min(50,Math.max(14,mxLen(aFinds.map(f=>String(f[4]||'')))+2));
+  ws1.getColumn(6).width=Math.min(50,Math.max(14,mxLen(auditInvoiceRows.filter(r=>!r._skip).map(r=>r._issues.join('; ')))+2));
+
+  // Sheet 2: Invoice
+  const ih=invFileData.headers, N2=ih.length+2, ws2=wb.addWorksheet('חשבון',{views:[{rightToLeft:true}]});
+  addTitle(ws2,`חשבון — ${tName} — ${todayStr()}`,N2); ws2.addRow([]); addHdr(ws2,[...ih,'סטטוס','ממצאים']);
+  const inv2Strs=auditInvoiceRows.map(r=>[...r._orig.map(v=>String(v||'')),'',r._issues.join('; ')]);
+  auditInvoiceRows.forEach((r,ri)=>{
+    const isIssue=!r._skip&&r._status==='issue', bg=r._skip?null:isIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+    const vals=[...r._orig.map(v=>asNum(v)),r._skip?'':isIssue?'✗':'✓',r._issues.join('; ')];
+    const row=ws2.addRow(vals); row.height=18;
+    vals.forEach((v,ci)=>{const cell=row.getCell(ci+1),isStatus=ci===vals.length-2,isNotes=ci===vals.length-1;dStyle(cell,{bg:r._skip?null:bg,color:r._skip?C.gray:isStatus?(isIssue?C.red:C.green):undefined,bold:isStatus&&!r._skip,fmt:typeof v==='number'&&!isStatus?'#,##0.##':undefined,wrap:isNotes,align:typeof v==='number'?'center':isStatus?'center':'right'});});
+  });
+  ih.forEach((_,i)=>{ws2.getColumn(i+1).width=Math.min(30,Math.max(8,mxLen(inv2Strs.map(r=>r[i]||''))+2));});
+  ws2.getColumn(N2-1).width=8; ws2.getColumn(N2).width=Math.min(50,Math.max(10,mxLen(auditInvoiceRows.map(r=>r._issues.join('; ')))+2));
+
+  // Sheet 3: Activity
+  const ah=actFilesList[0]?.data.headers||[], N3=3+ah.length, ws3=wb.addWorksheet('דוח ביצועים',{views:[{rightToLeft:true}]});
+  addTitle(ws3,`דוח ביצועים — ${tName} — ${todayStr()}`,N3); ws3.addRow([]); addHdr(ws3,['סטטוס','ממצאים','מקור קובץ',...ah]);
+  const att3Strs=auditActRows.map(r=>[r._hasIssue?'✗':'✓',r._issues.join('; '),r._src||'',...ah.map((_,i)=>String(r._orig[i]||''))]);
+  auditActRows.forEach((r,ri)=>{
+    const bg=r._hasIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+    const vals=[r._hasIssue?'✗':'✓',r._issues.join('; '),r._src||'',...ah.map((_,i)=>asNum(r._orig[i]))];
+    const row=ws3.addRow(vals); row.height=18;
+    vals.forEach((v,ci)=>{const cell=row.getCell(ci+1);dStyle(cell,{bg,bold:ci===0&&r._hasIssue,color:r._hasIssue&&ci<=1?C.red:undefined,fmt:ci>=3&&typeof v==='number'?'#,##0.##':undefined,wrap:ci===1,align:ci===0?'center':ci>=3&&typeof v==='number'?'center':'right'});});
+  });
+  ws3.getColumn(1).width=8; ws3.getColumn(2).width=Math.min(50,Math.max(10,mxLen(att3Strs.map(r=>r[1]))+2)); ws3.getColumn(3).width=Math.min(30,Math.max(10,mxLen(att3Strs.map(r=>r[2]))+2));
+  ah.forEach((_,i)=>{ws3.getColumn(4+i).width=Math.min(25,Math.max(8,mxLen(att3Strs.map(r=>r[3+i]||''))+2));});
+
+  // Sheet 4: Services
+  const ws4=wb.addWorksheet('רשימת שירותים',{views:[{rightToLeft:true}]});
+  addTitle(ws4,`רשימת שירותים — ${tName} — ${todayStr()}`,5); ws4.addRow([]); addHdr(ws4,['קוד / שם שירות','מחיר מאושר (₪)','כמות מקס\'','כמות בדוח ביצועים','הערה']);
+  const svc4S=services.map(s=>{const q=actQtyBySvc[nSvc(s.id)]||0;return[String(s.id||''),String(s.rate||0),String(s.maxQty??''),q.toFixed(2),q===0?'לא נמצאו ביצועים':''];});
+  if(services.length){services.forEach((s,ri)=>{const qty=actQtyBySvc[nSvc(s.id)]||0,zero=qty===0,bg=zero?C.redBg:(ri%2===0?C.white:C.altBg);const row=ws4.addRow([s.id||'',s.rate||0,s.maxQty??'',+qty.toFixed(2),zero?'לא נמצאו ביצועים':'']);row.height=16;dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.##',align:'center',bold:zero,color:zero?C.red:undefined});dStyle(row.getCell(5),{bg,wrap:true});});}
+  else ws4.addRow(['אין שירותים ברשימה','','','','']);
+  ws4.getColumn(1).width=Math.min(40,Math.max(14,mxLen(svc4S.map(r=>r[0]))+2)); ws4.getColumn(2).width=16; ws4.getColumn(3).width=14; ws4.getColumn(4).width=16; ws4.getColumn(5).width=Math.min(35,Math.max(8,mxLen(svc4S.map(r=>r[4]))+2));
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=`בדיקת_תפוקות_${tName.replace(/[\/\\:*?"<>|]/g,'-')}_${todayStr()}.xlsx`;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
 }
 
-function exportTable(type){
-  let headers=[], rows=[];
-  if(type==='new-types'){
-    headers=['סוג תפוקה','חודש ראשון','כמות שורות'];
-    rows=newTypesRes.map(r=>[r.tp,r.firstMonth,r.count]);
-  } else if(type==='reasonableness'){
-    headers=['עובד','סוג תפוקה','חודש','כמות','ממוצע','סטיה%','ממצא'];
-    rows=reasonRes.map(r=>[r.emp,r.tp,r.mn,r.qty,r.avg,r.devPct+'%',r.label]);
-  } else if(type==='sample'){
-    headers=['עובד','סוג תפוקה','חודש','כמות','ממוצע','סיכון','סיבה'];
-    rows=sampleRes.map(r=>[r.emp,r.tp,r.mn,r.qty,r.avg,r.risk,r.reason]);
-  } else if(type==='monthly'){
-    const months=Object.keys(monthlyData).sort();
-    const types=[...new Set(Object.values(monthlyData).flatMap(m=>Object.keys(m)))].sort();
-    headers=['סוג תפוקה',...months,'סה"כ'];
-    rows=types.map(tp=>{
-      const vals=months.map(m=>monthlyData[m][tp]||0);
-      return [tp,...vals,vals.reduce((s,v)=>s+v,0)];
-    });
-  }
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([headers,...rows]),'תוצאות');
-  XLSX.writeFile(wb,`בדיקת_תפוקות_${type}.xlsx`);
+// ── HELPERS ──
+function nSvc(v){return String(v||'').trim().replace(/\s+/g,' ').toLowerCase();}
+function excelDate(v){if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);return new Date(v);}
+function dateKey(v){try{const d=excelDate(v);return isNaN(d)?String(v||''):d.toLocaleDateString('he-IL');}catch{return String(v||'');}}
+function monthKey(v){try{const d=excelDate(v);return isNaN(d)?String(v||'').slice(0,7):`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}catch{return '';}}
+function todayStr(){return new Date().toLocaleDateString('he-IL').replace(/\//g,'-');}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(s){return escHtml(s);}
+function autoSelect(selId,headers,kws){const idx=headers.findIndex(h=>kws.some(k=>h.includes(k)));if(idx>=0)document.getElementById(selId).value=idx;}
+// ── SHEET HELPERS (new) ──
+function sheetSelectorHtml(wb,selId,onchangeFn){
+  if(!wb||!wb.SheetNames||wb.SheetNames.length<=1)return '';
+  const opts=wb.SheetNames.map((name,i)=>{const ws2=wb.Sheets[name];const ref=ws2['!ref']||'A1';const range=XLSX.utils.decode_range(ref);const rows=range.e.r-range.s.r+1;return`<option value="${name}"${i===0?' selected':''}>${escHtml(name)} (${rows} שורות)</option>`;});
+  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
+  return`<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem;font-size:0.82rem"><div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div><select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select></div>`;
 }
+function getRowsFromWbOut(wb,sheetName){
+  if(sheetName==='__ALL__'){let all=[];wb.SheetNames.forEach((n,i)=>{const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));if(i===0)all.push(...r);else all.push(...r.slice(1));});return all;}
+  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+}
+
+function changeSvcSheet(sheetName){if(!svcFileData.wb)return;const allRows=getRowsFromWbOut(svcFileData.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();svcFileData.allRows=allRows;svcFileData.selectedSheet=sheetName;applyHeaderRow(svcFileData,0);const wrap=document.getElementById('svc-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet');buildSvcColMap();}
+function changeActSheet(sheetName){const first=actFilesList[0];if(!first||!first.data.wb)return;const allRows=getRowsFromWbOut(first.data.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();first.data.allRows=allRows;first.data.selectedSheet=sheetName;applyHeaderRow(first.data,0);const wrap=document.getElementById('act-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(first.data.wb,'act-sh-sel','changeActSheet');buildActColSelects();}
+function changeOutInvSheet(sheetName){if(!invFileData.wb||invFileData.isPdf)return;const allRows=getRowsFromWbOut(invFileData.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();invFileData.allRows=allRows;invFileData.selectedSheet=sheetName;applyHeaderRow(invFileData,0);['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet');});buildInvColSelects();}
+
+function loadExcel(file,obj,cb){const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});obj.wb=wb;obj.selectedSheet=wb.SheetNames[0];const allRows=getRowsFromWbOut(wb,wb.SheetNames[0]);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();obj.allRows=allRows;applyHeaderRow(obj,0);cb();};r.readAsArrayBuffer(file);}
+function loadExcelAsync(file,obj){return new Promise(res=>loadExcel(file,obj,res));}
+function applyHeaderRow(obj,idx){idx=+idx;obj.headerRowIdx=idx;obj.headers=(obj.allRows[idx]||[]).map(c=>String(c||''));obj.rows=obj.allRows.slice(idx+1).filter(r=>r.some(c=>c!==''));}
+function headerRowSelectorHtml(obj,selId,onchangeFn){
+  if(!obj||!obj.allRows||obj.allRows.length<=1)return '';
+  const n=Math.min(obj.allRows.length,8);
+  const opts=Array.from({length:n},(_,i)=>{const preview=(obj.allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');const cur=(obj.headerRowIdx||0)===i?'selected':'';return`<option value="${i}" ${cur}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${escHtml(preview)}</option>`;});
+  return`<div style="background:var(--orange-bg);border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.9rem;font-size:0.82rem"><div style="font-weight:700;color:var(--orange);margin-bottom:5px">⚠️ שורת הכותרות בקובץ:</div><select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 10px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select><div style="font-size:0.74rem;color:var(--muted);margin-top:4px">אם יש כותרות או שורות ריקות מעל הטבלה — בחר את השורה עם שמות העמודות</div></div>`;
+}
+function showTab(name,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+name).classList.add('show');btn.classList.add('active');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function markStep(n,state){const el=document.getElementById('sn'+n);if(!el)return;el.className='step-num '+state;if(state==='done')el.textContent='✓';}
+function setDZLoaded(dzId,icon,text){const dz=document.getElementById(dzId);dz.classList.add('loaded');dz.querySelector('.ub-icon').textContent=icon;dz.querySelector('.ub-text').textContent=text;}
+function resetDZ(dzId,icon,text){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').textContent=icon;dz.querySelector('.ub-text').textContent=text;}
+
+[['dz-svc','fi-svc'],['dz-act','fi-act'],['dz-inv','fi-inv']].forEach(([dzId,fiId])=>{
+  const el=document.getElementById(dzId);
+  el.addEventListener('dragover',e=>e.preventDefault());
+  el.addEventListener('drop',e=>{e.preventDefault();const dt=new DataTransfer();Array.from(e.dataTransfer.files).forEach(f=>dt.items.add(f));const inp=document.getElementById(fiId);inp.files=dt.files;inp.dispatchEvent(new Event('change'));});
+});
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+renderTenderList();
 </script>
 </body>
 </html>
-
-
-

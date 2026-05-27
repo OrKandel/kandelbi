@@ -108,13 +108,28 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<header>
-  <a href="tools.html" class="back-link">← חזרה לכלים</a>
-  <a href="index.html" class="logo">קנדל <span>BI</span></a>
-</header>
+<!-- ═══ LAUNCH BANNER ═══ -->
+<div id="launch-banner" style="background:linear-gradient(135deg,#f0a500 0%,#ffc940 100%);color:#0d1f3c;text-align:center;padding:10px 40px;font-family:'Heebo',sans-serif;font-size:0.92rem;font-weight:700;position:relative;z-index:9999;direction:rtl">
+  🎉 לרגל ההשקה — כל הכלים הקיימים באתר פתוחים לשימוש חופשי וחינמי לכולם!
+  <button onclick="this.parentElement.style.display='none'" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.3rem;cursor:pointer;color:#0d1f3c;opacity:0.55;line-height:1;padding:4px" title="סגור">✕</button>
+</div>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="pricing.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מחירון</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
 <main>
 <div class="tool-title">⚖️ השוואת פירוט מול סיכום</div>
 <div class="tool-sub">בדיקת התאמה בין חשבון/סיכום לפירוט — לפי קריטריונים מרובים</div>
+<div style="background:#edf7f3;border:1.5px solid #0a7c5e;border-radius:8px;padding:9px 16px;margin:0.6rem 0 1rem;text-align:center;font-size:0.87rem;font-weight:700;color:#0a7c5e">
+  ✨ לרגל ההשקה — הכלי פתוח לשימוש חופשי בימים אלו
+</div>
 
 <div class="instructions">
   <div class="inst-title">📖 הוראות שימוש</div>
@@ -139,6 +154,7 @@ tr:last-child td{border-bottom:none}
         <div class="ub-sub">xlsx / xls / csv — השורות המפורטות שעברו בדיקה</div>
       </div>
       <input type="file" id="fi-detail" accept=".xlsx,.xls,.csv" hidden/>
+      <div id="rec-detail-sheet-sel-wrap"></div>
     </div>
     <div>
       <div style="font-weight:700;margin-bottom:8px;color:var(--orange)">📄 טבלת סיכום</div>
@@ -148,6 +164,7 @@ tr:last-child td{border-bottom:none}
         <div class="ub-sub">xlsx / xls / csv — החשבון/סיכום שהתקבל מהספק</div>
       </div>
       <input type="file" id="fi-summary" accept=".xlsx,.xls,.csv" hidden/>
+      <div id="rec-summary-sheet-sel-wrap"></div>
     </div>
   </div>
 </div>
@@ -240,18 +257,96 @@ let conditionCount=0;
 let allResults=[];
 const tolerance=()=>parseFloat(document.getElementById('tolerance').value)||0.01;
 
+// ── SHEET & HEADER ROW HELPERS ──
+function sheetSelectorHtml(wb, selId, onchangeFn){
+  if(!wb||!wb.SheetNames||wb.SheetNames.length<=1) return '';
+  const opts = wb.SheetNames.map((name,i)=>{
+    const ws=wb.Sheets[name];
+    const ref=ws['!ref']||'A1';
+    const range=XLSX.utils.decode_range(ref);
+    const rows=range.e.r-range.s.r+1;
+    return `<option value="${name}"${i===0?' selected':''}>${name} (${rows} שורות)</option>`;
+  });
+  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
+  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-top:0.5rem;margin-bottom:0.5rem;font-size:0.82rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div>
+    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+  </div>`;
+}
+function getRowsFromWb(wb, sheetName){
+  if(sheetName==='__ALL__'){
+    let all=[];
+    wb.SheetNames.forEach((n,i)=>{
+      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      if(i===0) all.push(...r);
+      else all.push(...r.slice(1));
+    });
+    return all;
+  }
+  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+}
+function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
+  if(!allRows||allRows.length<=1) return '';
+  const n=Math.min(allRows.length,8);
+  const opts=Array.from({length:n},(_,i)=>{
+    const preview=(allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,18)).filter(Boolean).join(' | ');
+    return `<option value="${i}"${(currentIdx||0)===i?' selected':''}>${'שורה '+(i+1)+(i===0?' (ברירת מחדל)':'')}: ${preview.replace(/</g,'&lt;')}</option>`;
+  });
+  return `<div style="background:#fff8ed;border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.5rem;font-size:0.82rem">
+    <div style="font-weight:700;color:#b87400;margin-bottom:5px">⚠️ שורת הכותרות:</div>
+    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+    <div style="font-size:0.74rem;color:#6b7a99;margin-top:3px">בחר שורה עם שמות עמודות אם הכותרות אינן בשורה הראשונה</div>
+  </div>`;
+}
+
+function applyRecFileSheet(dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange, sheetName, callback){
+  const allRows=getRowsFromWb(dataObj.wb, sheetName);
+  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+  dataObj.allRows=allRows; dataObj.selectedSheet=sheetName; dataObj.headerRowIdx=0;
+  dataObj.headers=allRows[0]||[]; dataObj.rows=allRows.slice(1).filter(r=>r.some(c=>c!==''));
+  const wrap=document.getElementById(wrapId);
+  if(wrap) wrap.innerHTML=sheetSelectorHtml(dataObj.wb,shSelId,shOnchange)+headerRowSelectorHtml(allRows,hdrSelId,hdrOnchange,0);
+  callback();
+}
+
+function changeDetailSheet(sheetName){
+  if(!detailData.wb) return;
+  applyRecFileSheet(detailData,'rec-detail-sheet-sel-wrap','rec-sh-detail','changeDetailSheet','rec-hdr-detail','changeDetailHdr',sheetName,()=>{buildConfig();});
+}
+function changeDetailHdr(idx){
+  if(!detailData.allRows) return;
+  detailData.headerRowIdx=+idx;
+  detailData.headers=detailData.allRows[+idx]||[];
+  detailData.rows=detailData.allRows.slice(+idx+1).filter(r=>r.some(c=>c!==''));
+  buildConfig();
+}
+function changeSummarySheet(sheetName){
+  if(!summaryData.wb) return;
+  applyRecFileSheet(summaryData,'rec-summary-sheet-sel-wrap','rec-sh-summary','changeSummarySheet','rec-hdr-summary','changeSummaryHdr',sheetName,()=>{buildConfig();});
+}
+function changeSummaryHdr(idx){
+  if(!summaryData.allRows) return;
+  summaryData.headerRowIdx=+idx;
+  summaryData.headers=summaryData.allRows[+idx]||[];
+  summaryData.rows=summaryData.allRows.slice(+idx+1).filter(r=>r.some(c=>c!==''));
+  buildConfig();
+}
+
 // ── LOAD FILES ──
-function loadFile(inputId, dzId, dataObj, colorClass, callback){
+function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange, callback){
   document.getElementById(inputId).addEventListener('change', e=>{
     const file=e.target.files[0]; if(!file) return;
     const reader=new FileReader();
     reader.onload=ev=>{
-      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',raw:false});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      while(rows.length&&rows[0].every(c=>!c)) rows.shift();
-      dataObj.headers=rows[0]||[];
-      dataObj.rows=rows.slice(1).filter(r=>r.some(c=>c!==''));
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
+      dataObj.wb=wb;
+      const allRows=getRowsFromWb(wb, wb.SheetNames[0]);
+      while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+      dataObj.allRows=allRows; dataObj.selectedSheet=wb.SheetNames[0]; dataObj.headerRowIdx=0;
+      dataObj.headers=allRows[0]||[];
+      dataObj.rows=allRows.slice(1).filter(r=>r.some(c=>c!==''));
+      const wrap=document.getElementById(wrapId);
+      if(wrap) wrap.innerHTML=sheetSelectorHtml(wb,shSelId,shOnchange)+headerRowSelectorHtml(allRows,hdrSelId,hdrOnchange,0);
       const dz=document.getElementById(dzId);
       dz.classList.add('loaded');
       dz.querySelector('.ub-icon').textContent='✅';
@@ -262,8 +357,8 @@ function loadFile(inputId, dzId, dataObj, colorClass, callback){
   });
 }
 
-loadFile('fi-detail','dz-detail',detailData,'blue',checkReady);
-loadFile('fi-summary','dz-summary',summaryData,'orange',checkReady);
+loadFile('fi-detail','dz-detail',detailData,'rec-detail-sheet-sel-wrap','rec-sh-detail','changeDetailSheet','rec-hdr-detail','changeDetailHdr',checkReady);
+loadFile('fi-summary','dz-summary',summaryData,'rec-summary-sheet-sel-wrap','rec-sh-summary','changeSummarySheet','rec-hdr-summary','changeSummaryHdr',checkReady);
 
 function checkReady(){
   if(!detailData.headers.length||!summaryData.headers.length) return;
