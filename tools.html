@@ -59,7 +59,7 @@
     .search-box{display:flex;align-items:center;gap:8px;background:var(--bg-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 14px}
     .search-box input{border:none;outline:none;font-size:0.9rem;font-family:inherit;background:transparent;width:200px;direction:rtl}
     .tools-grid{max-width:1200px;margin:1.5rem auto 4rem;padding:0 5vw;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.5rem}
-    .tool-card{background:var(--bg-white);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all 0.25s;display:flex;flex-direction:column;position:relative}
+    .tool-card{background:var(--bg-white);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all 0.25s;display:flex;flex-direction:column;position:relative;cursor:pointer}
     .tool-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(13,31,60,0.1);border-color:var(--blue-light)}
     .card-top{padding:0.8rem 1.5rem 0.5rem;display:flex;align-items:flex-start;gap:1rem}
     .card-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
@@ -71,6 +71,7 @@
     .card-body{padding:0 1.5rem 1rem;flex:1}
     .card-desc{font-size:0.9rem;color:var(--text-mid);line-height:1.65}
     .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.8rem}
+    .card-output{margin-top:0.75rem;font-size:0.82rem;color:var(--green);background:var(--green-bg);border:1px solid #b2ddd0;border-radius:8px;padding:6px 10px;line-height:1.4}
     .tag{background:var(--bg);color:var(--text-muted);font-size:0.75rem;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid var(--border)}
     .card-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
     .card-price{font-family:'Heebo';font-weight:900;font-size:1.1rem;color:var(--navy)}
@@ -155,7 +156,7 @@
 
 <div class="page-hero">
   <h1>כלים לבקרה <em>חשבונאית אוטומטית</em></h1>
-  <p>בקרות חשבונאיות לרכש ציבורי — כלי web חינמיים, ופתרונות מותאמים אישית לכל התקשרות</p>
+  <p>כלים חינמיים לבדיקת חשבונות ספקים, שעות, תעריפים, SLA וקבצי Excel — ישירות בדפדפן, בלי לשלוח את הנתונים לשרת</p>
   <p style="margin-top:0.6rem;font-size:0.88rem;color:rgba(255,255,255,0.5);font-style:italic;">"הספק יודע שמישהו בודק"</p>
 </div>
 
@@ -188,11 +189,12 @@
       <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תשומות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">בדיקת חשבון ספק מול רשימת עובדים מאושרים, תעריפים ודוחות נוכחות. מזהה עובדים לא מאושרים, חריגות תעריף ואי-התאמות שעות. מייצר אקסל מסומן ✅/❌ לכל שורה.</p>
+      <p class="card-desc">מעלים: חשבון ספק + רשימת עובדים מאושרים + תעריפים. הכלי מזהה עובדים לא מאושרים, חריגות תעריף, אי-התאמות שעות וכפילויות — ומחזיר קובץ Excel מסומן לכל שורה.</p>
       <div class="card-tags"><span class="tag">בקרה</span><span class="tag">חשבון קבלן</span><span class="tag">שעות</span><span class="tag">תעריפים</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel עם סימון חריגות לכל עובד ולכל שורה</div>
     </div>
     <div class="card-footer">
-      <button class="btn-dl btn-member" onclick="location.href='tool-hours-audit.html'">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','בקרת חשבון קבלן — תשומות','tool-hours-audit.html')">🔓 בדקו חשבון עכשיו</button>
     </div>
   </div>
 
@@ -204,11 +206,12 @@
       <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תפוקות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">בדיקת חשבון ספק לפי מכרז תפוקות — השוואת שירותים, כמויות ומחירים מול דוח הביצועים החודשי. בודק חריגות מתקרת כמות, תאימות מחיר ועקביות הנתונים.</p>
+      <p class="card-desc">בדיקת חשבון ספק מול דוח ביצוע חודשי: שירותים שסופקו, כמויות, מחירים ותקרות מאושרות. מתאים לחוזים שבהם התשלום מבוסס על יחידות שירות, פניות, פעולות או תפוקות.</p>
       <div class="card-tags"><span class="tag">בקרה</span><span class="tag">תפוקות</span><span class="tag">כמויות</span><span class="tag">מכרז</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel עם חריגות כמות, מחיר ועקביות — לכל שורת חשבון</div>
     </div>
     <div class="card-footer">
-      <button class="btn-dl btn-member" onclick="location.href='tool-outputs-audit.html'">🔓 פתיחת הכלי</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','בקרת חשבון קבלן — תפוקות','tool-outputs-audit.html')">🔓 בדקו חשבון תפוקות</button>
     </div>
   </div>
 
@@ -220,11 +223,12 @@
       <div class="card-meta"><div class="card-title">פיצול והקטנת קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">קובץ אקסל כבד שתוקע את המחשב? בחר עמודות רלוונטיות, חתוך לפי תאריך, מחלקה או מספר שורות — וקבל קבצים קטנים וניתנים לעבודה.</p>
+      <p class="card-desc">קובץ Excel כבד שתוקע את המחשב? בחרו עמודות רלוונטיות, סננו לפי תאריך, מחלקה או מספר שורות — וקבלו קבצים קטנים ונוחים לעבודה. מתאים לדוחות מערכת גדולים לפני בקרה, ניתוח או העברה לגורם אחר.</p>
       <div class="card-tags"><span class="tag">ביצועים</span><span class="tag">פיצול</span><span class="tag">ניקוי</span><span class="tag">תאריכים</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel מוקטן, מסונן ומוכן לעבודה</div>
     </div>
     <div class="card-footer">
-<button class="btn-dl btn-member" onclick="handleDL('member','פיצול והקטנת קבצי אקסל','tool-excel-splitter.html')">🔓 פתיחת הכלי</button>
+<button class="btn-dl btn-member" onclick="handleDL('member','פיצול והקטנת קבצי אקסל','tool-excel-splitter.html')">✂️ פצלו קובץ Excel</button>
     </div>
   </div>
 
@@ -236,11 +240,12 @@
       <div class="card-meta"><div class="card-title">איחוד קבצי אקסל</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">מאחד מספר קבצים עם מבנה זהה לקובץ אחד — לדוגמה: קובץ לכל חודש. מוסיף עמודת מקור שמציינת מאיזה קובץ הגיעה כל שורה. מטפל חכם בהבדלי מבנה.</p>
+      <p class="card-desc">מאחד קבצים חודשיים או קבצים ממספר יחידות לקובץ אחד, כולל עמודת מקור לכל שורה. מתאים לאיחוד דוחות נוכחות, חשבונות ספקים, דיווחי ביצוע או קבצים ממחוזות שונים.</p>
       <div class="card-tags"><span class="tag">איחוד</span><span class="tag">חודשי</span><span class="tag">מיזוג</span><span class="tag">עמודת מקור</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel מאוחד עם עמודת מקור לכל שורה</div>
     </div>
     <div class="card-footer">
-<button class="btn-dl btn-member" onclick="handleDL('member','איחוד קבצי אקסל','tool-merge-files.html')">🔓 פתיחת הכלי</button>
+<button class="btn-dl btn-member" onclick="handleDL('member','איחוד קבצי אקסל','tool-merge-files.html')">🗂️ אחדו קבצים</button>
     </div>
   </div>
 
@@ -252,11 +257,12 @@
       <div class="card-meta"><div class="card-title">בדיקת תקינות דיווחי שעות</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">10 בדיקות תקינות לדוחות נוכחות: חפיפות שעות, שעות ארוכות, שעות עגולות, חגים ושבתות, מכסה חודשית, תאריכים עתידיים ועוד.</p>
+      <p class="card-desc">10 בדיקות אוטומטיות לדוחות שעות: חפיפות, שעות עגולות, עבודה בשבת/חג, רצף שעות חריג, תאריכים עתידיים, חריגה ממכסה חודשית ועוד. מתאים לבדיקת חשבונות קבלן, שכר ונוכחות.</p>
       <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">תקינות</span><span class="tag">ביקורת שכר</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> דוח חריגות לכל עובד — מסומן לפי סוג הממצא</div>
     </div>
     <div class="card-footer">
-<button class="btn-dl btn-member" onclick="handleDL('member','בדיקת תקינות דיווחי שעות','tool-hours-overlap.html')">🔓 פתיחת הכלי</button>
+<button class="btn-dl btn-member" onclick="handleDL('member','בדיקת תקינות דיווחי שעות','tool-hours-overlap.html')">🔍 בדקו דוח שעות</button>
     </div>
   </div>
 
@@ -268,11 +274,12 @@
       <div class="card-meta"><div class="card-title">זמן בין אירועים — ניתוח רצף</div><div class="card-sub">כלי web · עובד בדפדפן</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">העלה פלט ממערכת תפעולית וקבל חישוב אוטומטי של הזמן שהושקע בכל פעולה — איתור פעולות מהירות או איטיות מדי.</p>
-      <div class="card-tags"><span class="tag">לוג</span><span class="tag">זמני עיבוד</span><span class="tag">חריגות</span></div>
+      <p class="card-desc">מעלים פלט ממערכת תפעולית וקבלו חישוב אוטומטי של משך הזמן בין שלבים בתהליך. מתאים לבדיקת SLA, זמני טיפול בבקשות, פעולות מהירות מדי, עיכובים וחריגות ברצף עבודה.</p>
+      <div class="card-tags"><span class="tag">לוג</span><span class="tag">SLA</span><span class="tag">זמני טיפול</span><span class="tag">חריגות</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> טבלת זמני טיפול וסימון חריגות SLA</div>
     </div>
     <div class="card-footer">
-<button class="btn-dl btn-member" onclick="handleDL('member','זמן בין אירועים','tool-time-between.html')">🔓 פתיחת הכלי</button>
+<button class="btn-dl btn-member" onclick="handleDL('member','זמן בין אירועים','tool-time-between.html')">⏱️ חשבו זמני טיפול</button>
     </div>
   </div>
 
@@ -286,104 +293,104 @@
 
     <a href="article-procurement-audit.html" class="article-card">
       <span class="article-card-cat">רכש ציבורי וביקורת פנימית</span>
-      <div class="article-card-title">5 בדיקות שכל מנהל רכש ציבורי חייב לבצע על חשבוניות קבלנים</div>
-      <div class="article-card-desc">חפיפות שעות, תעריפים לפי רמה, דיווח בשבת וחג, חשבון מול פירוט ומגמות חודשיות — מדריך מקצועי לביקורת שיטתית.</div>
+      <div class="article-card-title">5 בדיקות שחייבים לבצע לפני אישור חשבון קבלן</div>
+      <div class="article-card-desc">חפיפות שעות, חריגות תעריף, דיווחים בשבת וחג, התאמה לפירוט ומגמות חודשיות — צ׳קליסט מעשי לחשבות, רכש וביקורת.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-hours-overlap.html" class="article-card">
       <span class="article-card-cat">ביקורת שכר ורכש ציבורי</span>
-      <div class="article-card-title">חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל</div>
-      <div class="article-card-desc">מה הן חפיפות שעות, למה הן מתרחשות ואיך לאתר אותן אוטומטית — מדריך לאנשי רכש וביקורת פנימית.</div>
+      <div class="article-card-title">חפיפות שעות בדוחות נוכחות: איך מזהים ומה עושים</div>
+      <div class="article-card-desc">מהי חפיפת שעות, למה היא נוצרת, איך מזהים אותה אוטומטית ואיך נכון לטפל מול הספק לפני אישור החשבון.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 5 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-excel-large-files.html" class="article-card">
       <span class="article-card-cat">ניהול נתונים ואקסל</span>
-      <div class="article-card-title">קובץ אקסל כבד שתוקע את המחשב — 4 פתרונות מהירים</div>
-      <div class="article-card-desc">קובץ שמקרס את Excel? 4 שיטות מעשיות לפיצול, הקטנה ובחירת עמודות — עם כלי חינמי שעובד ישירות בדפדפן.</div>
+      <div class="article-card-title">קובץ אקסל כבד? 4 דרכים להחזיר אותו לעבודה</div>
+      <div class="article-card-desc">קובץ שנפתח לאט, נתקע או קורס? כך מקטינים, מפצלים ומנקים קבצים גדולים — כולל כלי חינמי בדפדפן.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 4 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-money-no-check.html" class="article-card" style="border-right:4px solid var(--accent)">
       <span class="article-card-cat" style="color:var(--accent)">🔥 חדש — רכש ציבורי וביקורת פנימית</span>
-      <div class="article-card-title">הכסף שמשולם בלי שמישהו בדק — ומה אפשר לעשות כבר ממחר</div>
-      <div class="article-card-desc">מה רואים שוב ושוב בדוחות ביקורת: ספקים שמבינים שהחשבונות לא נבדקים, יחידות שמאשרות ללא בדיקה — ותהליך שלם לתיקון, מהמכרז ועד החשבון החודשי.</div>
+      <div class="article-card-title">הכסף שמשולם בלי בדיקה — ואיך עוצרים את זה</div>
+      <div class="article-card-desc">למה חשבונות ספקים מאושרים בלי בקרה אמיתית, איך זה נראה בדוחות ביקורת, ומה אפשר לשנות כבר בחשבון הבא.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 8 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-tender-controls.html" class="article-card">
       <span class="article-card-cat">רכש ציבורי וביקורת פנימית</span>
-      <div class="article-card-title">איך לבנות בקרה אפקטיבית על קבלנים — כבר משלב המכרז</div>
-      <div class="article-card-desc">פירוט אקסל כתנאי לתשלום, SLA אוטומטי, דגימות תקופתיות — ולמה החשבות חייבת לוודא שהיחידה המקצועית לא רק מאשרת חשבונות.</div>
+      <div class="article-card-title">בקרה על קבלנים מתחילה כבר במכרז</div>
+      <div class="article-card-desc">אילו סעיפים חייבים להופיע במכרז כדי לאפשר בקרה חודשית: פירוט אקסל, SLA מדיד, מסמכי גיבוי וזכות קיזוז.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-roi-controls.html" class="article-card">
       <span class="article-card-cat">ניהול חוזי שירות ובקרה</span>
-      <div class="article-card-title">בקרה אוטומטית שוטפת על קבלנים — מה זה שווה לחשב?</div>
-      <div class="article-card-desc">ניתוח עלות-תועלת של בקרה שוטפת על חשבוניות קבלנים — כמה עולה הטעות שלא אותרה, וכמה עולה הבקרה שמונעת אותה.</div>
+      <div class="article-card-title">כמה שווה לחשבות בקרה אוטומטית על קבלנים?</div>
+      <div class="article-card-desc">ניתוח עלות־תועלת פשוט: כמה עולה טעות שלא אותרה, כמה עולה בקרה חודשית, ומתי הבקרה מחזירה את עצמה.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-sla-contract.html" class="article-card">
       <span class="article-card-cat">ניהול חוזי שירות ובקרה</span>
-      <div class="article-card-title">SLA בחוזה שירות: איך לדעת שהספק עומד בו — ומה קורה כשהוא לא</div>
-      <div class="article-card-desc">מדריך מעשי לחשבים ומנהלי חוזים: איך מחשבים SLA, למה ספקים לא עומדים בו, ואיך הופכים את ה-SLA לכלי ניהול אמיתי.</div>
+      <div class="article-card-title">SLA בחוזה שירות: איך בודקים ומקזזים נכון</div>
+      <div class="article-card-desc">איך להפוך סעיפי SLA ממילים בחוזה למדדים חודשיים: זמני טיפול, חריגות, פיצויים מוסכמים ודוח קיזוז.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-invoice-approval.html" class="article-card">
       <span class="article-card-cat">חשבות ובקרה פיננסית</span>
-      <div class="article-card-title">למה "אישור מינהלי" של חשבון קבלן לא מספיק — ומה לעשות במקום</div>
-      <div class="article-card-desc">החתימה על חשבון קבלן מהווה אישור מקצועי שהעבודה בוצעה כנדרש. מה קורה כשהאישור ניתן בלי בדיקה אמיתית — ומי חשוף?</div>
+      <div class="article-card-title">אישור מינהלי לחשבון קבלן לא מספיק</div>
+      <div class="article-card-desc">חתימה על חשבון היא לא רק פעולה טכנית. מה צריך לבדוק לפני אישור, מי חשוף, ואיך מתעדים בקרה אמיתית.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-vendor-transparency.html" class="article-card">
       <span class="article-card-cat">ניהול ספקים ובקרה</span>
-      <div class="article-card-title">ספק יודע שמישהו בודק — כיצד שקיפות בבקרה משנה התנהגות ספקים</div>
-      <div class="article-card-desc">כשספק יודע שהדוחות שלו נבדקים כל חודש, הוא מתנהג אחרת. על האפקט ההרתעתי של בקרה שיטתית — גם כשלא מוצאים כלום.</div>
+      <div class="article-card-title">הספק יודע שמישהו בודק — וזה משנה הכול</div>
+      <div class="article-card-desc">בקרה חודשית יוצרת הרתעה. גם כשהיא לא מוצאת חריגה, עצם הידיעה שהחשבונות נבדקים משנה את התנהגות הספקים.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 5 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-audit-reality-gap.html" class="article-card">
       <span class="article-card-cat">בקרה פנימית ורכש ציבורי</span>
-      <div class="article-card-title">בקרה על חשבוניות קבלן: הפער בין מה שאפשר לבדוק למה שנבדק בפועל</div>
-      <div class="article-card-desc">כמעט כל חוזה שירות מכיל עשרות נקודות שאפשר לבדוק. בפועל — בודקים 2-3. מאיפה הפער, ואיך סוגרים אותו.</div>
+      <div class="article-card-title">הפער בין מה שאפשר לבדוק לבין מה שבודקים בפועל</div>
+      <div class="article-card-desc">כמעט בכל חוזה שירות יש עשרות נקודות בקרה. בפועל בודקים רק מעט. כך סוגרים את הפער בלי להעמיס על החשבות.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-auditor-visit.html" class="article-card">
       <span class="article-card-cat">ביקורת פנימית וניהול פיננסי</span>
-      <div class="article-card-title">מה קורה כשמבקר הפנים מגיע ואין לכם תיעוד בקרה?</div>
-      <div class="article-card-desc">ביקורת פנימית על ניהול חוזי שירות — מה מבקרים מחפשים, ממצאים נפוצים, והמרחק בין "בדקנו" לבין "תיעדנו שבדקנו".</div>
+      <div class="article-card-title">מבקר הפנים הגיע — איפה תיעוד הבקרה?</div>
+      <div class="article-card-desc">מה מבקרים מחפשים בבדיקת חוזי שירות, אילו ממצאים חוזרים שוב ושוב, ולמה "בדקנו" לא מספיק בלי תיעוד.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-contract-checklist.html" class="article-card">
       <span class="article-card-cat">ניהול חוזים ורכש ציבורי</span>
-      <div class="article-card-title">7 שאלות שכדאי לשאול לפני שחותמים על חוזה שירות חדש</div>
-      <div class="article-card-desc">רוב הבעיות בניהול חוזי שירות נקבעות בשלב הכתיבה. 7 שאלות שיחסכו לכם ביקורת, מחלוקות וכסף.</div>
+      <div class="article-card-title">7 שאלות לפני שחותמים על חוזה שירות</div>
+      <div class="article-card-desc">רוב בעיות הבקרה מתחילות כבר בניסוח החוזה. 7 שאלות שיעזרו למנוע מחלוקות, חריגות תשלום וממצאי ביקורת.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
 
     <a href="article-professional-unit-trust.html" class="article-card">
       <span class="article-card-cat">בקרה עצמאית וניהול ספקים</span>
-      <div class="article-card-title">האם תמיד אפשר לסמוך על הבקרה של היחידה המקצועית?</div>
-      <div class="article-card-desc">היחידה המקצועית מאשרת את העבודה — אבל האם היא הגורם המתאים לבקר את הספק? על ניגוד עניינים, עיוורון מוסדי, ולמה החשב חייב לשמור על בקרה עצמאית.</div>
+      <div class="article-card-title">האם אפשר לסמוך רק על אישור היחידה המקצועית?</div>
+      <div class="article-card-desc">היחידה המקצועית מאשרת שהעבודה בוצעה — אבל החשבות עדיין צריכה בקרה עצמאית על תשלום, SLA וחריגות.</div>
       <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
       <span class="article-card-read">קראו את המאמר ←</span>
     </a>
@@ -618,6 +625,15 @@ function forgotPassword(){
 function logout(){clearSess();updateUI();showOK('יצאת מהחשבון בהצלחה.')}
 
 document.addEventListener('click',()=>closeUserDropdown());
+
+// לחיצה על כל מקום בכרטיס כלי — מפעיל את כפתור הפתיחה
+document.querySelectorAll('.tool-card').forEach(card => {
+  card.addEventListener('click', e => {
+    if (e.target.closest('button') || e.target.closest('a')) return; // לא לחפוף עם כפתורים וקישורים קיימים
+    const btn = card.querySelector('.btn-dl');
+    if (btn) btn.click();
+  });
+});
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 function showOK(msg){document.getElementById('ok-msg').textContent=msg;document.getElementById('modal-ok').classList.add('open')}
 
