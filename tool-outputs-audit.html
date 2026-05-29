@@ -213,7 +213,7 @@ tr.row-issue:hover td{background:#fde8e8}
   <div id="act-hdr-sel-wrap"></div>
   <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם כל שורה = יחידת שירות אחת — אל תבחר עמודת כמות. אם יש עמודת כמות — בחר אותה.</div>
   <div class="grid2">
-    <div class="form-group"><label>סוג שירות / קוד (חובה):</label><select id="col-act-svc"></select></div>
+    <div class="form-group"><label>סוג שירות / קוד <span id="act-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label><select id="col-act-svc"></select></div>
     <div class="form-group"><label>תאריך (אופציונלי):</label><select id="col-act-date"></select></div>
     <div class="form-group"><label>כמות לשורה (אופציונלי — ריק = כל שורה=1):</label><select id="col-act-qty"></select></div>
     <div class="form-group"><label>מבצע / ספק (אופציונלי):</label><select id="col-act-provider"></select></div>
@@ -224,7 +224,7 @@ tr.row-issue:hover td{background:#fde8e8}
   <div id="inv-hdr-sel-wrap"></div>
   <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם בחשבון יש שורה לכל שירות עם כמות — בחר עמודת כמות. אם יש רק סה"כ — בחר עמודת סה"כ.</div>
   <div class="grid2">
-    <div class="form-group"><label>סוג שירות / קוד (חובה):</label><select id="col-inv-svc"></select></div>
+    <div class="form-group"><label>סוג שירות / קוד <span id="inv-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label><select id="col-inv-svc"></select></div>
     <div class="form-group"><label>מבצע / ספק בחשבון (אופציונלי):</label><select id="col-inv-provider"></select></div>
     <div class="form-group"><label>כמות יחידות (אופציונלי):</label><select id="col-inv-qty"></select></div>
     <div class="form-group"><label>מחיר ליחידה (אופציונלי):</label><select id="col-inv-rate"></select></div>
@@ -491,7 +491,16 @@ function getColMapping(){if(!currentTender?.name)return null;return loadTenders(
 
 // ── STEP 4 ──
 function goToStep4(){markStep(3,'done');document.getElementById('step4-card').classList.remove('hidden');markStep(4,'active');buildColMaps();document.getElementById('step4-card').scrollIntoView({behavior:'smooth'});}
-function buildColMaps(){buildActColSelects();buildInvColSelects();}
+function buildColMaps(){
+  buildActColSelects();buildInvColSelects();
+  const n=currentTender?.services?.length||0;
+  const multiSvc=n>1;
+  const hintMulti='<span style="color:var(--red);font-weight:700">(חובה)</span>';
+  const hintSingle='(אופציונלי — ריק = שירות יחיד)';
+  const hint=multiSvc?hintMulti:hintSingle;
+  document.getElementById('act-svc-hint').innerHTML=hint;
+  document.getElementById('inv-svc-hint').innerHTML=hint;
+}
 
 function buildActColSelects(){
   const actData=actFilesList[0]?.data, mapping=getColMapping();
@@ -502,7 +511,7 @@ function buildActColSelects(){
   const ah=actData?.headers||[];
   const opts=ah.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
   const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
-  document.getElementById('col-act-svc').innerHTML=opts;
+  document.getElementById('col-act-svc').innerHTML=optsOpt;
   ['col-act-date','col-act-qty','col-act-provider','col-act-ref'].forEach(id=>document.getElementById(id).innerHTML=optsOpt);
   const ahl=ah.map(x=>String(x||'').toLowerCase());
   autoSelect('col-act-svc',ahl,['שירות','service','קוד','code','סוג']);
@@ -521,7 +530,7 @@ function buildInvColSelects(){
   const ih=invFileData.headers;
   const opts=ih.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
   const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
-  document.getElementById('col-inv-svc').innerHTML=opts;
+  document.getElementById('col-inv-svc').innerHTML=optsOpt;
   ['col-inv-provider','col-inv-qty','col-inv-rate','col-inv-total'].forEach(id=>document.getElementById(id).innerHTML=optsOpt);
   const ihl=ih.map(x=>String(x||'').toLowerCase());
   autoSelect('col-inv-svc',ihl,['שירות','service','קוד','code','סוג']);
@@ -553,10 +562,14 @@ function runFullAudit(){
   const svcById={};
   services.forEach(s=>{svcById[nSvc(s.id)]=s;});
 
+  const singleActMode=acsvc<0; // no service column — count all rows as one service
+  const singleInvMode=isvc<0;
+
   // 1. Qty per service from activity
   actQtyBySvc={};
   allAct.forEach(row=>{
-    const sk=nSvc(String(row[acsvc]||'').trim()); if(!sk)return;
+    const sk=singleActMode?'__single__':nSvc(String(row[acsvc]||'').trim());
+    if(!singleActMode&&!sk)return;
     const qty=acqty>=0?(parseFloat(row[acqty])||1):1;
     actQtyBySvc[sk]=(actQtyBySvc[sk]||0)+qty;
   });
@@ -565,7 +578,8 @@ function runFullAudit(){
   monthlyData={};
   allAct.forEach(row=>{
     const mn=acdate>=0?monthKey(row[acdate]):'לא ידוע';
-    const sk=nSvc(String(row[acsvc]||'').trim()); if(!sk)return;
+    const sk=singleActMode?'__single__':nSvc(String(row[acsvc]||'').trim());
+    if(!singleActMode&&!sk)return;
     const qty=acqty>=0?(parseFloat(row[acqty])||1):1;
     if(!monthlyData[mn])monthlyData[mn]={};
     monthlyData[mn][sk]=(monthlyData[mn][sk]||0)+qty;
@@ -608,15 +622,16 @@ function runFullAudit(){
 
   // 5. Invoice audit
   auditInvoiceRows=invFileData.rows.map(row=>{
-    const svcRaw=String(row[isvc]||'').trim();
+    const svcRaw=singleInvMode?'__single__':String(row[isvc]||'').trim();
     const qtyV=iqty>=0?(parseFloat(row[iqty])||null):null;
     const rateV=irate>=0?(parseFloat(row[irate])||null):null;
     const totalV=itotal>=0?(parseFloat(row[itotal])||null):null;
-    if(!svcRaw)return{_orig:row,_skip:true,_issues:[],svcIssue:false,qtyIssue:false,rateIssue:false};
+    if(!singleInvMode&&!svcRaw)return{_orig:row,_skip:true,_issues:[],svcIssue:false,qtyIssue:false,rateIssue:false};
     const issues=[]; let svcIssue=false,qtyIssue=false,rateIssue=false;
-    const sk=nSvc(svcRaw), approvedSvc=svcById[sk]||null;
-    // a) authorized?
-    if(services.length>0&&!approvedSvc){issues.push(`שירות "${svcRaw}" אינו ברשימת השירותים המאושרים`);svcIssue=true;}
+    const sk=singleInvMode?'__single__':nSvc(svcRaw);
+    const approvedSvc=singleInvMode&&services.length===1?Object.values(svcById)[0]||null:svcById[sk]||null;
+    // a) authorized? (skip check when no service column selected)
+    if(!singleInvMode&&services.length>0&&!approvedSvc){issues.push(`שירות "${svcRaw}" אינו ברשימת השירותים המאושרים`);svcIssue=true;}
     // b) rate match?
     if(approvedSvc&&rateV!==null&&rateV>0&&approvedSvc.rate>0&&Math.abs(rateV-approvedSvc.rate)>0.5){issues.push(`המחיר ליחידה אינו תואם (בחשבון: ${rateV.toFixed(2)} ₪, מאושר: ${approvedSvc.rate.toFixed(2)} ₪)`);rateIssue=true;}
     // c) qty match?
@@ -706,14 +721,20 @@ function renderActTable(){
 function renderServicesTab(){
   const services=currentTender?.services||[];
   if(!services.length){document.getElementById('services-content').innerHTML='<div class="alert-info">לא הועלתה רשימת שירותים מאושרים</div>';return;}
+  const _acsvc=+document.getElementById('col-act-svc').value;
   const isvc=+document.getElementById('col-inv-svc').value;
-  const invSvcs=new Set(invFileData.rows.map(r=>nSvc(String(r[isvc]||'').trim())));
-  const unauth=[...new Set(invFileData.rows.map(r=>String(r[isvc]||'').trim()))].filter(s=>s&&!services.some(sv=>nSvc(sv.id)===nSvc(s)));
+  const _singleAct=_acsvc<0, _singleInv=isvc<0;
+  const singleActTotal=_singleAct?(actQtyBySvc['__single__']||0):0;
+  const invSvcs=_singleInv?null:new Set(invFileData.rows.map(r=>nSvc(String(r[isvc]||'').trim())));
+  const unauth=_singleInv?[]:([...new Set(invFileData.rows.map(r=>String(r[isvc]||'').trim()))].filter(s=>s&&!services.some(sv=>nSvc(sv.id)===nSvc(s))));
   let html=`<div style="font-weight:700;font-size:0.88rem;color:var(--navy);margin-bottom:0.7rem">שירותים מאושרים (${services.length})</div>
     <div style="margin-bottom:0.7rem"><button class="btn-accent btn-sm" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
     <div class="result-table-wrap"><table><thead><tr><th>קוד / שם שירות</th><th>מחיר מאושר</th><th>כמות מקס'</th><th>כמות בדוח ביצועים</th><th>בחשבון</th></tr></thead>
     <tbody>${services.map(s=>{
-      const sk=nSvc(s.id), qty=actQtyBySvc[sk]||0, inI=invSvcs.has(sk), maxOk=s.maxQty==null||qty<=s.maxQty;
+      const sk=nSvc(s.id);
+      const qty=_singleAct?(services.length===1?singleActTotal:0):(actQtyBySvc[sk]||0);
+      const inI=_singleInv?true:invSvcs.has(sk);
+      const maxOk=s.maxQty==null||qty<=s.maxQty;
       return `<tr${qty===0?' class="row-issue"':''}><td><strong>${escHtml(s.id||'')}</strong></td><td style="text-align:center"><strong>${s.rate?Number(s.rate).toFixed(2)+' ₪':'—'}</strong></td><td style="text-align:center">${s.maxQty!=null?s.maxQty:'—'}</td><td style="text-align:center;font-weight:700;color:${qty===0?'var(--red)':!maxOk?'var(--orange)':'var(--green)'}">${qty%1===0?qty:qty.toFixed(2)}${!maxOk?' ⚠️':qty===0?' (אין)':''}</td><td style="text-align:center">${inI?'✅':'—'}</td></tr>`;
     }).join('')}</tbody></table></div>`;
   if(unauth.length)html+=`<div style="margin-top:1rem;font-weight:700;font-size:0.88rem;color:var(--red);margin-bottom:0.5rem">⚠️ שירותים בחשבון שאינם ברשימה המאושרת (${unauth.length})</div><div class="alert-danger">${unauth.map(s=>`<div>• ${escHtml(s)}</div>`).join('')}</div>`;

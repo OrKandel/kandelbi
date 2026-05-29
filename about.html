@@ -27,9 +27,14 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
 body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
-header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between}
-.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
-nav-links{display:flex;gap:1.5rem}
+nav{background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;position:fixed;top:0;right:0;left:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif}
+nav .logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px}
+nav .logo span{color:var(--accent)}
+nav ul{list-style:none;display:flex;gap:0.15rem;margin:0;padding:0;flex-wrap:nowrap}
+nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav ul li a:hover,nav ul li a.active{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-cta{background:var(--accent) !important;color:var(--navy) !important;font-weight:800 !important;padding:0.45rem 1rem !important}
+.nav-phone{color:var(--accent) !important;font-weight:700 !important}
 .back-link{color:rgba(255,255,255,0.6);font-size:0.85rem;text-decoration:none}.back-link:hover{color:#fff}
 main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
 h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.4rem}
@@ -55,20 +60,22 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
 </style>
 </head>
 <body>
-<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
-  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
-  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
-    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
-    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
-    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
-    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="index.html#services">שירותים</a></li>
+    <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="articles.html">מאמרים</a></li>
+    <li><a href="about.html" class="active">אודות</a></li>
+    <li><a href="tel:050-691-4898" class="nav-phone"><span style="color:#25d366;">☎</span> 050-691-4898</a></li>
+    <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
   </ul>
 </nav>
 <div style="height:64px"></div>
 <main>
 
 <div class="profile-card">
-  <div class="profile-icon">👤</div>
   <div class="profile-text">
     <h1>אור קנדל</h1>
     <div class="subtitle">רו"ח, CISA, בודק שכר מוסמך ומפתח Full-Stack</div>
@@ -101,15 +108,15 @@ li{margin-bottom:0.5rem;font-size:0.97rem}
   </p>
   <ul>
     <li><strong>כלים חינמיים:</strong> בקרות אוטומטיות שעובדות ישירות בדפדפן, בלי להעלות נתונים לאינטרנט — לכל אחד</li>
-    <li><strong>פתרונות מותאמים אישית:</strong> בקרות שתפורות לחוזה הספציפי שלך — תעריפים, כללי SLA, ובדיקות מותאמות להתקשרות. בחודש הבא כבר תוכל להשתמש בו, במחיר שאפילו לא מצריך קבלת הצעות מחיר.</li>
-    <li><strong>✨ שירות מנוהל (חדש):</strong> הצוות שלנו מפעיל את הבקרות, דוגם מסמכים לאימות נתוני הספק, ואתם מקבלים כל חודש דוח חריגות + חישוב SLA.</li>
+    <li><strong>פתרונות מותאמים אישית:</strong> בקרות שתפורות לחוזה הספציפי שלכם — תעריפים, כללי SLA, ובדיקות מותאמות להתקשרות. בחודש הבא כבר תוכלו להשתמש בכלי התפור לכם, במחיר שאפילו לא מצריך קבלת הצעות מחיר.</li>
+    <li><strong>✨ שירות מנוהל (חדש):</strong> הצוות שלנו מפעיל את הבקרות, דוגם אסמכתאות לאימות נתוני הספק, ואתם מקבלים כל חודש דוח חריגות + חישוב SLA + מייל המיועד לספק הכולל פירוט של התיקונים שעליו לבצע בחשבון.</li>
   </ul>
 </div>
 
 <h2>תחומי התמחות</h2>
 <ul>
-  <li><strong>ביקורת חשבוניות קבלנים</strong> — חפיפות שעות, תעריפים, שבתות וחגים, התאמת חשבון לפירוט</li>
-  <li><strong>ביקורת שכר</strong> — זיהוי כפילויות, חריגות ממכסות, בדיקות סבירות</li>
+  <li><strong>ביקורת חשבוניות ספקים</strong> — חפיפות שעות, תקינות תעריפים, עמידה בדרישות המכרז, עבודה בשבתות וחגים, התאמת חשבון לפירוט שעות/תפוקות</li>
+  <li><strong>ביקורת שכר</strong> — תנאים סוציאליים, חשבונות בנק כפולים, חופשה ומחלה, ביגוד והבראה ועוד</li>
   <li><strong>רכש ציבורי</strong> — בניית מנגנוני בקרה בחוזים, SLA, דגימות תקופתיות</li>
   <li><strong>אוטומציה של בקרות</strong> — Excel, VBA, Power BI, כלי web</li>
   <li><strong>ניתוח נתונים</strong> — זיהוי חריגות, מגמות, ניתוח Benford</li>

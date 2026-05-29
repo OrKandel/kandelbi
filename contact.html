@@ -119,6 +119,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
   <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
     <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
     <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="articles.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מאמרים</a></li>
     <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
     <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
   </ul>
@@ -141,7 +142,14 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
 
       <div class="form-error" id="form-error">אירעה שגיאה בשליחה. נסו שוב או פנו ישירות במייל.</div>
 
-      <form id="contact-form" action="https://formspree.io/f/REPLACE_WITH_YOUR_FORMSPREE_ID" method="POST" novalidate>
+      <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
+
+        <!-- Web3Forms -->
+        <input type="hidden" name="access_key" value="221edd83-24de-428f-a004-56d511e9a2f5"/>
+        <input type="hidden" name="subject" value="פנייה חדשה דרך קנדל BI"/>
+        <input type="hidden" name="from_name" value="קנדל BI — טופס יצירת קשר"/>
+        <!-- Honeypot anti-spam -->
+        <input type="checkbox" name="botcheck" style="display:none"/>
 
         <div class="form-row-2">
           <div class="form-group">
@@ -167,14 +175,14 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
 
         <div class="form-group">
           <label>נושא הפנייה</label>
-          <select name="subject">
+          <select name="topic">
             <option value="">— בחרו נושא —</option>
-            <option value="custom-tool">בקרה מותאמת לחוזה ספציפי</option>
-            <option value="new-system">בניית מערכת בקרה חדשה</option>
-            <option value="managed">שירות בקרה חודשי מנוהל</option>
-            <option value="tool-question">שאלה על כלי חינמי</option>
-            <option value="firms">רישיון למשרד רו״ח / ביקורת</option>
-            <option value="other">אחר</option>
+            <option value="בקרה מותאמת לחוזה ספציפי">בקרה מותאמת לחוזה ספציפי</option>
+            <option value="בניית מערכת בקרה חדשה">בניית מערכת בקרה חדשה</option>
+            <option value="שירות בקרה חודשי מנוהל">שירות בקרה חודשי מנוהל</option>
+            <option value="שאלה על כלי חינמי">שאלה על כלי חינמי</option>
+            <option value="רישיון למשרד רו״ח / ביקורת">רישיון למשרד רו״ח / ביקורת</option>
+            <option value="אחר">אחר</option>
           </select>
         </div>
 
@@ -182,10 +190,6 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
           <label>הודעה <span class="req">*</span></label>
           <textarea name="message" placeholder="תארו את הצורך, שם הגוף, סוג החוזה הרלוונטי — כל פרט שיעזור לנו להכין תשובה מדויקת." required></textarea>
         </div>
-
-        <!-- Honeypot anti-spam -->
-        <input type="text" name="_gotcha" style="display:none"/>
-        <input type="hidden" name="_language" value="he"/>
 
         <button type="submit" class="btn-submit" id="submit-btn">
           <span id="btn-text">שלח הודעה ←</span>
@@ -206,7 +210,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
       <div class="contact-info-card">
         <h3>פרטי יצירת קשר</h3>
         <div class="contact-item">
-          <div class="c-icon">📞</div>
+          <div class="c-icon" style="background:#e7faf0;"><span style="color:#25d366;">☎</span></div>
           <div>
             <div class="c-label">טלפון</div>
             <div class="c-val"><a href="tel:050-691-4898">050-691-4898</a></div>
@@ -216,7 +220,13 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
           <div class="c-icon">✉️</div>
           <div>
             <div class="c-label">מייל</div>
-            <div class="c-val"><a href="mailto:info@kandelbi.org">info@kandelbi.org</a></div>
+            <div class="c-val" style="display:flex;align-items:center;gap:8px;">
+              <a href="mailto:info@kandelbi.org">info@kandelbi.org</a>
+              <button id="copy-email-btn" onclick="copyEmail()" title="העתק כתובת מייל" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:0.8rem;color:var(--muted);transition:all 0.2s;line-height:1;" aria-label="העתק מייל">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              <span id="copy-email-msg" style="font-size:0.75rem;color:#0a7c5e;display:none;">✓ הועתק</span>
+            </div>
           </div>
         </div>
         <div class="contact-item">
@@ -230,6 +240,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
           <div class="c-icon" style="background:#e7faf0;">💬</div>
           <div>
             <div class="c-label">קבוצת WhatsApp</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">קבוצה לעדכונים והסברים על כלי בקרה חדשים</div>
             <div class="c-val"><a href="https://chat.whatsapp.com/CRa87SHUF0rDbfjsPDoAcQ" target="_blank" rel="noopener" style="color:#25d366;">הצטרפו לקבוצה ←</a></div>
           </div>
         </div>
@@ -241,7 +252,7 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
 
       <div class="pricing-link-card">
         <h3>כלי מותאם אישית?</h3>
-        <p>בחודש הבא כבר תוכל להשתמש בכלי שתפור להתקשרות הספציפית שלך, במחיר שאפילו לא מצריך קבלת הצעות מחיר. כתבו לנו ונחזור אליכם.</p>
+        <p>בחודש הבא כבר תוכלו להשתמש בכלי שתפור להתקשרות הספציפית שלכם, במחיר שאפילו לא מצריך קבלת הצעות מחיר. כתבו לנו ונחזור אליכם.</p>
       </div>
 
     </div>
@@ -311,6 +322,21 @@ form.addEventListener('submit', async function(e) {
     btnText.textContent = 'שלח הודעה ←';
   }
 });
+
+function copyEmail() {
+  navigator.clipboard.writeText('info@kandelbi.org').then(function() {
+    var msg = document.getElementById('copy-email-msg');
+    var btn = document.getElementById('copy-email-btn');
+    msg.style.display = 'inline';
+    btn.style.color = '#0a7c5e';
+    btn.style.borderColor = '#0a7c5e';
+    setTimeout(function() {
+      msg.style.display = 'none';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
 </script>
 </body>
 </html>

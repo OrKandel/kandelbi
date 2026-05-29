@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>מאמרים ומדריכים — בקרה, רכש ציבורי וחשבות | קנדל BI</title>
+<meta name="description" content="מאמרים מקצועיים על בקרת ספקים, רכש ציבורי, ביקורת פנימית וחשבות — מאת אור קנדל, רו״ח CISA."/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/articles.html"/>
+<meta property="og:title" content="מאמרים ומדריכים — קנדל BI"/>
+<meta property="og:description" content="מדריכים מעשיים לחשבות, רכש וביקורת פנימית — בדיקות חשבונות, SLA, חפיפות שעות ועוד."/>
+<meta property="og:url" content="https://kandelbi.org/articles.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--blue-light:#3a82d4;--accent:#f0a500;--bg:#f0f3f8;--bg-white:#fff;--border:#d5dde8;--text:#1a1a2e;--text-mid:#3a4562;--text-muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+
+/* NAV */
+nav{background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;position:fixed;top:0;right:0;left:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif}
+nav .logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px}
+nav .logo span{color:var(--accent)}
+nav ul{list-style:none;display:flex;gap:0.15rem;margin:0;padding:0;flex-wrap:nowrap}
+nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav ul li a:hover,nav ul li a.active{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-cta{background:var(--accent) !important;color:var(--navy) !important;font-weight:800 !important;padding:0.45rem 1rem !important}
+.nav-phone{color:var(--accent) !important;font-weight:700 !important}
+
+/* HERO */
+.page-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:3.5rem 5vw 2.5rem;text-align:center;margin-top:64px}
+.page-hero h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:#fff;margin-bottom:0.6rem}
+.page-hero h1 em{color:var(--accent);font-style:normal}
+.page-hero p{color:rgba(255,255,255,0.7);font-size:1rem;max-width:560px;margin:0 auto}
+
+/* FILTER */
+.filter-bar{max-width:1200px;margin:0 auto;padding:1.5rem 5vw 0.5rem;display:flex;gap:0.6rem;flex-wrap:wrap}
+.filter-btn{background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:6px 16px;font-size:0.82rem;font-weight:700;color:var(--text-mid);cursor:pointer;transition:all 0.18s;font-family:'Heebo',sans-serif}
+.filter-btn:hover,.filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ARTICLES GRID */
+.articles-section{max-width:1200px;margin:0 auto 4rem;padding:1rem 5vw}
+.articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.2rem}
+.article-card{background:var(--bg-white);border:1px solid var(--border);border-radius:14px;padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:0.6rem;transition:all 0.22s;text-decoration:none;color:inherit;border-right:4px solid var(--blue)}
+.article-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(13,31,60,0.09);border-color:var(--blue-light)}
+.article-card.featured{border-right-color:var(--accent)}
+.article-card-cat{font-size:0.76rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.03em}
+.article-card.featured .article-card-cat{color:var(--accent)}
+.article-card-title{font-family:'Heebo';font-weight:800;font-size:1rem;color:var(--navy);line-height:1.35}
+.article-card-desc{font-size:0.88rem;color:var(--text-mid);line-height:1.6;flex:1}
+.article-card-meta{font-size:0.78rem;color:var(--text-muted);display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.2rem}
+.article-card-read{font-size:0.82rem;font-weight:700;color:var(--blue);margin-top:0.4rem}
+
+/* FOOTER */
+footer{background:#080f1e;color:rgba(255,255,255,0.5);padding:30px 5vw;text-align:center;font-size:0.85rem}
+footer a{color:rgba(255,255,255,0.4);text-decoration:none}
+
+/* WA WIDGET */
+.wa-widget{position:fixed;bottom:24px;left:24px;z-index:9999;display:flex;flex-direction:column;align-items:center;gap:10px}
+.wa-toggle{width:58px;height:58px;border-radius:50%;background:#25d366;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.5);transition:transform 0.2s,box-shadow 0.2s;padding:0}
+.wa-toggle:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(37,211,102,0.65)}
+.wa-panel{background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.18);width:272px;overflow:hidden;display:none;margin-bottom:4px}
+.wa-panel.open{display:block;animation:waSlide 0.22s ease}
+@keyframes waSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.wa-panel-header{background:#25d366;color:#fff;padding:12px 15px;font-weight:700;font-size:0.88rem;font-family:'Heebo',sans-serif}
+.wa-option{display:flex;align-items:center;gap:12px;padding:12px 15px;text-decoration:none;color:#1a1a2e;border-bottom:1px solid #f0f0f0;transition:background 0.15s;font-family:'Heebo',sans-serif}
+.wa-option:hover{background:#f0fff7}
+.wa-option:last-child{border-bottom:none}
+.wa-option-icon{font-size:1.5rem;flex-shrink:0;line-height:1}
+.wa-option-title{font-weight:700;font-size:0.85rem;display:block}
+.wa-option-sub{font-size:0.73rem;color:#6b7a99;margin-top:2px;display:block;line-height:1.4}
+
+@media(max-width:600px){.articles-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="index.html#services">שירותים</a></li>
+    <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="articles.html" class="active">מאמרים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="tel:050-691-4898" class="nav-phone"><span style="color:#25d366;">☎</span> 050-691-4898</a></li>
+    <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
+  </ul>
+</nav>
+
+<div class="page-hero">
+  <h1>📝 מאמרים <em>ומדריכים</em></h1>
+  <p>מדריכים מעשיים לחשבות, רכש וביקורת פנימית — בדיקות חשבונות, SLA, חפיפות שעות ועוד</p>
+</div>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterArticles('all',this)">הכול</button>
+  <button class="filter-btn" onclick="filterArticles('רכש',this)">רכש ציבורי</button>
+  <button class="filter-btn" onclick="filterArticles('ביקורת',this)">ביקורת פנימית</button>
+  <button class="filter-btn" onclick="filterArticles('חוזים',this)">ניהול חוזים</button>
+  <button class="filter-btn" onclick="filterArticles('חשבות',this)">חשבות</button>
+  <button class="filter-btn" onclick="filterArticles('נתונים',this)">נתונים ואקסל</button>
+</div>
+
+<section class="articles-section">
+  <div class="articles-grid" id="articles-grid">
+
+    <a href="article-money-no-check.html" class="article-card featured" data-cats="רכש ביקורת">
+      <span class="article-card-cat">🔥 רכש ציבורי וביקורת פנימית</span>
+      <div class="article-card-title">הכסף שמשולם בלי בדיקה — ואיך עוצרים את זה</div>
+      <div class="article-card-desc">למה חשבונות ספקים מאושרים בלי בקרה אמיתית, איך זה נראה בדוחות ביקורת, ומה אפשר לשנות כבר בחשבון הבא.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 8 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-procurement-audit.html" class="article-card" data-cats="רכש ביקורת">
+      <span class="article-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <div class="article-card-title">5 בדיקות שחייבים לבצע לפני אישור חשבון קבלן</div>
+      <div class="article-card-desc">חפיפות שעות, חריגות תעריף, דיווחים בשבת וחג, התאמה לפירוט ומגמות חודשיות — צ׳קליסט מעשי לחשבות, רכש וביקורת.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-tender-controls.html" class="article-card" data-cats="רכש ביקורת חוזים">
+      <span class="article-card-cat">רכש ציבורי וביקורת פנימית</span>
+      <div class="article-card-title">בקרה על קבלנים מתחילה כבר במכרז</div>
+      <div class="article-card-desc">אילו סעיפים חייבים להופיע במכרז כדי לאפשר בקרה חודשית: פירוט אקסל, SLA מדיד, מסמכי גיבוי וזכות קיזוז.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-hours-overlap.html" class="article-card" data-cats="רכש ביקורת">
+      <span class="article-card-cat">ביקורת שכר ורכש ציבורי</span>
+      <div class="article-card-title">חפיפות שעות בדוחות נוכחות: איך מזהים ומה עושים</div>
+      <div class="article-card-desc">מהי חפיפת שעות, למה היא נוצרת, איך מזהים אותה אוטומטית ואיך נכון לטפל מול הספק לפני אישור החשבון.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 5 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-contract-checklist.html" class="article-card" data-cats="חוזים רכש">
+      <span class="article-card-cat">ניהול חוזים ורכש ציבורי</span>
+      <div class="article-card-title">7 שאלות לפני שחותמים על חוזה שירות</div>
+      <div class="article-card-desc">רוב בעיות הבקרה מתחילות כבר בניסוח החוזה. 7 שאלות שיעזרו למנוע מחלוקות, חריגות תשלום וממצאי ביקורת.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-sla-contract.html" class="article-card" data-cats="חוזים חשבות">
+      <span class="article-card-cat">ניהול חוזי שירות ובקרה</span>
+      <div class="article-card-title">SLA בחוזה שירות: איך בודקים ומקזזים נכון</div>
+      <div class="article-card-desc">איך להפוך סעיפי SLA ממילים בחוזה למדדים חודשיים: זמני טיפול, חריגות, פיצויים מוסכמים ודוח קיזוז.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-invoice-approval.html" class="article-card" data-cats="חשבות ביקורת">
+      <span class="article-card-cat">חשבות ובקרה פיננסית</span>
+      <div class="article-card-title">אישור מינהלי לחשבון קבלן לא מספיק</div>
+      <div class="article-card-desc">חתימה על חשבון היא לא רק פעולה טכנית. מה צריך לבדוק לפני אישור, מי חשוף, ואיך מתעדים בקרה אמיתית.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-roi-controls.html" class="article-card" data-cats="חשבות חוזים">
+      <span class="article-card-cat">ניהול חוזי שירות ובקרה</span>
+      <div class="article-card-title">כמה שווה לחשבות בקרה אוטומטית על קבלנים?</div>
+      <div class="article-card-desc">ניתוח עלות־תועלת פשוט: כמה עולה טעות שלא אותרה, כמה עולה בקרה חודשית, ומתי הבקרה מחזירה את עצמה.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-vendor-transparency.html" class="article-card" data-cats="חוזים ביקורת">
+      <span class="article-card-cat">ניהול ספקים ובקרה</span>
+      <div class="article-card-title">הספק יודע שמישהו בודק — וזה משנה הכול</div>
+      <div class="article-card-desc">בקרה חודשית יוצרת הרתעה. גם כשהיא לא מוצאת חריגה, עצם הידיעה שהחשבונות נבדקים משנה את התנהגות הספקים.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 5 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-audit-reality-gap.html" class="article-card" data-cats="ביקורת רכש">
+      <span class="article-card-cat">בקרה פנימית ורכש ציבורי</span>
+      <div class="article-card-title">הפער בין מה שאפשר לבדוק לבין מה שבודקים בפועל</div>
+      <div class="article-card-desc">כמעט בכל חוזה שירות יש עשרות נקודות בקרה. בפועל בודקים רק מעט. כך סוגרים את הפער בלי להעמיס על החשבות.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-auditor-visit.html" class="article-card" data-cats="ביקורת חשבות">
+      <span class="article-card-cat">ביקורת פנימית וניהול פיננסי</span>
+      <div class="article-card-title">מבקר הפנים הגיע — איפה תיעוד הבקרה?</div>
+      <div class="article-card-desc">מה מבקרים מחפשים בבדיקת חוזי שירות, אילו ממצאים חוזרים שוב ושוב, ולמה "בדקנו" לא מספיק בלי תיעוד.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 6 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-professional-unit-trust.html" class="article-card" data-cats="ביקורת חשבות">
+      <span class="article-card-cat">בקרה עצמאית וניהול ספקים</span>
+      <div class="article-card-title">האם אפשר לסמוך רק על אישור היחידה המקצועית?</div>
+      <div class="article-card-desc">היחידה המקצועית מאשרת שהעבודה בוצעה — אבל החשבות עדיין צריכה בקרה עצמאית על תשלום, SLA וחריגות.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 7 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+    <a href="article-excel-large-files.html" class="article-card" data-cats="נתונים">
+      <span class="article-card-cat">ניהול נתונים ואקסל</span>
+      <div class="article-card-title">קובץ אקסל כבד? 4 דרכים להחזיר אותו לעבודה</div>
+      <div class="article-card-desc">קובץ שנפתח לאט, נתקע או קורס? כך מקטינים, מפצלים ומנקים קבצים גדולים — כולל כלי חינמי בדפדפן.</div>
+      <div class="article-card-meta"><span>✍️ אור קנדל, רו"ח CISA</span><span>⏱️ 4 דקות</span></div>
+      <span class="article-card-read">קראו את המאמר ←</span>
+    </a>
+
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 קנדל BI — אור קנדל רו"ח · <a href="index.html">kandelbi.org</a> · <a href="terms.html">תנאי שימוש</a> · <a href="about.html">אודות</a> | כל הזכויות שמורות</p>
+</footer>
+
+<!-- WhatsApp Widget -->
+<div class="wa-widget" id="waWidget">
+  <div class="wa-panel" id="waPanel">
+    <div class="wa-panel-header">👋 שלום! במה נוכל לעזור?</div>
+    <a href="https://chat.whatsapp.com/CRa87SHUF0rDbfjsPDoAcQ" class="wa-option" target="_blank" rel="noopener">
+      <span class="wa-option-icon">👥</span>
+      <span>
+        <span class="wa-option-title">הצטרפו לקבוצת WhatsApp</span>
+        <span class="wa-option-sub">עדכונים על כלים חדשים, טיפים לבקרה וניהול חוזים</span>
+      </span>
+    </a>
+    <a href="https://wa.me/972506914898" class="wa-option" target="_blank" rel="noopener">
+      <span class="wa-option-icon">💬</span>
+      <span>
+        <span class="wa-option-title">הודעה אישית לאור קנדל</span>
+        <span class="wa-option-sub">שאלה, ייעוץ או הצעת שיתוף פעולה</span>
+      </span>
+    </a>
+  </div>
+  <button class="wa-toggle" id="waToggle" aria-label="פתח אפשרויות WhatsApp">
+    <svg id="waIconOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="#fff">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+    <svg id="waIconClose" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="display:none;">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+function filterArticles(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.article-card').forEach(card => {
+    if (cat === 'all' || (card.dataset.cats || '').includes(cat)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+(function(){
+  var toggle = document.getElementById('waToggle');
+  var panel  = document.getElementById('waPanel');
+  var iconOpen  = document.getElementById('waIconOpen');
+  var iconClose = document.getElementById('waIconClose');
+  toggle.addEventListener('click', function(){
+    var isOpen = panel.classList.toggle('open');
+    iconOpen.style.display  = isOpen ? 'none' : '';
+    iconClose.style.display = isOpen ? ''     : 'none';
+  });
+  document.addEventListener('click', function(e){
+    if (!document.getElementById('waWidget').contains(e.target)) {
+      panel.classList.remove('open');
+      iconOpen.style.display  = '';
+      iconClose.style.display = 'none';
+    }
+  });
+})();
+</script>
+</body>
+</html>
