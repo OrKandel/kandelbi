@@ -10,12 +10,12 @@
   gtag('config', 'G-FR9DZSW3M4');
 </script>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל | קנדל BI</title>
+<title>חפיפות שעות בדוחות נוכחות: איך מזהים ומה עושים | קנדל BI</title>
 <meta name="description" content="מה הן חפיפות שעות בדיווחי עובדים, למה הן מסוכנות, ואיך לזהות אותן אוטומטית. מדריך מלא לאנשי רכש וביקורת פנימית במגזר הציבורי."/>
 <meta name="keywords" content="חפיפות שעות, דיווחי נוכחות, ביקורת שעות עובדים, זיהוי חפיפות אוטומטי, ביקורת פנימית שכר, רכש ציבורי"/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="https://kandelbi.org/article-hours-overlap.html"/>
-<meta property="og:title" content="חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל"/>
+<meta property="og:title" content="חפיפות שעות בדוחות נוכחות: איך מזהים ומה עושים"/>
 <meta property="og:description" content="מדריך לזיהוי חפיפות שעות בדוחות נוכחות — מה זה, למה זה קורה, ואיך לאתר אוטומטית."/>
 <meta property="og:url" content="https://kandelbi.org/article-hours-overlap.html"/>
 <meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
@@ -55,7 +55,7 @@ footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px soli
 .related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
 </style>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Article","headline":"חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל","description":"מה הן חפיפות שעות בדיווחי עובדים, למה הן מסוכנות, ואיך לזהות אותן אוטומטית. מדריך מלא לאנשי רכש וביקורת פנימית במגזר הציבורי.","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA ובודק שכר מוסמך","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-hours-overlap.html","inLanguage":"he"}
+{"@context":"https://schema.org","@type":"Article","headline":"חפיפות שעות בדוחות נוכחות: איך מזהים ומה עושים","description":"מה הן חפיפות שעות בדיווחי עובדים, למה הן מסוכנות, ואיך לזהות אותן אוטומטית. מדריך מלא לאנשי רכש וביקורת פנימית במגזר הציבורי.","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA ובודק שכר מוסמך","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-hours-overlap.html","inLanguage":"he"}
 </script>
 </head>
 <body>
@@ -71,7 +71,7 @@ footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px soli
 <div style="height:64px"></div>
 <main>
 
-<h1>חפיפות שעות בדיווחי נוכחות — כיצד לזהות ולטפל</h1>
+<h1>חפיפות שעות בדוחות נוכחות: איך מזהים ומה עושים</h1>
 <div class="article-meta">
   <span>✍️ אור קנדל, רו"ח CISA</span>
   <span>📂 ביקורת שכר ורכש ציבורי</span>
@@ -84,7 +84,7 @@ footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px soli
 
 <h2>מהי חפיפת שעות?</h2>
 <p>
-חפיפת שעות מתרחשת כשעובד מדווח על שתי "רצועות זמן" ביום נתון שחופפות זו לזו, באופן חלקי או מלא.
+חפיפת שעות מתרחשת כשעובד מדווח על שתי רצועות זמן ביום נתון שחופפות זו לזו, באופן חלקי או מלא.
 </p>
 
 <div class="highlight-box">
@@ -123,8 +123,8 @@ footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px soli
 </p>
 <ol>
   <li>קבצו את כל השורות לפי שם עובד ותאריך</li>
-  <li>לכל קבוצה — מיין לפי שעת כניסה</li>
-  <li>בדוק כל זוג שורות עוקבות: אם שעת הכניסה של שורה j קטנה משעת היציאה של שורה i — יש חפיפה</li>
+  <li>לכל קבוצה — מיינו לפי שעת כניסה</li>
+  <li>בדקו כל זוג שורות עוקבות: אם שעת הכניסה של שורה j קטנה משעת היציאה של שורה i — יש חפיפה</li>
   <li>חשב את גודל החפיפה: <code>min(יציאה_i, יציאה_j) − כניסה_j</code></li>
 </ol>
 
@@ -154,8 +154,8 @@ footer-note{display:block;margin-top:3rem;padding-top:1.5rem;border-top:1px soli
 <div class="cta-box">
   <h3>רוצה לבדוק דוח נוכחות עכשיו?</h3>
   <p>הכלי של קנדל BI מאתר חפיפות ועוד 9 בדיקות אוטומטית — העלו קובץ ותקבלו תוצאות בשניות. חינמי, עובד בדפדפן, הנתונים לא עוזבים את המחשב שלכם.</p>
-  <a href="tool-hours-overlap.html" class="cta-btn">🔍 פתח את כלי בדיקת השעות</a>
-  <p style="margin-top:1rem;font-size:0.85rem;color:rgba(255,255,255,0.7);">רוצה בקרה מותאמת לחוזה הספציפי שלך? <a href="index.html#cta" style="color:var(--accent);font-weight:700;">רוצה כלי מותאם להתקשרות שלך? נשמח לסייע ←</a></p>
+  <a href="tool-hours-overlap.html" class="cta-btn">🔍 פתחו את כלי בדיקת השעות</a>
+  <p style="margin-top:1rem;font-size:0.85rem;color:rgba(255,255,255,0.7);">רוצים בקרה מותאמת לחוזה הספציפי שלכם? <a href="index.html#cta" style="color:var(--accent);font-weight:700;">רוצה כלי מותאם להתקשרות שלך? נשמח לסייע ←</a> &nbsp;·&nbsp; <a href="https://chat.whatsapp.com/CRa87SHUF0rDbfjsPDoAcQ" target="_blank" rel="noopener" style="color:#25d366;font-weight:700;">💬 קבוצת WhatsApp</a></p>
 </div>
 
 <div class="related-section">
