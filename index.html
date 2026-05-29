@@ -670,6 +670,56 @@
 </section>
 
 
+<!-- ═══ 3-STEP METHOD ═══ -->
+<section style="background:#fff;padding:3.5rem 5vw 3rem;border-bottom:1px solid #dce3ef">
+  <div style="max-width:1100px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:0.5rem">
+      <span class="section-tag">איך זה עובד?</span>
+      <h2 style="font-family:'Heebo',sans-serif;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:900;color:var(--navy);margin-top:0.4rem;margin-bottom:0.3rem">בדיקת חשבון ספק — <em style="color:var(--blue);font-style:normal">3 שלבים, דוח מוכן</em></h2>
+      <p style="color:var(--text-muted);font-size:0.95rem;max-width:540px;margin:0 auto">ללא התקנה, ללא שליחת קבצים לשרת — הכל רץ בדפדפן שלכם</p>
+    </div>
+    <div id="method-grid" style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:center;margin-top:2.8rem">
+      <!-- Step 1 -->
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:1.8rem 1.5rem;text-align:center;position:relative">
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--navy));display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem">📂</div>
+        <div style="font-size:0.7rem;font-weight:800;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:0.4rem">שלב 1</div>
+        <div style="font-weight:800;color:var(--navy);font-size:1rem;margin-bottom:0.5rem">מעלים קבצים</div>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6">חשבון הספק + דוח שעות/ביצוע + רשימת עובדים/שירותים מאושרים</p>
+      </div>
+      <!-- Arrow -->
+      <div style="text-align:center;padding:0 0.8rem;color:var(--border);font-size:2rem;font-family:sans-serif">→</div>
+      <!-- Step 2 -->
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:1.8rem 1.5rem;text-align:center">
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#e67e22);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem">🔍</div>
+        <div style="font-size:0.7rem;font-weight:800;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:0.4rem">שלב 2</div>
+        <div style="font-weight:800;color:var(--navy);font-size:1rem;margin-bottom:0.5rem">הכלי מזהה חריגות</div>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6">חפיפות שעות · תעריפים חריגים · SLA · עובדים לא מאושרים · כפילויות</p>
+      </div>
+      <!-- Arrow -->
+      <div style="text-align:center;padding:0 0.8rem;color:var(--border);font-size:2rem;font-family:sans-serif">→</div>
+      <!-- Step 3 -->
+      <div style="background:linear-gradient(135deg,var(--navy),var(--navy-mid));border:1.5px solid var(--accent);border-radius:16px;padding:1.8rem 1.5rem;text-align:center">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(240,165,0,0.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem">📊</div>
+        <div style="font-size:0.7rem;font-weight:800;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:0.4rem">שלב 3</div>
+        <div style="font-weight:800;color:#fff;font-size:1rem;margin-bottom:0.5rem">מקבלים דוח Excel</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.7);line-height:1.6">כל שורה מסומנת לפי ממצא — מוכן לאישור, בירור או קיזוז מהחשבון</p>
+        <a href="sample-report.xlsx" download style="display:inline-block;margin-top:1rem;background:var(--accent);color:var(--navy);font-weight:800;font-size:0.78rem;padding:6px 16px;border-radius:20px;text-decoration:none;">⬇ דוגמת דוח</a>
+      </div>
+    </div>
+    <!-- Mobile: hide arrows, stack vertically -->
+    <style>
+      @media(max-width:720px){
+        #method-grid{grid-template-columns:1fr !important}
+        .method-arrow{display:none !important}
+      }
+    </style>
+    <div style="text-align:center;margin-top:2rem">
+      <a href="tools.html" class="btn-primary" style="font-size:0.92rem;padding:0.75rem 1.8rem;">נסו כלי בדיקה חינמי ←</a>
+    </div>
+  </div>
+</section>
+
+
 <!-- ═══ FOR WHOM ═══ -->
 <section id="for-whom" style="background:#fff;padding:3rem 5vw 2.5rem;border-bottom:1px solid #dce3ef">
   <div style="max-width:1200px;margin:0 auto">
@@ -884,6 +934,66 @@
 </section>
 
 
+<!-- ═══ PACKAGES ═══ -->
+<section style="background:#fff;padding:4rem 5vw 3.5rem;border-top:1px solid var(--border)">
+  <div style="max-width:1100px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:2.8rem">
+      <span class="section-tag">חבילות שירות</span>
+      <h2 style="font-family:'Heebo',sans-serif;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:900;color:var(--navy);margin-top:0.4rem">בחרו את הפתרון <em style="color:var(--blue);font-style:normal">המתאים לכם</em></h2>
+    </div>
+    <div id="pkg-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem">
+
+      <!-- Package 1 -->
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:2rem 1.6rem;display:flex;flex-direction:column">
+        <div style="font-size:2rem;margin-bottom:0.8rem">🔎</div>
+        <div style="font-weight:900;color:var(--navy);font-size:1.05rem;margin-bottom:0.4rem">בדיקה חד-פעמית</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5">בדיקת חשבון ספק בודד — מתאים לחשבון שמחשיד, או לבדיקת מדגם לפני אישור</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px;flex:1;margin-bottom:1.4rem">
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> בדיקת חשבון ספק אחד</li>
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> דוח חריגות מפורט</li>
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> ממצאים ממוספרים לפעולה</li>
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> מסירה תוך 48 שעות</li>
+        </ul>
+        <a href="contact.html" style="display:block;text-align:center;background:var(--navy);color:#fff;padding:10px 18px;border-radius:9px;font-weight:700;font-size:0.88rem;text-decoration:none;transition:opacity 0.2s" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">לפרטים ←</a>
+      </div>
+
+      <!-- Package 2 — Highlighted -->
+      <div style="background:linear-gradient(160deg,var(--navy) 0%,var(--navy-mid) 100%);border:2px solid var(--accent);border-radius:16px;padding:2rem 1.6rem;display:flex;flex-direction:column;position:relative">
+        <div style="position:absolute;top:-14px;right:50%;transform:translateX(50%);background:var(--accent);color:var(--navy);font-size:0.72rem;font-weight:900;padding:4px 16px;border-radius:20px;white-space:nowrap">⭐ הכי פופולרי</div>
+        <div style="font-size:2rem;margin-bottom:0.8rem">📋</div>
+        <div style="font-weight:900;color:var(--accent);font-size:1.05rem;margin-bottom:0.4rem">בקרה חודשית מנוהלת</div>
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.65);margin-bottom:1.2rem;line-height:1.5">בדיקה קבועה כל חודש — אתם מקבלים דוח מוכן לפעולה, בלי לגייס מומחה פנימי</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px;flex:1;margin-bottom:1.4rem">
+          <li style="font-size:0.85rem;color:rgba(255,255,255,0.82);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--accent);font-weight:700">✓</span> בדיקה חודשית קבועה</li>
+          <li style="font-size:0.85rem;color:rgba(255,255,255,0.82);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--accent);font-weight:700">✓</span> דוח חריגות + חישוב SLA</li>
+          <li style="font-size:0.85rem;color:rgba(255,255,255,0.82);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--accent);font-weight:700">✓</span> דגימת אסמכתאות מבוססת סיכון</li>
+          <li style="font-size:0.85rem;color:rgba(255,255,255,0.82);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--accent);font-weight:700">✓</span> מייל הערות לספק</li>
+          <li style="font-size:0.85rem;color:rgba(255,255,255,0.82);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--accent);font-weight:700">✓</span> מחיר קבוע ומוזל — בזכות האוטומציה</li>
+        </ul>
+        <a href="contact.html" style="display:block;text-align:center;background:var(--accent);color:var(--navy);padding:10px 18px;border-radius:9px;font-weight:900;font-size:0.88rem;text-decoration:none;transition:opacity 0.2s" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">קבלו הצעת מחיר ←</a>
+      </div>
+
+      <!-- Package 3 -->
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:2rem 1.6rem;display:flex;flex-direction:column">
+        <div style="font-size:2rem;margin-bottom:0.8rem">⚙️</div>
+        <div style="font-weight:900;color:var(--navy);font-size:1.05rem;margin-bottom:0.4rem">כלי מותאם אישית</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.5">כלי בקרה הבנוי סביב המכרז/חוזה הספציפי שלכם — תעריפים, SLA ותנאים מדויקים</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px;flex:1;margin-bottom:1.4rem">
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> ניתוח מסמכי המכרז/חוזה</li>
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> בנייה מותאמת — תעריפים ו-SLA</li>
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> הדרכת הצוות + תיעוד</li>
+          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> עדכונים לפי שינויי חוזה</li>
+        </ul>
+        <a href="contact.html" style="display:block;text-align:center;background:var(--navy);color:#fff;padding:10px 18px;border-radius:9px;font-weight:700;font-size:0.88rem;text-decoration:none;transition:opacity 0.2s" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">לפרטים ←</a>
+      </div>
+
+    </div>
+    <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:1.4rem">כל המחירים לפי צרכי הגוף — <a href="contact.html" style="color:var(--blue)">צרו קשר לייעוץ ראשוני ללא עלות</a></p>
+  </div>
+</section>
+<style>@media(max-width:720px){#pkg-grid{grid-template-columns:1fr !important}}</style>
+
+
 <!-- ═══ WHY ═══ -->
 <section id="why" aria-labelledby="why-title">
   <div class="section-inner">
@@ -951,6 +1061,60 @@
     </div>
   </div>
 </section>
+
+
+<!-- ═══ ROI CALCULATOR ═══ -->
+<section style="background:var(--bg);padding:3.5rem 5vw">
+  <div style="max-width:820px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:2rem">
+      <span class="section-tag">כמה שווה הבקרה?</span>
+      <h2 style="font-family:'Heebo',sans-serif;font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:900;color:var(--navy);margin-top:0.4rem">מחשבון <em style="color:var(--blue);font-style:normal">חיסכון משוער</em></h2>
+      <p style="color:var(--text-muted);font-size:0.92rem;margin-top:0.4rem">הזינו נתוני חוזה וראו כמה בקרה אוטומטית יכולה לחסוך</p>
+    </div>
+    <div style="background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:2rem 2.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+        <div>
+          <label style="display:block;font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:6px">היקף חוזה שנתי (₪)</label>
+          <input id="roi-contract" type="number" min="0" placeholder="לדוגמה: 2,000,000" oninput="calcROI()"
+            style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:0.95rem;outline:none;transition:border-color 0.2s"
+            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:6px">שיעור חריגה משוערת (%)</label>
+          <input id="roi-rate" type="number" min="0" max="100" placeholder="לדוגמה: 5" oninput="calcROI()" value="5"
+            style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:0.95rem;outline:none;transition:border-color 0.2s"
+            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"/>
+        </div>
+      </div>
+      <div id="roi-result" style="display:none;background:linear-gradient(135deg,var(--navy),var(--navy-mid));border-radius:14px;padding:1.5rem 2rem;color:#fff;text-align:center;margin-bottom:1.2rem">
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.65);margin-bottom:0.4rem">חיסכון שנתי משוער מבקרה אוטומטית</div>
+        <div id="roi-saving" style="font-family:'Heebo';font-weight:900;font-size:2.4rem;color:var(--accent);line-height:1.1;margin-bottom:0.4rem">—</div>
+        <div style="font-size:0.78rem;color:rgba(255,255,255,0.5)">* הערכה בהתבסס על שיעור החריגה שהזנתם. הסכום בפועל תלוי בחוזה הספציפי.</div>
+      </div>
+      <div id="roi-empty" style="text-align:center;color:var(--text-muted);font-size:0.88rem;padding:0.5rem">← הזינו היקף חוזה לחישוב</div>
+      <div style="text-align:center">
+        <a href="contact.html" class="btn-primary" style="font-size:0.9rem;padding:0.75rem 1.8rem;margin-top:0.5rem">רוצים לדעת יותר? נדבר ←</a>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+function calcROI(){
+  const contract = parseFloat(document.getElementById('roi-contract').value)||0;
+  const rate = parseFloat(document.getElementById('roi-rate').value)||0;
+  const res = document.getElementById('roi-result');
+  const emp = document.getElementById('roi-empty');
+  if(contract > 0){
+    const saving = Math.round(contract * rate / 100);
+    document.getElementById('roi-saving').textContent = '₪ ' + saving.toLocaleString('he-IL');
+    res.style.display = 'block';
+    emp.style.display = 'none';
+  } else {
+    res.style.display = 'none';
+    emp.style.display = 'block';
+  }
+}
+</script>
 
 
 <!-- ═══ CTA ═══ -->

@@ -871,9 +871,18 @@ function sheetSelectorHtml(wb,selId,onchangeFn){
   opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
   return`<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem;font-size:0.82rem"><div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div><select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select></div>`;
 }
+function _fmtCell(v){
+  // Convert Excel time-fraction (0<n<1) stored without format to HH:MM string
+  if(typeof v==='number'&&v>0&&v<1){const m=Math.round(v*1440);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+  // Convert Date objects that are time-only (epoch date = Excel serial 0 = Dec 30 1899)
+  if(v instanceof Date&&!isNaN(v)){const y=v.getFullYear();if(y<=1900)return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');}
+  return v;
+}
+function _fmtRow(row){return row.map(_fmtCell);}
+
 function getRowsFromWbOut(wb,sheetName){
-  if(sheetName==='__ALL__'){let all=[];wb.SheetNames.forEach((n,i)=>{const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));if(i===0)all.push(...r);else all.push(...r.slice(1));});return all;}
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+  if(sheetName==='__ALL__'){let all=[];wb.SheetNames.forEach((n,i)=>{const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!=='')).map(_fmtRow);if(i===0)all.push(...r);else all.push(...r.slice(1));});return all;}
+  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!=='')).map(_fmtRow);
 }
 
 function changeSvcSheet(sheetName){if(!svcFileData.wb)return;const allRows=getRowsFromWbOut(svcFileData.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();svcFileData.allRows=allRows;svcFileData.selectedSheet=sheetName;applyHeaderRow(svcFileData,0);const wrap=document.getElementById('svc-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet');buildSvcColMap();}

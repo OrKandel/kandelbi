@@ -1921,17 +1921,25 @@ function sheetSelectorHtml(wb, selId, onchangeFn){
     <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
   </div>`;
 }
+function _fmtCellAudit(v){
+  // Convert Excel time-fraction (0<n<1) stored without format to HH:MM string
+  if(typeof v==='number'&&v>0&&v<1){const m=Math.round(v*1440);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+  // Convert Date objects that are time-only (epoch date = Excel serial 0 = Dec 30 1899)
+  if(v instanceof Date&&!isNaN(v)){const y=v.getFullYear();if(y<=1900)return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');}
+  return v;
+}
+
 function getRowsFromWbAudit(wb, sheetName){
   if(sheetName==='__ALL__'){
     let all=[];
     wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!=='')).map(row=>row.map(_fmtCellAudit));
       if(i===0) all.push(...r);
       else all.push(...r.slice(1));
     });
     return all;
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!=='')).map(row=>row.map(_fmtCellAudit));
 }
 
 function changeEmpSheet(sheetName){
