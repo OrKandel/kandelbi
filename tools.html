@@ -173,8 +173,7 @@
 </div>
 
 <div class="tier-legend">
-  <span class="tier-badge tier-member">👤 כלים כלליים · הרשמה חינמית</span>
-  <span class="tier-badge tier-procurement">⚖️ בקרות מכרזים, התקשרויות ותשלומים</span>
+  <span class="tier-badge tier-member">👤 כלים כלליים · בקרות מכרזים, התקשרויות ותשלומים</span>
 </div>
 
 <div class="filters-bar">
@@ -183,7 +182,7 @@
     <button class="filter-tab" onclick="filterCards('member',this)">מנוי חינמי</button>
     <button class="filter-tab" onclick="filterCards('excel',this)">Excel / כלי</button>
     <button class="filter-tab" onclick="filterCards('bot',this)">צ'אטבוט</button>
-    <button class="filter-tab" onclick="filterCards('procurement',this)">⚖️ מכרזים והתקשרויות</button>
+    <button class="filter-tab" onclick="filterCards('procurement',this)">מכרזים והתקשרויות</button>
   </div>
   <div class="search-box">
     <span>🔍</span>
@@ -201,7 +200,7 @@
       <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תשומות</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">מעלים: חשבון ספק + רשימת עובדים מאושרים + תעריפים. הכלי מזהה עובדים לא מאושרים, חריגות תעריף, אי-התאמות שעות וכפילויות — ומחזיר קובץ Excel מסומן לכל שורה.</p>
+      <p class="card-desc">העלו חשבון ספק, רשימת עובדים מאושרים ותעריפים — הכלי מזהה עובדים לא מאושרים, חריגות תעריף, אי-התאמות שעות וכפילויות, ומחזיר קובץ Excel מסומן לכל שורה.</p>
       <div class="card-tags"><span class="tag">בקרה</span><span class="tag">חשבון קבלן</span><span class="tag">שעות</span><span class="tag">תעריפים</span><span class="tag">ביקורת</span></div>
       <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel עם סימון חריגות לכל עובד ולכל שורה</div>
     </div>
@@ -296,6 +295,23 @@
   </div>
 
 
+  <!-- ═══ כלי: חילוץ נתוני מכרז ═══ -->
+  <div class="tool-card" data-tier="member" data-type="audit" data-title="חילוץ נתוני מכרז — מחצית אוטומטי">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">⚖️</div>
+      <div class="card-meta"><div class="card-title">חילוץ נתוני מכרז</div><div class="card-sub">כלי בדפדפן · מחצית אוטומטי</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מעלים פדף של מכרז פומבי — הכלי מחלץ אוטומטית תנאי סף, מועדים, שירותים ותעריפים, מסמכים נדרשים ומדדי שירות. סוקרים, עורכים ומייצאים לאקסל מסודר.</p>
+      <div class="card-tags"><span class="tag">מכרז</span><span class="tag">תנאי סף</span><span class="tag">מועדים</span><span class="tag">חילוץ נתונים</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ אקסל עם פרטי המכרז מאורגנים בגיליונות</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="handleDL('member','חילוץ נתוני מכרז','tool-tender-chat.html')">⚖️ חלצו נתוני מכרז</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══ ARTICLES LINK ══ -->
@@ -314,7 +330,7 @@
   <div style="background:linear-gradient(135deg,#0d1f3c 0%,#1a3561 100%);border-radius:18px;padding:2.2rem 2.5rem;display:flex;gap:2rem;align-items:center;flex-wrap:wrap;border:2px solid #f0a500;">
     <div style="flex:1;min-width:260px;">
       <span style="display:inline-block;background:#f0a500;color:#0d1f3c;font-size:0.72rem;font-weight:900;padding:3px 12px;border-radius:20px;margin-bottom:0.9rem;">✨ שירות מנוהל — חדש</span>
-      <h2 style="font-family:'Heebo';font-size:1.25rem;font-weight:900;color:#f0a500;margin-bottom:0.6rem;">🎯 הצוות עובד, אתם מקבלים דוח</h2>
+      <h2 style="font-family:'Heebo';font-size:1.25rem;font-weight:900;color:#f0a500;margin-bottom:0.6rem;">🎯 אנחנו בודקים, אתם מקבלים דוח</h2>
       <p style="color:rgba(255,255,255,0.85);font-size:0.93rem;line-height:1.7;margin-bottom:1rem;">
         אנחנו מפעילים את הבקרות במקומכם — דגימת מסמכים לאימות נתוני הספק, הרצת הבקרות האוטומטיות וניתוח הממצאים.<br/>
         <strong style="color:#fff;">אתם מקבלים כל חודש: דוח חריגות מוכן לפעולה + חישוב SLA.</strong>

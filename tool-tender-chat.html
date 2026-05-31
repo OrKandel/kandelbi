@@ -1,580 +1,734 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
+  window.dataLayer=window.dataLayer||[];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-FR9DZSW3M4');
+  gtag('js',new Date());gtag('config','G-FR9DZSW3M4');
 </script>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>ניתוח מכרז ציבורי באמצעות AI — קנדל BI</title>
-<meta name="description" content="העלה PDF של מכרז ציבורי וקבל צ'קליסט לבדיקת זכייה והתקשרות שוטפת. מזהה אוטומטית תנאי סף, מועדים ודרישות. מותאם למכרזי ממשלה ורכש ציבורי."/>
-<meta name="keywords" content="ניתוח מכרז, מכרז ציבורי AI, צ'קליסט מכרז, בדיקת תנאי סף, רכש ציבורי ממשלה"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>חילוץ נתוני מכרז — קנדל BI</title>
+<meta name="description" content="מעלים PDF של מכרז פומבי, הכלי מחלץ אוטומטית תנאי סף, מועדים, שירותים ותעריפים — סוקרים, עורכים ומייצאים לאקסל."/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="https://kandelbi.org/tool-tender-chat.html"/>
-<meta property="og:title" content="ניתוח מכרז ציבורי ב-AI — קנדל BI"/>
-<meta property="og:description" content="העלה PDF של מכרז ממשלתי וקבל צ'קליסט אוטומטי לבדיקת זכייה. מזהה תנאי סף ומועדים."/>
+<meta property="og:title" content="חילוץ נתוני מכרז — קנדל BI"/>
 <meta property="og:url" content="https://kandelbi.org/tool-tender-chat.html"/>
-<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<meta property="og:locale" content="he_IL"/>
+<meta property="og:site_name" content="קנדל BI"/>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
   --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
   --green:#0a7c5e;--red:#d93025;--orange:#e67e22;
+  --gbg:#edf7f3;--rbg:#fef2f2;--obg:#fff8ed;
 }
-html,body{height:100%;overflow:hidden}
-body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;display:flex;flex-direction:column}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
 
-header{background:var(--navy);padding:12px 4vw;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.logo{font-weight:900;font-size:1.15rem;color:#fff;text-decoration:none}.logo span{color:var(--accent)}
-.back-link{color:rgba(255,255,255,0.6);font-size:0.82rem;text-decoration:none}.back-link:hover{color:#fff}
-.hbadge{background:rgba(240,165,0,0.2);border:1px solid rgba(240,165,0,0.35);color:var(--accent);font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px}
+/* ── NAV ── */
+nav{position:fixed;top:0;right:0;left:0;z-index:100;background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25)}
+.logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+nav ul{list-style:none;display:flex;gap:0.1rem;margin:0;padding:0}
+nav a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav a.cta{background:var(--accent);color:var(--navy);font-weight:800;padding:0.45rem 1rem}
+nav a:hover:not(.cta){background:rgba(255,255,255,0.1);color:#fff}
 
-.app{display:flex;flex:1;overflow:hidden}
-.sidebar{width:300px;background:var(--white);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:3rem 5vw 2rem;text-align:center;margin-top:64px}
+.hero-badge{display:inline-block;background:rgba(240,165,0,0.2);border:1px solid rgba(240,165,0,0.4);color:var(--accent);font-size:0.75rem;font-weight:800;padding:4px 14px;border-radius:20px;margin-bottom:0.8rem}
+.hero h1{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:#fff;margin-bottom:0.4rem}
+.hero p{font-size:0.93rem;color:rgba(255,255,255,0.72);max-width:540px;margin:0 auto}
 
-.ssec{padding:1rem;border-bottom:1px solid var(--border)}
-.stitle{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.6rem}
+/* ── STEPS BAR ── */
+.steps-bar{background:var(--white);border-bottom:2px solid var(--border);padding:0.9rem 5vw;display:flex;align-items:center;justify-content:center;gap:4px;position:sticky;top:64px;z-index:50}
+.step{display:flex;align-items:center;gap:7px;font-size:0.83rem;font-weight:600;color:var(--muted);padding:5px 14px;border-radius:8px;transition:all 0.3s}
+.step.active{color:var(--navy);background:rgba(13,31,60,0.07)}
+.step.done{color:var(--green)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:900;flex-shrink:0;transition:all 0.3s}
+.step.active .step-num{background:var(--navy);color:#fff}
+.step.done .step-num{background:var(--green);color:#fff}
+.step-sep{color:var(--border);font-size:0.9rem;padding:0 2px}
 
-/* API */
-.api-row{display:flex;gap:5px}
-.api-inp{flex:1;padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:0.8rem;font-family:inherit;outline:none;direction:ltr}
-.api-inp:focus{border-color:var(--blue)}.api-inp.ok{border-color:var(--green);background:#edf7f3}
-.btn-save{padding:7px 10px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit}
+/* ── MAIN ── */
+.main{max-width:860px;margin:0 auto;padding:2rem 5vw 5rem}
 
-/* UPLOAD */
-.upbox{border:2px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
-.upbox:hover{border-color:var(--blue);background:#eef3fb}
-.upbox.loaded{border-color:var(--green);background:#edf7f3}
-.upbox.error{border-color:var(--red);background:#fef2f2}
-.upbox.checking{border-color:var(--orange);background:#fff8ed;cursor:wait}
-.ubi{font-size:1.4rem;margin-bottom:3px}.ubt{font-size:0.8rem;font-weight:700}.ubs{font-size:0.7rem;color:var(--muted);margin-top:2px}
+/* ── UPLOAD ── */
+.upload-zone{background:var(--white);border-radius:16px;border:2.5px dashed var(--border);padding:2.8rem 2rem;text-align:center;cursor:pointer;transition:all 0.25s;margin-bottom:1.5rem}
+.upload-zone:hover{border-color:var(--blue);background:#eef3fb}
+.upload-zone.drag{border-color:var(--blue);background:#e8f0fb;transform:scale(1.01)}
+.upload-zone.processing{border-style:solid;border-color:var(--accent);background:var(--obg);cursor:wait}
+.upload-zone.loaded{border-style:solid;border-color:var(--green);background:var(--gbg)}
+.upload-zone.errored{border-style:solid;border-color:var(--red);background:var(--rbg)}
+.up-icon{font-size:2.8rem;margin-bottom:0.6rem}
+.up-title{font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:0.3rem}
+.up-sub{font-size:0.83rem;color:var(--muted)}
+.up-retry{display:inline-block;margin-top:0.6rem;font-size:0.8rem;color:var(--blue);font-weight:700;cursor:pointer;text-decoration:underline}
 
-/* TYPE TABS */
-.ttabs{display:flex;gap:5px}
-.ttab{flex:1;padding:7px;border:1.5px solid var(--border);border-radius:7px;background:var(--bg);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:center}
-.ttab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+/* SPINNER */
+.spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(240,165,0,0.3);border-top-color:var(--accent);border-radius:50%;animation:rot 0.8s linear infinite;vertical-align:middle;margin-left:5px}
+@keyframes rot{to{transform:rotate(360deg)}}
 
-/* QUICK */
-.qbtn{width:100%;text-align:right;padding:7px 10px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.78rem;cursor:pointer;transition:all 0.2s;margin-bottom:5px;color:var(--text);display:flex;align-items:center;gap:7px}
-.qbtn:hover{border-color:var(--blue);background:#eef3fb;color:var(--blue)}
-.qbtn:disabled{opacity:0.4;cursor:not-allowed}
+/* ── SECTION CARDS ── */
+.sec{background:var(--white);border-radius:14px;border:1px solid var(--border);margin-bottom:1rem;overflow:hidden;box-shadow:0 2px 10px rgba(13,31,60,0.05)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1.2rem;background:var(--navy);cursor:pointer;user-select:none;-webkit-user-select:none}
+.sec-left{display:flex;align-items:center;gap:9px}
+.sec-ico{font-size:1rem}
+.sec-title{font-size:0.92rem;font-weight:800;color:#fff}
+.sec-badge{font-size:0.68rem;color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.12);padding:2px 8px;border-radius:10px}
+.sec-toggle{color:rgba(255,255,255,0.5);font-size:0.78rem;transition:transform 0.2s}
+.sec-body{padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:0.75rem}
+.sec-body.collapsed{display:none}
 
-/* CHAT */
-.status-bar{padding:5px 1.2rem;background:var(--bg);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.sdot.ready{background:var(--green)}.sdot.busy{background:var(--accent);animation:pulse 1s infinite}.sdot.error{background:var(--red)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+/* ── FIELDS ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem}
+.fgrid.cols3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg.full{grid-column:1/-1}
+.flabel{font-size:0.72rem;font-weight:700;color:var(--muted);letter-spacing:0.3px;text-transform:uppercase}
+.finp{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.87rem;font-family:'Heebo',sans-serif;color:var(--text);background:var(--bg);direction:rtl;outline:none;transition:border-color 0.2s;width:100%}
+.finp:focus{border-color:var(--blue);background:#fff}
+.finp.edited{border-color:var(--accent);background:#fffbf0}
+textarea.finp{resize:vertical;min-height:72px;line-height:1.55}
+select.finp{cursor:pointer}
 
-.msgs{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:0.9rem;background:#f8fafc}
-.msg{max-width:88%;display:flex;flex-direction:column;gap:3px;animation:fadeUp 0.25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{align-self:flex-start}
-.msg.bot{align-self:flex-end}
-.bubble{padding:10px 14px;border-radius:14px;font-size:0.87rem;line-height:1.7}
-.msg.user .bubble{background:var(--navy);color:#fff;border-bottom-right-radius:3px}
-.msg.bot .bubble{background:var(--white);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px;box-shadow:0 2px 12px rgba(13,31,60,0.07)}
-.msg.bot.warn .bubble{background:#fff8ed;border-color:#f5d48a}
-.msg.bot.err .bubble{background:#fef2f2;border-color:#fca5a5}
-.mtime{font-size:0.67rem;color:var(--muted);padding:0 3px}
+/* ── DYNAMIC ROWS ── */
+.dlist{display:flex;flex-direction:column;gap:5px}
+.drow{display:flex;align-items:center;gap:5px;background:var(--bg);border-radius:8px;padding:5px 7px;border:1.5px solid transparent;transition:border-color 0.2s}
+.drow:hover{border-color:var(--border)}
+.drow .finp{background:#fff}
+.drow .finp.w80{width:80px;flex:none}
+.drow .finp.w90{width:90px;flex:none}
+.drow .finp.w110{width:110px;flex:none}
+.drow .finp.w130{width:130px;flex:none}
+.btn-rm{background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.9rem;padding:3px 6px;border-radius:5px;transition:all 0.2s;flex-shrink:0;line-height:1}
+.btn-rm:hover{color:var(--red);background:var(--rbg)}
+.btn-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px 12px;background:none;border:1.5px dashed var(--border);border-radius:8px;color:var(--muted);font-family:'Heebo',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:2px}
+.btn-add:hover{border-color:var(--blue);color:var(--blue);background:#eef3fb}
 
-/* Markdown */
-.bubble h2{font-size:0.95rem;font-weight:800;color:var(--navy);margin:0.7rem 0 0.3rem;border-bottom:2px solid var(--accent);padding-bottom:3px}
-.bubble h3{font-size:0.88rem;font-weight:700;color:var(--navy2);margin:0.5rem 0 0.2rem}
-.bubble ul,.bubble ol{padding-right:1.1rem;margin:0.3rem 0}
-.bubble li{margin-bottom:3px;font-size:0.85rem}
-.bubble li::marker{color:var(--accent);font-weight:700}
-.bubble strong{color:var(--navy)}
-.bubble hr{border:none;border-top:1px solid var(--border);margin:0.6rem 0}
-.bubble .tag{display:inline-block;background:var(--navy);color:#fff;font-size:0.68rem;font-weight:700;padding:1px 7px;border-radius:8px;margin-bottom:5px}
-.bubble .warn-tag{background:#fff3e0;color:var(--orange);border:1px solid #f5d48a;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:5px}
+/* col headers for tables */
+.col-heads{display:grid;gap:5px;padding:2px 7px 0;font-size:0.7rem;font-weight:700;color:var(--muted)}
 
-/* Typing */
-.typing{display:flex;align-items:center;gap:5px;padding:9px 13px;background:var(--white);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:3px;width:fit-content;align-self:flex-end}
-.tdot{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:typing 1.2s infinite}
-.tdot:nth-child(2){animation-delay:0.2s}.tdot:nth-child(3){animation-delay:0.4s}
-@keyframes typing{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+/* ── EXPORT BAR ── */
+.export-bar{position:sticky;bottom:0;background:var(--white);border-top:2px solid var(--border);padding:0.9rem 5vw;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(13,31,60,0.1);display:none}
+.ebar-info{font-size:0.83rem;color:var(--muted);line-height:1.5}
+.ebar-info strong{color:var(--navy);display:block;font-size:0.9rem}
+.btn-export{display:flex;align-items:center;gap:7px;padding:11px 26px;background:var(--accent);color:var(--navy);border:none;border-radius:10px;font-family:'Heebo',sans-serif;font-size:0.95rem;font-weight:900;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.btn-export:hover{background:#ffc940;transform:translateY(-1px)}
+.btn-reanalyze{padding:9px 18px;background:none;border:2px solid var(--border);border-radius:9px;font-family:'Heebo',sans-serif;font-size:0.82rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.2s}
+.btn-reanalyze:hover{border-color:var(--navy);color:var(--navy)}
 
-/* Welcome */
-.welcome{text-align:center;padding:2.5rem 1.5rem;color:var(--muted)}
-.welcome-icon{font-size:2.5rem;margin-bottom:0.6rem}
-.welcome h2{font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:0.4rem}
-.welcome p{font-size:0.83rem;line-height:1.7}
-.welcome-steps{text-align:right;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-top:1rem;display:flex;flex-direction:column;gap:7px}
-.wstep{display:flex;align-items:center;gap:8px;font-size:0.82rem}
-.wnum{background:var(--navy);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:900;flex-shrink:0}
-
-/* Input */
-.input-area{padding:0.8rem 1.2rem;background:var(--white);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
-.inp-ta{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:0.88rem;outline:none;resize:none;min-height:40px;max-height:100px;direction:rtl;line-height:1.5;transition:border-color 0.2s}
-.inp-ta:focus{border-color:var(--blue)}
-.btn-send{padding:9px 16px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-family:inherit;font-weight:700;font-size:0.87rem;cursor:pointer;transition:all 0.2s;flex-shrink:0}
-.btn-send:hover{background:var(--navy2)}.btn-send:disabled{opacity:0.4;cursor:not-allowed}
-.btn-clr{padding:9px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;cursor:pointer;font-size:0.9rem;transition:all 0.2s}
-.btn-clr:hover{border-color:var(--red);background:#fef2f2}
-
-/* Export */
-.btn-exp{width:100%;padding:8px;background:var(--accent);color:var(--navy);border:none;border-radius:7px;font-family:inherit;font-weight:700;font-size:0.78rem;cursor:pointer;margin-top:4px}
-.btn-exp:hover{background:#ffc940}
-
-@media(max-width:680px){
-  .sidebar{width:100%;max-height:42vh;border-left:none;border-bottom:1px solid var(--border)}
-  .app{flex-direction:column}
+@media(max-width:640px){
+  .fgrid,.fgrid.cols3{grid-template-columns:1fr}
+  .step span:not(.step-num){display:none}
+  .drow{flex-wrap:wrap}
+  .drow .finp.w80,.drow .finp.w110,.drow .finp.w130{width:100%}
 }
 </style>
 </head>
 <body>
 
-<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
-  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
-  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
-    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
-    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
-    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
-    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="tools.html">כלים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="contact.html" class="cta">צרו קשר</a></li>
   </ul>
 </nav>
-<div style="height:64px"></div>
 
-<div class="app">
+<div class="hero">
+  <div class="hero-badge">⚖️ כלי מכרזים</div>
+  <h1>חילוץ נתוני מכרז — מחצית אוטומטי</h1>
+  <p>מעלים PDF של מכרז פומבי, הכלי מחלץ אוטומטית את כל הנתונים — סוקרים, עורכים ומייצאים לאקסל</p>
+</div>
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
+<div class="steps-bar">
+  <div class="step active" id="step1"><span class="step-num">1</span><span>העלאת מכרז</span></div>
+  <span class="step-sep">›</span>
+  <div class="step" id="step2"><span class="step-num">2</span><span>סקירה ועריכה</span></div>
+  <span class="step-sep">›</span>
+  <div class="step" id="step3"><span class="step-num">3</span><span>ייצוא לאקסל</span></div>
+</div>
 
+<div class="main">
 
-
-    <div class="ssec">
-      <div class="stitle">📄 העלאת מכרז PDF</div>
-      <div class="upbox" id="upbox" onclick="document.getElementById('pdf-inp').click()">
-        <div class="ubi">📑</div>
-        <div class="ubt">לחץ להעלאת PDF</div>
-        <div class="ubs">עד 20MB · רק מכרזים פומביים</div>
-      </div>
-      <input type="file" id="pdf-inp" accept=".pdf" hidden/>
+  <!-- אזהרת פרטיות -->
+  <div style="background:#fff8ed;border:1.5px solid #f5d48a;border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem;display:flex;gap:10px;align-items:flex-start">
+    <span style="font-size:1.2rem;flex-shrink:0">⚠️</span>
+    <div style="font-size:0.84rem;color:#7a4f00;line-height:1.6">
+      <strong style="display:block;margin-bottom:2px;">שימו לב לפני ההעלאה</strong>
+      הPDF שתעלו יישלח לשרת חיצוני לצורך ניתוח אוטומטי. <strong>העלו מכרזים פומביים בלבד</strong> — מסמכים שפורסמו בפומבי ואינם מכילים מידע עסקי סודי, מידע אישי רגיש או נתונים פנימיים מסווגים. אין להעלות מסמכים פנימיים, הצעות מחיר או חוזים חתומים.
     </div>
-
-
-
-    <div class="ssec">
-      <div class="stitle">⚡ שאלות מהירות</div>
-      <button class="qbtn" id="q1" onclick="sendQ(this,'צור צ\'ק ליסט מפורט לבדיקת תקינות הזכייה — עמידה בתנאי הסף, אסמכתאות, השכלה וניסיון הצוות')" disabled>
-        <span>✅</span>צ'ק ליסט — בדיקת זכייה
-      </button>
-      <button class="qbtn" id="q2" onclick="sendQ(this,'מה המסמכים שיש לדרוש עם כל חשבונית? פרט לפי סוג המכרז')" disabled>
-        <span>📋</span>מסמכים לחשבונית
-      </button>
-      <button class="qbtn" id="q3" onclick="sendQ(this,getHoursQ())" disabled>
-        <span>⏰</span>בדיקת דוחות תשומות/תפוקות
-      </button>
-      <button class="qbtn" id="q4" onclick="sendQ(this,'אילו דגלים אדומים ובעיות אפשריות יש במכרז זה שכדאי לשים לב אליהן?')" disabled>
-        <span>🚩</span>דגלים אדומים
-      </button>
-      <button class="qbtn" id="q5" onclick="sendQ(this,'בנה תוכנית ביקורת מלאה להתקשרות השוטפת כולל לוח זמנים לבדיקות')" disabled>
-        <span>📊</span>תוכנית ביקורת מלאה
-      </button>
-      <button class="qbtn" id="q6" onclick="sendQ(this,'צור רשימת אסמכתאות לבדיקת ניסיון הצוות המוצע — מה לדרוש ואיך לאמת')" disabled>
-        <span>👥</span>אסמכתאות צוות
-      </button>
-    </div>
-
-    <div class="ssec">
-      <div class="stitle">💾 ייצוא</div>
-      <button class="btn-exp" onclick="exportChat()">⬇ ייצא שיחה לקובץ טקסט</button>
-    </div>
-
   </div>
 
-  <!-- CHAT -->
-  <div class="chat-wrap">
-    <div class="status-bar">
-      <div class="sdot" id="sdot"></div>
-      <span id="stext">העלה מכרז PDF כדי להתחיל</span>
-    </div>
+  <!-- UPLOAD — מכרז ראשי -->
+  <div class="upload-zone" id="upzone">
+    <div class="up-icon" id="up-ico">📑</div>
+    <div class="up-title" id="up-title">לחצו להעלאת PDF מכרז</div>
+    <div class="up-sub" id="up-sub">גררו לכאן או לחצו לבחירת קובץ · עד 20 מגה · מכרזים פומביים בלבד</div>
+  </div>
+  <input type="file" id="finput" accept=".pdf" hidden/>
 
-    <div class="msgs" id="msgs">
-      <div class="welcome">
-        <div class="welcome-icon">⚖️</div>
-        <h2>ניתוח מכרזים חכם</h2>
-        <p>העלה PDF של מכרז פומבי וקבל צ'ק ליסטים מפורטים — לבדיקת הזכייה ולהתקשרות השוטפת</p>
-        <div class="welcome-steps">
-          <div class="wstep"><div class="wnum">1</div><span>העלה PDF של המכרז הפומבי</span></div>
-          <div class="wstep"><div class="wnum">2</div><span>הצ'אט יזהה אוטומטית את סוג המכרז</span></div>
-          <div class="wstep"><div class="wnum">3</div><span>הצ'אט יאמת שזה מכרז ויתחיל לנתח</span></div>
-          <div class="wstep"><div class="wnum">4</div><span>קבל צ'ק ליסטים ושאל כל שאלה</span></div>
+  <!-- UPLOAD — שאלות הבהרה (אופציונלי) -->
+  <div style="background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:0.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+    <div>
+      <div style="font-size:0.87rem;font-weight:800;color:var(--navy);margin-bottom:2px">📎 שאלות הבהרה — אופציונלי</div>
+      <div style="font-size:0.78rem;color:var(--muted)" id="clar-sub">העלו PDF שאלות הבהרה לניתוח משולב עם המכרז</div>
+    </div>
+    <button id="clar-btn" onclick="document.getElementById('clarinput').click()" style="padding:8px 18px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Heebo',sans-serif;font-size:0.82rem;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.2s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📂 בחרו קובץ</button>
+  </div>
+  <input type="file" id="clarinput" accept=".pdf" hidden/>
+
+  <!-- RESULTS -->
+  <div id="results" style="display:none">
+
+    <!-- פרטי מכרז -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sg')">
+        <div class="sec-left"><span class="sec-ico">📋</span><span class="sec-title">פרטי מכרז כלליים</span></div>
+        <span class="sec-toggle" id="tg-sg">▲</span>
+      </div>
+      <div class="sec-body" id="sg">
+        <div class="fgrid">
+          <div class="fg full"><label class="flabel">שם המכרז</label><input class="finp" id="f-name" placeholder="שם המכרז המלא" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">מספר מכרז</label><input class="finp" id="f-num" placeholder="מספר מכרז" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">גוף מפרסם</label><input class="finp" id="f-pub" placeholder="שם הרשות / הגוף" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">תאריך פרסום</label><input class="finp" id="f-pubdate" placeholder="תאריך פרסום" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">תקופת התקשרות</label><input class="finp" id="f-dur" placeholder="לדוגמה: שנה + אופציה לשנתיים" oninput="ed(this)"/></div>
+          <div class="fg full"><label class="flabel">סוג מכרז</label>
+            <select class="finp" id="f-type" onchange="ed(this)">
+              <option value="">— בחר —</option>
+              <option value="לפי שעות">לפי שעות</option>
+              <option value="לפי תפוקות">לפי תפוקות</option>
+              <option value="מעורב">מעורב — שעות ותפוקות</option>
+              <option value="לא ידוע">לא ידוע</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="input-area">
-      <button class="btn-clr" onclick="clearChat()" title="נקה שיחה">🗑️</button>
-      <textarea class="inp-ta" id="user-inp" placeholder="שאל שאלה על המכרז..." rows="1"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
-      <button class="btn-send" id="btn-send" onclick="send()" disabled>שלח ←</button>
+    <!-- תנאי סף -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('st')">
+        <div class="sec-left"><span class="sec-ico">🔒</span><span class="sec-title">תנאי סף</span><span class="sec-badge" id="cnt-t">0</span></div>
+        <span class="sec-toggle" id="tg-st">▲</span>
+      </div>
+      <div class="sec-body" id="st">
+        <div style="font-size:0.78rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:7px 10px;line-height:1.5">
+          <strong style="color:var(--navy)">ראשוני</strong> — נבדק פעם אחת בתחילת ההתקשרות &nbsp;·&nbsp; <strong style="color:var(--navy)">מתמשך</strong> — חייב להישמר לאורך כל תקופת החוזה
+        </div>
+        <div class="col-heads" style="grid-template-columns:110px 1fr 110px 28px">
+          <span>קטגוריה</span><span>תיאור התנאי</span><span>שלב</span><span></span>
+        </div>
+        <div class="dlist" id="list-t"></div>
+        <button class="btn-add" onclick="addT()">+ הוספת תנאי סף</button>
+      </div>
     </div>
+
+    <!-- שירותים -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('ss')">
+        <div class="sec-left"><span class="sec-ico">🛠️</span><span class="sec-title">שירותים ותעריפים</span><span class="sec-badge" id="cnt-s">0</span></div>
+        <span class="sec-toggle" id="tg-ss">▲</span>
+      </div>
+      <div class="sec-body" id="ss">
+        <div class="col-heads" style="grid-template-columns:1fr 90px 90px 90px 90px 28px">
+          <span>שם השירות</span><span>יחידת מידה</span><span>תעריף</span><span>כמות משוערת</span><span>כמות מקסימלית</span><span></span>
+        </div>
+        <div class="dlist" id="list-s"></div>
+        <button class="btn-add" onclick="addS()">+ הוספת שירות</button>
+      </div>
+    </div>
+
+    <!-- דרישות מהספק -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sr')">
+        <div class="sec-left"><span class="sec-ico">📌</span><span class="sec-title">דרישות מהספק — הגדרת העבודה</span><span class="sec-badge" id="cnt-r">0</span></div>
+        <span class="sec-toggle" id="tg-sr">▲</span>
+      </div>
+      <div class="sec-body" id="sr">
+        <div class="col-heads" style="grid-template-columns:0.8fr 1.5fr 28px">
+          <span>נושא / דרישה</span><span>תיאור מפורט</span><span></span>
+        </div>
+        <div class="dlist" id="list-r"></div>
+        <button class="btn-add" onclick="addR()">+ הוספת דרישה</button>
+      </div>
+    </div>
+
+    <!-- מסמכים -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sm')">
+        <div class="sec-left"><span class="sec-ico">📄</span><span class="sec-title">מסמכים נדרשים</span><span class="sec-badge" id="cnt-m">0</span></div>
+        <span class="sec-toggle" id="tg-sm">▲</span>
+      </div>
+      <div class="sec-body" id="sm">
+        <div class="col-heads" style="grid-template-columns:1fr 1fr 28px">
+          <span>שם המסמך</span><span>הערות</span><span></span>
+        </div>
+        <div class="dlist" id="list-m"></div>
+        <button class="btn-add" onclick="addM()">+ הוספת מסמך</button>
+      </div>
+    </div>
+
+    <!-- מדדי שירות -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sl')">
+        <div class="sec-left"><span class="sec-ico">📊</span><span class="sec-title">מדדי רמת שירות</span><span class="sec-badge" id="cnt-l">0</span></div>
+        <span class="sec-toggle" id="tg-sl">▲</span>
+      </div>
+      <div class="sec-body" id="sl">
+        <div class="col-heads" style="grid-template-columns:1fr 120px 140px 28px">
+          <span>שם המדד</span><span>יעד חוזי</span><span>פיצוי / קנס</span><span></span>
+        </div>
+        <div class="dlist" id="list-l"></div>
+        <button class="btn-add" onclick="addL()">+ הוספת מדד</button>
+      </div>
+    </div>
+
+    <!-- בקרות חודשיות -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sc')">
+        <div class="sec-left"><span class="sec-ico">📅</span><span class="sec-title">בקרות חודשיות / תקופתיות</span><span class="sec-badge" id="cnt-c">0</span></div>
+        <span class="sec-toggle" id="tg-sc">▲</span>
+      </div>
+      <div class="sec-body" id="sc">
+        <div class="col-heads" style="grid-template-columns:1fr 110px 1fr 28px">
+          <span>שם הבקרה</span><span>תדירות</span><span>מסמכים נדרשים לביצוע</span><span></span>
+        </div>
+        <div class="dlist" id="list-c"></div>
+        <button class="btn-add" onclick="addC()">+ הוספת בקרה</button>
+      </div>
+    </div>
+
+    <div style="height:80px"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- EXPORT BAR -->
+<div class="export-bar" id="ebar">
+  <div class="ebar-info">
+    <strong id="ebar-title">מכרז מוכן לייצוא</strong>
+    בדקו ועדכנו את הנתונים לפי הצורך
+  </div>
+  <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
+    <button class="btn-reanalyze" onclick="reanalyze()">🔄 ניתוח מחדש</button>
+    <button class="btn-export" onclick="exportXls()">📥 ייצוא לאקסל</button>
   </div>
 </div>
 
 <script>
-// ── STATE ──
-const PROXY_URL = 'https://gemini-proxy.orkandel11.workers.dev/';
-const GEMINI_MODEL = 'gemini-2.0-flash';
-let pdfBase64 = null;
-let tenderType = 'hours';
-let history = [];
-let busy = false;
-let tenderVerified = false;
+const PROXY = 'https://gemini-proxy.orkandel11.workers.dev/';
+const MODEL  = 'gemini-2.0-flash';
+let lastB64  = null;
+let lastClarB64 = null;
 
-// ── SYSTEM PROMPT ──
-const SYSTEM = `אתה מומחה לביקורת פנימית ומכרזים במגזר הציבורי בישראל. 
-אתה מנתח מכרזים פומביים ומייצר צ'ק ליסטים מקצועיים לשני שלבים:
+// ── STEPS ──
+function setStep(n){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('step'+i);
+    el.className='step'+(i===n?' active':i<n?' done':'');
+  });
+}
 
-**שלב 1 — בדיקת תקינות הזכייה:**
-- עמידה בתנאי סף (כספיים, ניסיון, רישיונות)
-- אסמכתאות השכלה וניסיון הצוות המוצע
-- מסמכים משפטיים (אישור ניהול ספרים, ביטוחים, ערבויות)
-- בדיקת ניגודי עניינים
-- תקינות ההצעה הכספית
+// ── UPLOAD ──
+const zone  = document.getElementById('upzone');
+const finput = document.getElementById('finput');
+zone.addEventListener('click', ()=>{ if(!zone.classList.contains('processing')&&!zone.classList.contains('loaded')) finput.click(); });
+zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', ()=>zone.classList.remove('drag'));
+zone.addEventListener('drop', e=>{ e.preventDefault(); zone.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f&&f.type==='application/pdf') go(f); else alert('נא להעלות קובץ PDF בלבד'); });
+finput.addEventListener('change', e=>{ const f=e.target.files[0]; if(f) go(f); });
 
-**שלב 2 — התקשרות שוטפת:**
-עבור מכרז לפי תשומות:
-- דוחות תשומות חודשיים + השוואה לצוות שהוגש
-- בדיקת חפיפות בשעות (אותו עובד, שני מקומות)
-- תעריפים לפי רמת עובד
-- סבירות שעות (שבתות, חגים, שעות ברצף)
-- ביצוע מדגם מבוסס סיכונים
-
-עבור מכרז לפי תפוקות:
-- דוח תפוקות חודשי
-- בדיקת סבירות ועקביות תפוקות
-- זיהוי סוגי תפוקה חדשים שנוספו
-- השוואה בין חודשים
-- מדגם מבוסס סיכונים
-
-ענה תמיד בעברית, בצורה מובנית עם כותרות, רשימות ותיוגים ברורים.
-השתמש ב-## לכותרות ראשיות, ב-### לכותרות משניות, וב-**טקסט** להדגשות.`;
-
-// ── INIT ──
-setStatus('ready', 'העלה מכרז כדי להתחיל');
-
-
-
-// ── PDF ──
-document.getElementById('pdf-inp').addEventListener('change', async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 20 * 1024 * 1024) { alert('הקובץ גדול מ-20MB'); return; }
-
-
-  setUpbox('checking', '⏳', 'טוען מסמך...', 'אנא המתן');
-  setStatus('busy', 'מעבד מסמך...');
-
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const b64 = ev.target.result.split(',')[1];
-
-    // ── VALIDATION: קרא רק 2 עמודות ראשונות לאימות ──
-    try {
-      const isValid = await validateIsTender(b64);
-      if (!isValid.ok) {
-        setUpbox('error', '❌', 'המסמך אינו מכרז', isValid.reason);
-        setStatus('error', 'המסמך נדחה — ' + isValid.reason);
-        addMsg('bot err', `❌ **המסמך שהועלה אינו מכרז פומבי**\n\n${isValid.reason}\n\nאנא העלה מסמך מכרז תקני.`);
-        pdfBase64 = null;
-        tenderVerified = false;
-        checkReady();
-        return;
-      }
-
-      // תקין — שמור ונתח
-      pdfBase64 = b64;
-      tenderVerified = true;
-      tenderType = isValid.tenderType || 'unknown';
-      
-      // תגית סוג מכרז
-      const typeLabel = tenderType === 'hours' ? '⏰ לפי תשומות' : 
-                        tenderType === 'outputs' ? '📦 לפי תפוקות' :
-                        tenderType === 'mixed' ? '🔀 שעות + תפוקות' : '';
-      const typeHint = typeLabel ? ` · ${typeLabel}` : '';
-      
-      setUpbox('loaded', '✅', file.name, `${(file.size/1024).toFixed(0)} KB${typeHint}`);
-      setStatus('ready', 'מוכן לניתוח');
-      checkReady();
-
-      // ניתוח ראשוני אוטומטי
-      const typeDesc = tenderType === 'hours' ? 'לפי תשומות (שעות)' :
-                       tenderType === 'outputs' ? 'לפי תפוקות' :
-                       tenderType === 'mixed' ? 'מעורב — חלק לפי תשומות וחלק לפי תפוקות' :
-                       '(זהה מתוך המכרז)';
-      
-      const autoQ = `נתח את המכרז וצור שני צ'ק ליסטים מפורטים:
-1. **שלב הזכייה** — בדיקת תקינות, תנאי סף, אסמכתאות צוות, ניגודי עניינים
-2. **התקשרות שוטפת** — מסמכים לחשבונית ובדיקות שוטפות (סוג מכרז: ${typeDesc})
-${tenderType === 'mixed' ? '
-שים לב: המכרז מכיל גם רכיב שעות וגם רכיב תפוקות — פרט בדיקות לכל חלק בנפרד.' : ''}`;
-      await callGemini(autoQ, true);
-
-    } catch (err) {
-      setUpbox('error', '⚠️', 'שגיאה באימות', err.message);
-      setStatus('error', 'שגיאת API: ' + err.message);
-    }
+// ── UPLOAD — שאלות הבהרה ──
+document.getElementById('clarinput').addEventListener('change', e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  if(f.size>20*1024*1024){ alert('הקובץ גדול מ-20 מגה'); return; }
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    lastClarB64=ev.target.result.split(',')[1];
+    document.getElementById('clar-sub').textContent='✅ '+f.name+' — יכלל בניתוח';
+    document.getElementById('clar-btn').textContent='🔄 החלף קובץ';
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(f);
 });
 
-// ── VALIDATE IS TENDER ──
-async function validateIsTender(b64) {
-  const prompt = `Read the first 2-3 pages of this document only.
-Answer ONLY in this exact JSON format, nothing else:
-{"ok": true/false, "reason": "brief explanation in Hebrew", "type": "document type in Hebrew", "tenderType": "hours/outputs/mixed/unknown"}
+function setZone(state, ico, title, sub){
+  zone.className='upload-zone '+state;
+  document.getElementById('up-ico').textContent=ico;
+  document.getElementById('up-title').textContent=title;
+  document.getElementById('up-sub').textContent=sub||'';
+}
 
-Where tenderType:
-- "hours" = tender priced by work hours
-- "outputs" = tender priced by deliverables/outputs
-- "mixed" = tender with both hours AND outputs components
-- "unknown" = cannot determine
+async function go(file){
+  if(file.size>20*1024*1024){ alert('הקובץ גדול מ-20 מגה'); return; }
+  setZone('processing','🔍','בודק שזה מכרז פומבי...','מאמת את סוג המסמך — אנא המתן');
+  setStep(1);
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const b64=ev.target.result.split(',')[1];
+    lastB64=b64;
 
-If not a public tender/RFP/procurement document, set ok=false.`;
+    // ניתוח מלא
+    const clarNote=lastClarB64?' + שאלות הבהרה':'';
+    setZone('processing','⏳','מנתח את המכרז...','חולץ תנאי סף, שירותים, בקרות'+clarNote+' — אנא המתן כחצי דקה');
+    await analyze(b64, file.name, file.size);
+  };
+  reader.readAsDataURL(file);
+}
 
-  const res = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: GEMINI_MODEL,
-      payload: {
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: 'application/pdf', data: b64 } },
-            { text: prompt }
-          ]
-        }],
-        generationConfig: { maxOutputTokens: 200, temperature: 0 }
+
+async function analyze(b64, fname, fsize){
+  try{
+    const data=await extract(b64);
+    populate(data);
+
+    // בדיקה אם חזר תוכן אמיתי
+    const hasContent = !!(
+      data.general?.name || data.general?.number || data.general?.publisher ||
+      (data.thresholds||[]).length || (data.services||[]).length ||
+      (data.requirements||[]).length || (data.controls||[]).length
+    );
+
+    const sz=fsize?`${(fsize/1024).toFixed(0)} ק"ב · `:'';
+    if(hasContent){
+      setZone('loaded','✅', fname||'קובץ הועלה', sz+'ניתוח הושלם בהצלחה');
+    } else {
+      setZone('loaded','⚠️', fname||'קובץ הועלה', sz+'לא הצלחנו לחלץ נתונים אוטומטית — מלאו ידנית');
+      showNotice('לא הצלחנו לחלץ נתונים מהמסמך. ייתכן שמדובר בקובץ סרוק, מוצפן, או שהתוכן אינו זמין לקריאה. ניתן למלא את הטופס ידנית.');
+    }
+
+    document.getElementById('results').style.display='block';
+    document.getElementById('ebar').style.display='flex';
+    document.getElementById('ebar-title').textContent=data.general?.name||fname||'מכרז מוכן לייצוא';
+    setStep(2);
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    setZone('errored','❌','שגיאה בניתוח',err.message+' — לחצו להעלאה מחדש');
+  }
+}
+
+function showNotice(msg){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:80px;right:50%;transform:translateX(50%);z-index:999;background:#1a3561;color:#fff;padding:14px 22px;border-radius:12px;font-size:0.87rem;max-width:480px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.25);line-height:1.6';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 7000);
+}
+
+async function reanalyze(){
+  if(!lastB64){alert('העלו קובץ קודם');return;}
+  setZone('processing','⏳','מנתח מחדש...','');
+  await analyze(lastB64, document.getElementById('up-title').textContent);
+}
+
+// ── EXTRACT ──
+async function extract(b64){
+  const prompt=`אתה מומחה לניתוח מכרזים ציבוריים בישראל.
+קרא את כל המסמכים המצורפים וחלץ את המידע הבא.
+אם צורפו שאלות הבהרה — שלב את המידע שלהן עם המכרז.
+החזר JSON בלבד ללא שום טקסט נוסף:
+
+{
+  "general":{
+    "name":"שם המכרז המלא",
+    "number":"מספר המכרז",
+    "publisher":"שם הגוף המפרסם",
+    "publishDate":"תאריך פרסום",
+    "contractDuration":"תקופת ההתקשרות",
+    "tenderType":"לפי שעות/לפי תפוקות/מעורב/לא ידוע"
+  },
+  "thresholds":[
+    {"category":"ניסיון","description":"תיאור מלא של התנאי","stage":"ראשוני/מתמשך"}
+  ],
+  "services":[
+    {"name":"שם השירות","unit":"יחידת מידה","rate":"תעריף","quantity":"כמות משוערת","maxQuantity":"כמות מקסימלית אם קיימת"}
+  ],
+  "requirements":[
+    {"name":"נושא הדרישה","description":"תיאור מפורט של מה שהספק נדרש לספק"}
+  ],
+  "documents":[
+    {"name":"שם המסמך","notes":"הערות"}
+  ],
+  "sla":[
+    {"metric":"שם המדד","target":"יעד חוזי","penalty":"פיצוי או קנס"}
+  ],
+  "controls":[
+    {"name":"שם הבקרה","frequency":"חודשי/רבעוני/שנתי/לפי אירוע","documents":"מסמך א, מסמך ב"}
+  ]
+}
+
+הנחיות חשובות:
+1. תנאי סף — stage=ראשוני אם נבדק רק בתחילת ההתקשרות, stage=מתמשך אם חייב להישמר לאורך כל תקופת החוזה (לדוגמה: חובת העסקת X עובדים בעלי ותק, קיום רישיון בתוקף). קטגוריות: ניסיון, כספי, רישיון, כוח אדם, אחר.
+2. מסמכים נדרשים ובקרות חודשיות — כלול רק מה שרלוונטי לניהול ההתקשרות השוטפת. אל תכלול מסמכים שמוגשים רק פעם אחת בעת ההתקשרות (כגון: ערבות ביצוע, הצהרות, כתב התחייבות).
+3. דרישות מהספק — פרט את הגדרת העבודה: מה בדיוק הספק נדרש לספק, להעמיד, לבצע. לא תנאי סף אלא תיאור השירות עצמו.
+4. בקרות חודשיות — כלול את כל הבקרות הרלוונטיות להתקשרות השוטפת: בדיקת דוחות תשומות/תפוקות, אימות נוכחות, בדיקת תעריפים, עמידה במדדי שירות, דגימות, בדיקת עמידה בתנאים המתמשכים ועוד.
+5. אם שדה אינו קיים, השאר ריק. החזר JSON בלבד.`;
+
+  // בונה את חלקי הבקשה — מכרז + שאלות הבהרה אם קיימות
+  const parts=[{inline_data:{mime_type:'application/pdf',data:b64}}];
+  if(lastClarB64) parts.push({inline_data:{mime_type:'application/pdf',data:lastClarB64}});
+  parts.push({text:prompt});
+
+  const res=await fetch(PROXY,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:MODEL,
+      payload:{
+        contents:[{parts}],
+        generationConfig:{maxOutputTokens:5000,temperature:0}
       }
     })
   });
-
-  if (!res.ok) throw new Error(`API Error ${res.status}`);
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{"ok":false,"reason":"לא ניתן לאמת","type":"לא ידוע"}';
-
-  try {
-    const clean = text.replace(/```json|```/g, '').trim();
+  if(!res.ok) throw new Error('שגיאת שרת '+res.status);
+  const json=await res.json();
+  console.log('[KandelBI] תשובת ג\'מיני:', JSON.stringify(json).substring(0,500));
+  const raw=json.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
+  console.log('[KandelBI] טקסט גולמי:', raw.substring(0,300));
+  if(json.error) throw new Error('שגיאת API: '+JSON.stringify(json.error));
+  const clean=raw.replace(/```json|```/g,'').trim();
+  try{
     return JSON.parse(clean);
-  } catch {
-    return { ok: false, reason: 'לא ניתן לאמת את סוג המסמך', type: 'לא ידוע' };
+  }catch(e){
+    console.log('[KandelBI] JSON לא תקין:', clean.substring(0,200));
+    throw new Error('תשובה לא תקינה מהמודל — נסו שוב');
   }
 }
 
-// ── TENDER TYPE ──
-// tenderType set automatically from document analysis
+// ── POPULATE ──
+function populate(d){
+  const g=d.general||{};
+  sv('f-name',g.name); sv('f-num',g.number); sv('f-pub',g.publisher);
+  sv('f-pubdate',g.publishDate); sv('f-dur',g.contractDuration);
+  const tm={'שעות':'לפי שעות','תפוקות':'לפי תפוקות','מעורב':'מעורב','לפי שעות':'לפי שעות','לפי תפוקות':'לפי תפוקות'};
+  const tv=tm[g.tenderType]||g.tenderType||'';
+  const sel=document.getElementById('f-type');
+  for(let o of sel.options) if(o.value===tv){o.selected=true;break;}
 
-// ── SEND ──
-async function send() {
-  const txt = document.getElementById('user-inp').value.trim();
-  if (!txt || busy) return;
-  document.getElementById('user-inp').value = '';
-  await callGemini(txt, false);
+  renderT(d.thresholds||[]);
+  renderS(d.services||[]);
+  renderR(d.requirements||[]);
+  renderM(d.documents||[]);
+  renderL(d.sla||[]);
+  renderC(d.controls||[]);
+}
+function sv(id,v){ const el=document.getElementById(id); if(el&&v) el.value=v; }
+function ed(el){ el.classList.add('edited'); }
+
+// ── TOGGLES ──
+function tog(id){
+  const b=document.getElementById(id);
+  const t=document.getElementById('tg-'+id);
+  b.classList.toggle('collapsed');
+  t.textContent=b.classList.contains('collapsed')?'▼':'▲';
 }
 
-function sendQ(btn, q) {
-  if (busy) return;
-  callGemini(q, false);
+// ── THRESHOLDS ──
+function renderT(arr){ document.getElementById('list-t').innerHTML=''; arr.forEach(x=>addT(x)); }
+function addT(x){
+  x=x||{};
+  const cats=['ניסיון','כספי','רישיון','כוח אדם','אחר'];
+  const catOpts=cats.map(c=>`<option value="${c}" ${(x.category||'')===(c)?'selected':''}>${c}</option>`).join('');
+  const stageOpts=`
+    <option value="ראשוני" ${(x.stage||'ראשוני')==='ראשוני'?'selected':''}>ראשוני</option>
+    <option value="מתמשך" ${(x.stage||'')==='מתמשך'?'selected':''}>מתמשך</option>`;
+  const row=mk('drow',`
+    <select class="finp w110" onchange="ed(this)">${catOpts}</select>
+    <input class="finp" value="${es(x.description||'')}" placeholder="תיאור התנאי המלא" oninput="ed(this)" style="flex:1"/>
+    <select class="finp w110" onchange="ed(this)">${stageOpts}</select>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-t').appendChild(row);
+  cnt('cnt-t','list-t');
 }
 
-async function callGemini(userText, isAuto) {
-  if (!apiKey) { alert('הכנס מפתח API'); return; }
-  if (!pdfBase64) { alert('העלה מכרז קודם'); return; }
-  if (busy) return;
-
-  busy = true;
-  setBtns(false);
-  setStatus('busy', 'מנתח...');
-
-  if (!isAuto) addMsg('user', userText);
-  showTyping();
-
-  // בנה history
-  const contents = [];
-
-  // הוסף PDF בהודעה הראשונה תמיד
-  const firstParts = [
-    { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
-    { text: `${SYSTEM}\n\nסוג המכרז: ${tenderType === 'hours' ? 'לפי תשומות' : 'לפי תפוקות'}\n\n${userText}` }
-  ];
-  contents.push({ role: 'user', parts: firstParts });
-
-  // הוסף היסטוריה אם יש
-  if (history.length > 0) {
-    contents.length = 0;
-    contents.push({ role: 'user', parts: [{ inline_data: { mime_type: 'application/pdf', data: pdfBase64 } }, { text: SYSTEM }] });
-    contents.push({ role: 'model', parts: [{ text: 'הבנתי. אני מוכן לנתח את המכרז.' }] });
-    history.forEach(h => contents.push(h));
-    contents.push({ role: 'user', parts: [{ text: userText }] });
-  }
-
-  try {
-    const res = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: GEMINI_MODEL,
-        payload: {
-          contents,
-          generationConfig: { maxOutputTokens: 4000, temperature: 0.3 }
-        }
-      })
-    });
-
-    hideTyping();
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error?.message || `שגיאת API ${res.status}`);
-    }
-
-    const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'לא התקבלה תשובה';
-
-    // שמור בהיסטוריה
-    history.push({ role: 'user', parts: [{ text: userText }] });
-    history.push({ role: 'model', parts: [{ text: reply }] });
-
-    addMsg('bot', reply);
-    setStatus('ready', 'מוכן');
-
-  } catch (err) {
-    hideTyping();
-    addMsg('bot err', `⚠️ **שגיאה:** ${err.message}\n\nוודא שהמפתח תקין ויש לך גישה ל-Gemini API.`);
-    setStatus('error', 'שגיאה: ' + err.message);
-  }
-
-  busy = false;
-  setBtns(true);
+// ── SERVICES ──
+function renderS(arr){ document.getElementById('list-s').innerHTML=''; arr.forEach(x=>addS(x)); }
+function addS(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="שם השירות" oninput="ed(this)" style="flex:1"/>
+    <input class="finp w90" value="${es(x.unit||'')}" placeholder="יחידה" oninput="ed(this)"/>
+    <input class="finp w90" value="${es(x.rate||'')}" placeholder="תעריף" oninput="ed(this)"/>
+    <input class="finp w90" value="${es(x.quantity||'')}" placeholder="כמות משוערת" oninput="ed(this)"/>
+    <input class="finp w90" value="${es(x.maxQuantity||'')}" placeholder="כמות מקס׳" oninput="ed(this)"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-s').appendChild(row);
+  cnt('cnt-s','list-s');
 }
 
-// ── UI HELPERS ──
-function addMsg(type, text) {
-  const msgs = document.getElementById('msgs');
-  const welcome = msgs.querySelector('.welcome');
-  if (welcome) welcome.remove();
-
-  const div = document.createElement('div');
-  div.className = 'msg ' + type;
-  const time = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-  div.innerHTML = `<div class="bubble">${md(text)}</div><div class="mtime">${time}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+// ── DOCUMENTS ──
+function renderM(arr){ document.getElementById('list-m').innerHTML=''; arr.forEach(x=>addM(x)); }
+function addM(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="שם המסמך" oninput="ed(this)" style="flex:1.2"/>
+    <input class="finp" value="${es(x.notes||'')}" placeholder="הערות" oninput="ed(this)" style="flex:1"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-m').appendChild(row);
+  cnt('cnt-m','list-m');
 }
 
-function md(text) {
-  return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`)
-    .replace(/^---$/gm,'<hr/>')
-    .replace(/\n/g,'<br/>');
+// ── SLA ──
+function renderL(arr){ document.getElementById('list-l').innerHTML=''; arr.forEach(x=>addL(x)); }
+function addL(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.metric||'')}" placeholder="שם המדד" oninput="ed(this)" style="flex:1"/>
+    <input class="finp w130" value="${es(x.target||'')}" placeholder="יעד חוזי" oninput="ed(this)"/>
+    <input class="finp w130" value="${es(x.penalty||'')}" placeholder="פיצוי/קנס" oninput="ed(this)"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-l').appendChild(row);
+  cnt('cnt-l','list-l');
 }
 
-let typingEl = null;
-function showTyping() {
-  typingEl = document.createElement('div');
-  typingEl.className = 'typing';
-  typingEl.innerHTML = '<div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>';
-  document.getElementById('msgs').appendChild(typingEl);
-  document.getElementById('msgs').scrollTop = 99999;
-}
-function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null; } }
-
-function setStatus(state, text) {
-  document.getElementById('sdot').className = 'sdot ' + (state === 'ready' ? 'ready' : state === 'busy' ? 'busy' : 'error');
-  document.getElementById('stext').textContent = text;
+// ── REQUIREMENTS ──
+function renderR(arr){ document.getElementById('list-r').innerHTML=''; arr.forEach(x=>addR(x)); }
+function addR(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="נושא / כותרת הדרישה" oninput="ed(this)" style="flex:0.8"/>
+    <input class="finp" value="${es(x.description||'')}" placeholder="תיאור מפורט של מה שהספק נדרש לספק" oninput="ed(this)" style="flex:1.5"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-r').appendChild(row);
+  cnt('cnt-r','list-r');
 }
 
-function setUpbox(cls, icon, title, sub) {
-  const b = document.getElementById('upbox');
-  b.className = 'upbox ' + cls;
-  b.innerHTML = `<div class="ubi">${icon}</div><div class="ubt">${title}</div><div class="ubs">${sub}</div>`;
-  if (cls !== 'checking') b.onclick = () => document.getElementById('pdf-inp').click();
+// ── CONTROLS ──
+function renderC(arr){ document.getElementById('list-c').innerHTML=''; arr.forEach(x=>addC(x)); }
+function addC(x){
+  x=x||{};
+  const freqs=['חודשי','רבעוני','שנתי','לפי אירוע'];
+  const fOpts=freqs.map(f=>`<option value="${f}" ${(x.frequency||'')===(f)?'selected':''}>${f}</option>`).join('');
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="שם הבקרה" oninput="ed(this)" style="flex:1"/>
+    <select class="finp w110" onchange="ed(this)">${fOpts}</select>
+    <input class="finp" value="${es(x.documents||'')}" placeholder="מסמכים נדרשים לביצוע" oninput="ed(this)" style="flex:1.4"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-c').appendChild(row);
+  cnt('cnt-c','list-c');
 }
 
-function checkReady() {
-  const ok = !!(pdfBase64 && tenderVerified);
-  document.getElementById('btn-send').disabled = !ok;
-  document.querySelectorAll('.qbtn').forEach(b => b.disabled = !ok);
-}
+// ── HELPERS ──
+function mk(cls,html){ const d=document.createElement('div'); d.className=cls; d.innerHTML=html; return d; }
+function rm(btn){ const row=btn.closest('.drow'); const list=row.parentElement; row.remove(); updateAllCounts(); }
+function updateAllCounts(){ cnt('cnt-t','list-t'); cnt('cnt-s','list-s'); cnt('cnt-r','list-r'); cnt('cnt-m','list-m'); cnt('cnt-l','list-l'); cnt('cnt-c','list-c'); }
+function cnt(cid,lid){ const el=document.getElementById(cid); if(el) el.textContent=document.getElementById(lid).children.length; }
+function es(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function gv(id){ return document.getElementById(id)?.value||''; }
 
-function setBtns(enabled) {
-  document.getElementById('btn-send').disabled = !enabled || !pdfBase64;
-  document.querySelectorAll('.qbtn').forEach(b => b.disabled = !enabled || !pdfBase64);
-}
-
-function clearChat() {
-  history = [];
-  const msgs = document.getElementById('msgs');
-  msgs.innerHTML = `<div class="welcome">
-    <div class="welcome-icon">⚖️</div>
-    <h2>ניתוח מכרזים חכם</h2>
-    <p>שאל שאלה חדשה או לחץ על אחת השאלות המהירות</p>
-  </div>`;
-}
-
-function exportChat() {
-  const msgs = document.querySelectorAll('.msg');
-  if (!msgs.length) { alert('אין שיחה לייצוא'); return; }
-  let txt = `ניתוח מכרז — קנדל BI\n${new Date().toLocaleDateString('he-IL')}\n${'='.repeat(40)}\n\n`;
-  msgs.forEach(m => {
-    const isUser = m.classList.contains('user');
-    const bubble = m.querySelector('.bubble');
-    const time = m.querySelector('.mtime')?.textContent || '';
-    txt += `[${isUser ? 'מבקר' : 'AI'} ${time}]\n${bubble?.innerText || ''}\n\n${'─'.repeat(30)}\n\n`;
+// ── COLLECT ──
+function collect(){
+  const thresholds=[...document.getElementById('list-t').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{category:i[0].value,description:i[1].value,stage:i[2].value};
   });
-  const a = document.createElement('a');
-  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
-  a.download = `ניתוח_מכרז_${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.txt`;
-  a.click();
+  const services=[...document.getElementById('list-s').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,unit:i[1].value,rate:i[2].value,quantity:i[3].value,maxQuantity:i[4].value};
+  });
+  const requirements=[...document.getElementById('list-r').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,description:i[1].value};
+  });
+  const documents=[...document.getElementById('list-m').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,notes:i[1].value};
+  });
+  const sla=[...document.getElementById('list-l').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{metric:i[0].value,target:i[1].value,penalty:i[2].value};
+  });
+  const controls=[...document.getElementById('list-c').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,frequency:i[1].value,documents:i[2].value};
+  });
+  return{
+    general:{name:gv('f-name'),number:gv('f-num'),publisher:gv('f-pub'),publishDate:gv('f-pubdate'),contractDuration:gv('f-dur'),tenderType:gv('f-type')},
+    thresholds,services,requirements,documents,sla,controls
+  };
 }
 
-// ── DRAG & DROP ──
-document.getElementById('upbox').addEventListener('dragover', e => { e.preventDefault(); document.getElementById('upbox').style.borderColor='var(--blue)'; });
-document.getElementById('upbox').addEventListener('dragleave', () => { document.getElementById('upbox').style.borderColor=''; });
-document.getElementById('upbox').addEventListener('drop', e => {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    document.getElementById('pdf-inp').files = dt.files;
-    document.getElementById('pdf-inp').dispatchEvent(new Event('change'));
+// ── EXPORT ──
+function exportXls(){
+  const d=collect();
+  const wb=XLSX.utils.book_new();
+
+  // גיליון 1: פרטי מכרז
+  const s1=XLSX.utils.aoa_to_sheet([
+    ['פרטי מכרז — חולץ על ידי קנדל BI'],
+    [],
+    ['שדה','ערך'],
+    ['שם המכרז',d.general.name],
+    ['מספר מכרז',d.general.number],
+    ['גוף מפרסם',d.general.publisher],
+    ['תאריך פרסום',d.general.publishDate],
+    ['תקופת התקשרות',d.general.contractDuration],
+    ['סוג מכרז',d.general.tenderType],
+  ]);
+  s1['!cols']=[{wch:24},{wch:44}];
+  XLSX.utils.book_append_sheet(wb,s1,'פרטי מכרז');
+
+  // גיליון 2: תנאי סף
+  if(d.thresholds.length){
+    const rows=[['קטגוריה','תיאור התנאי','שלב']];
+    d.thresholds.forEach(t=>rows.push([t.category,t.description,t.stage||'ראשוני']));
+    const s2=XLSX.utils.aoa_to_sheet(rows);
+    s2['!cols']=[{wch:14},{wch:55},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,s2,'תנאי סף');
   }
-});
 
-// Auto-resize textarea
-function getHoursQ() {
-  if (tenderType === 'outputs') return 'מה לבדוק בדוחות התפוקות? סבירות, עקביות, מדגם מבוסס סיכונים';
-  if (tenderType === 'mixed') return 'המכרז מעורב — מה לבדוק בחלק השעות ומה בחלק התפוקות?';
-  return 'מה לבדוק בדוחות השעות? חפיפות, תעריפים לפי רמה, סבירות, שבתות וחגים';
+  // גיליון 3: שירותים
+  if(d.services.length){
+    const rows=[['שם השירות','יחידת מידה','תעריף','כמות משוערת','כמות מקסימלית']];
+    d.services.forEach(s=>rows.push([s.name,s.unit,s.rate,s.quantity,s.maxQuantity]));
+    const s3=XLSX.utils.aoa_to_sheet(rows);
+    s3['!cols']=[{wch:32},{wch:14},{wch:14},{wch:16},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,s3,'שירותים ותעריפים');
+  }
+
+  // גיליון 3א: דרישות מהספק
+  if(d.requirements.length){
+    const rows=[['נושא / דרישה','תיאור מפורט']];
+    d.requirements.forEach(r=>rows.push([r.name,r.description]));
+    const s3a=XLSX.utils.aoa_to_sheet(rows);
+    s3a['!cols']=[{wch:28},{wch:60}];
+    XLSX.utils.book_append_sheet(wb,s3a,'דרישות מהספק');
+  }
+
+  // גיליון 4: מסמכים
+  if(d.documents.length){
+    const rows=[['שם המסמך','הערות']];
+    d.documents.forEach(m=>rows.push([m.name,m.notes]));
+    const s4=XLSX.utils.aoa_to_sheet(rows);
+    s4['!cols']=[{wch:40},{wch:32}];
+    XLSX.utils.book_append_sheet(wb,s4,'מסמכים נדרשים');
+  }
+
+  // גיליון 5: מדדי שירות
+  if(d.sla.length){
+    const rows=[['שם המדד','יעד חוזי','פיצוי / קנס']];
+    d.sla.forEach(l=>rows.push([l.metric,l.target,l.penalty]));
+    const s5=XLSX.utils.aoa_to_sheet(rows);
+    s5['!cols']=[{wch:32},{wch:18},{wch:28}];
+    XLSX.utils.book_append_sheet(wb,s5,'מדדי שירות');
+  }
+
+  // גיליון 6: בקרות חודשיות
+  if(d.controls.length){
+    const rows=[['שם הבקרה','תדירות','מסמכים נדרשים לביצוע']];
+    d.controls.forEach(c=>rows.push([c.name,c.frequency,c.documents]));
+    const s6=XLSX.utils.aoa_to_sheet(rows);
+    s6['!cols']=[{wch:36},{wch:14},{wch:50}];
+    XLSX.utils.book_append_sheet(wb,s6,'בקרות חודשיות');
+  }
+
+  const fname=(d.general.name||'מכרז').replace(/[\\/:*?"<>|]/g,'').substring(0,50);
+  XLSX.writeFile(wb,`${fname} — קנדל BI.xlsx`);
+  setStep(3);
 }
-
-document.getElementById('user-inp').addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-});
 </script>
-
-<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
-  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור להתקשרות הספציפית שלך</strong>? בחודש הבא כבר תוכל להשתמש בו, במחיר שאפילו לא מצריך קבלת הצעות מחיר. &nbsp;<a href="contact.html" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
-  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות | חל איסור על העתקת הכלים</span>
-</div>
 </body>
 </html>
-
-
