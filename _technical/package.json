@@ -1,0 +1,9 @@
+{
+  "name": "kandelbi",
+  "version": "1.0.0",
+  "description": "קנדל BI — פתרונות ביקורת למגזר הציבורי",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "stripe": "^14.0.0"
+  }
+}

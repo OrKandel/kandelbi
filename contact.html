@@ -30,13 +30,14 @@
 }
 body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
 
-header{background:var(--navy);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
-.logo{font-weight:900;font-size:1.3rem;color:#fff;text-decoration:none}
+nav{background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;position:fixed;top:0;right:0;left:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif}
+.logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px}
 .logo span{color:var(--accent)}
-.header-nav{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;}
-.nav-link{color:rgba(255,255,255,0.7);font-size:0.85rem;text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.2s;}
-.nav-link:hover{color:#fff;background:rgba(255,255,255,0.1)}
-.nav-link.active{color:#fff;font-weight:700;}
+nav ul{list-style:none;display:flex;gap:0.15rem;margin:0;padding:0;flex-wrap:nowrap}
+nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav ul li a:hover,nav ul li a.active{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-cta{background:var(--accent) !important;color:var(--navy) !important;font-weight:800 !important;padding:0.45rem 1rem !important}
+.nav-phone{color:var(--accent) !important;font-weight:700 !important}
 
 main{max-width:900px;margin:0 auto;padding:3rem 5vw 5rem}
 
@@ -114,14 +115,16 @@ h1{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:900;color:var(--navy);margin-b
 </head>
 <body>
 
-<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
-  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
-  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
-    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
-    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
-    <li><a href="articles.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">מאמרים</a></li>
-    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
-    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="services.html">שירותים</a></li>
+    <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="articles.html">מאמרים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="tel:050-691-4898" class="nav-phone"><span style="color:#25d366;">☎</span> 050-691-4898</a></li>
+    <li><a href="contact.html" class="nav-cta active">צרו קשר</a></li>
   </ul>
 </nav>
 <div style="height:64px"></div>

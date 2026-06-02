@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-FR9DZSW3M4');</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>מודל סיכון לביקורת — חיזוי ממצאים | קנדל BI</title>
+<meta name="description" content="בנו מודל חיזוי סיכון לממצאי ביקורת על בסיס נתוני ביקורות עבר — כלי חינמי לגופי ביקורת ופיקוח. כל הנתונים נשארים בדפדפן."/>
+<link rel="canonical" href="https://kandelbi.org/tool-audit-risk-model.html"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--blue2:#2d87e8;
+  --accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;
+  --text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--green-bg:#f0faf6;
+  --red:#d93025;--red-bg:#fef2f2;--orange:#c47c00;--orange-bg:#fff8ed;
+  --blue-bg:#eef3fb;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.6;font-size:15px}
+
+/* NAV */
+nav{background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;position:fixed;top:0;right:0;left:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,0.25)}
+.logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none}
+.logo span{color:var(--accent)}
+nav ul{list-style:none;display:flex;gap:0.1rem;margin:0;padding:0}
+nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav ul li a:hover{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-cta{background:var(--accent)!important;color:var(--navy)!important;font-weight:800!important;padding:0.45rem 1rem!important}
+
+/* HERO */
+.page-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:96px 5vw 48px;text-align:center}
+.page-hero h1{font-size:clamp(1.5rem,4vw,2.3rem);font-weight:900;color:#fff;margin-bottom:0.7rem;line-height:1.25}
+.page-hero h1 em{color:var(--accent);font-style:normal}
+.page-hero p{color:rgba(255,255,255,0.72);font-size:0.97rem;max-width:620px;margin:0 auto 0.5rem}
+.page-tag{display:inline-block;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;font-size:0.78rem;color:rgba(255,255,255,0.72);margin-bottom:0.8rem}
+.flow-hint{display:flex;align-items:center;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin-top:1rem}
+.flow-hint .fh-step{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:5px 12px;font-size:0.8rem;color:#fff;font-weight:600}
+.flow-hint .fh-arrow{color:rgba(255,255,255,0.4);font-size:0.8rem}
+
+/* WRAP */
+.tool-wrap{max-width:1120px;margin:0 auto;padding:2rem 5vw 5rem}
+
+/* PRIVACY */
+.privacy-strip{background:var(--green-bg);border:1px solid #b2ddd0;border-radius:10px;padding:0.65rem 1rem;font-size:0.82rem;color:var(--green);margin-bottom:1.4rem;display:flex;align-items:center;gap:0.5rem}
+
+/* SECTION CARDS */
+.section-card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:1.6rem 2rem;margin-bottom:1.4rem}
+.section-header{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.4rem}
+.step-badge{background:var(--navy);color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.85rem;flex-shrink:0}
+.section-header h2{font-size:1.05rem;font-weight:800;color:var(--navy);margin:0}
+.section-desc{font-size:0.85rem;color:var(--muted);margin-bottom:1.1rem;margin-right:38px}
+
+/* METRICS SETUP */
+.metrics-row{display:flex;gap:0.5rem;margin-bottom:0.45rem;align-items:center}
+.metrics-row .row-num{font-size:0.75rem;color:var(--muted);min-width:18px;text-align:center}
+.metrics-row input{flex:1;padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none;direction:rtl}
+.metrics-row input:focus{border-color:var(--blue)}
+.btn-icon-del{background:none;border:1.5px solid var(--border);border-radius:7px;padding:6px 9px;cursor:pointer;color:var(--muted);font-size:0.85rem;line-height:1;transition:all 0.2s}
+.btn-icon-del:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.btn-add-metric{background:var(--blue-bg);border:1.5px dashed var(--blue);color:var(--blue);border-radius:8px;padding:7px 14px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-top:0.3rem;transition:all 0.2s}
+.btn-add-metric:hover{background:#dde9f6}
+.findings-setup{display:flex;align-items:center;gap:0.8rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);flex-wrap:wrap}
+.findings-setup label{font-size:0.85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.findings-setup input{flex:1;min-width:180px;max-width:280px;padding:7px 11px;border:1.5px solid var(--accent);border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none;background:var(--orange-bg)}
+.presets{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;align-items:center}
+.preset-label{font-size:0.78rem;color:var(--muted)}
+.preset-chip{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:4px 12px;font-size:0.78rem;cursor:pointer;color:var(--muted);font-family:inherit;transition:all 0.18s}
+.preset-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+
+/* DATA TABLE */
+.table-toolbar{display:flex;gap:0.5rem;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap}
+.btn{padding:7px 14px;border-radius:8px;border:none;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1558a0}
+.btn-secondary{background:var(--bg);border:1.5px solid var(--border);color:var(--text)}.btn-secondary:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.btn-danger{background:none;border:1.5px solid var(--border);color:var(--muted)}.btn-danger:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.btn-upload{background:var(--bg);border:1.5px dashed var(--border);color:var(--muted);position:relative;overflow:hidden}
+.btn-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:100px}
+.btn-upload:hover{border-color:var(--blue);color:var(--blue)}
+.row-badge{font-size:0.78rem;background:var(--blue-bg);color:var(--blue);border:1px solid #c8d9f2;border-radius:12px;padding:3px 10px;font-weight:700}
+.table-scroll{overflow-x:auto;border:1.5px solid var(--border);border-radius:10px;margin-bottom:0.8rem}
+table.data-tbl{width:100%;border-collapse:collapse;min-width:400px}
+.data-tbl th{background:var(--navy);color:#fff;padding:8px 10px;font-size:0.8rem;font-weight:700;white-space:nowrap;text-align:right}
+.data-tbl th.findings-th{background:var(--navy2)}
+.data-tbl td{padding:1px 3px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-tbl tr:last-child td{border-bottom:none}
+.data-tbl tr:nth-child(even){background:#fafbfc}
+.data-tbl input.ci{width:100%;padding:6px 8px;border:none;background:transparent;font-size:0.87rem;font-family:inherit;outline:none;direction:rtl;text-align:right;min-width:80px}
+.data-tbl input.ci:focus{background:var(--blue-bg);border-radius:4px}
+.data-tbl td.findings-td input.ci{border-right:3px solid var(--accent)}
+.cell-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.82rem;padding:4px 6px;border-radius:4px}
+.cell-del:hover{color:var(--red);background:var(--red-bg)}
+.warn-box{background:var(--orange-bg);border:1px solid #f5d48a;border-radius:8px;padding:0.6rem 0.9rem;font-size:0.82rem;color:var(--orange);margin-top:0.6rem}
+.info-note{font-size:0.79rem;color:var(--muted);margin-top:0.4rem}
+
+/* ANALYZE */
+.analyze-wrap{text-align:center;padding:0.8rem 0 1.2rem}
+.btn-analyze{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:12px 34px;border-radius:12px;border:none;font-size:0.98rem;font-weight:900;cursor:pointer;font-family:inherit;transition:all 0.2s;box-shadow:0 4px 16px rgba(13,31,60,0.2)}
+.btn-analyze:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(13,31,60,0.3)}
+.btn-analyze:disabled{opacity:0.45;cursor:not-allowed}
+.analyze-hint{font-size:0.82rem;color:var(--muted);margin-top:0.5rem}
+
+/* RESULTS GRID */
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-bottom:1.4rem}
+@media(max-width:700px){.results-grid{grid-template-columns:1fr}}
+
+/* CORRELATIONS */
+.corr-item{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0;border-bottom:1px solid var(--border)}
+.corr-item:last-child{border-bottom:none}
+.corr-label{font-size:0.85rem;font-weight:700;color:var(--navy);min-width:110px;flex-shrink:0;line-height:1.3}
+.corr-bar-wrap{flex:1;height:18px;background:var(--bg);border-radius:9px;overflow:hidden;direction:ltr}
+.corr-bar{height:100%;border-radius:9px;transition:width 0.5s ease}
+.corr-bar.pos{background:linear-gradient(to right,#ff9068,var(--red))}
+.corr-bar.neg{background:linear-gradient(to right,#4fc3a0,var(--green))}
+.corr-bar.weak{background:#dde3ee}
+.corr-r{font-size:0.78rem;font-weight:700;min-width:42px;text-align:center;border-radius:6px;padding:2px 5px}
+.corr-r.pos{background:var(--red-bg);color:var(--red)}
+.corr-r.neg{background:var(--green-bg);color:var(--green)}
+.corr-r.weak{background:var(--bg);color:var(--muted)}
+.corr-tag{font-size:0.72rem;color:var(--muted);white-space:nowrap}
+.corr-legend{display:flex;gap:0.8rem;font-size:0.75rem;margin-bottom:0.8rem;flex-wrap:wrap}
+.corr-legend span{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.model-note{font-size:0.79rem;color:var(--muted);margin-top:0.8rem;background:var(--bg);border-radius:8px;padding:0.55rem 0.8rem}
+
+/* CALCULATOR */
+.calc-field{margin-bottom:0.6rem}
+.calc-field label{display:block;font-size:0.8rem;font-weight:700;color:var(--muted);margin-bottom:3px}
+.calc-field label .weak-note{font-weight:400;color:#b0bac8;font-size:0.72rem}
+.calc-field input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none}
+.calc-field input:focus{border-color:var(--blue)}
+.btn-calc{width:100%;padding:10px;background:var(--accent);color:var(--navy);border:none;border-radius:10px;font-size:0.92rem;font-weight:900;cursor:pointer;font-family:inherit;margin-top:0.5rem;transition:all 0.2s}
+.btn-calc:hover{background:#e09800}
+
+/* RISK OUTPUT */
+.risk-output{margin-top:1rem;padding:1.1rem 1.3rem;border-radius:12px;border:2px solid var(--border)}
+.risk-output.low{border-color:var(--green);background:var(--green-bg)}
+.risk-output.med{border-color:var(--orange);background:var(--orange-bg)}
+.risk-output.high{border-color:var(--red);background:var(--red-bg)}
+.risk-tier-label{font-size:1.1rem;font-weight:900;margin-bottom:0.4rem}
+.risk-score-line{font-size:0.8rem;opacity:0.75;margin-bottom:0.5rem}
+.risk-gauge-track{height:16px;background:linear-gradient(to right,#0a7c5e,#f0a500,#d93025);border-radius:8px;position:relative;direction:ltr;margin:0.3rem 0 0.8rem}
+.risk-marker{position:absolute;top:-5px;width:6px;height:26px;background:var(--navy);border-radius:3px;transform:translateX(-50%);transition:left 0.4s ease}
+.risk-breakdown{border-top:1px solid rgba(0,0,0,0.07);padding-top:0.6rem;margin-top:0.4rem}
+.rbd-title{font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:0.35rem}
+.rbd-item{display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;padding:2px 0}
+.rbd-contrib{font-weight:700;font-size:0.8rem}
+.contrib-high{color:var(--red)}
+.contrib-low{color:var(--green)}
+.contrib-med{color:var(--orange)}
+.risk-disclaimer{font-size:0.73rem;color:var(--muted);margin-top:0.7rem;border-top:1px solid rgba(0,0,0,0.06);padding-top:0.5rem}
+
+/* MODEL SUMMARY */
+.model-stats{display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.model-stat{text-align:center;min-width:70px}
+.model-stat-num{font-size:1.5rem;font-weight:900;color:var(--navy)}
+.model-stat-lbl{font-size:0.75rem;color:var(--muted)}
+.model-included{font-size:0.82rem;color:var(--muted)}
+.model-included strong{color:var(--navy)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:16px;padding:1.8rem;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative}
+.modal h3{font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:0.4rem}
+.modal-sub{font-size:0.82rem;color:var(--muted);margin-bottom:1.1rem}
+.modal-field{margin-bottom:0.7rem}
+.modal-field label{display:block;font-size:0.82rem;font-weight:700;color:var(--muted);margin-bottom:3px}
+.modal-field select{width:100%;padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:inherit;direction:rtl;outline:none}
+.modal-field select:focus{border-color:var(--blue)}
+.modal-divider{border:none;border-top:1px solid var(--border);margin:1rem 0}
+.modal-section-title{font-size:0.82rem;font-weight:800;color:var(--navy);margin-bottom:0.6rem}
+.modal-actions{display:flex;gap:0.5rem;margin-top:1.2rem}
+.modal-actions .btn{flex:1}
+
+/* NO-DATA */
+.empty-row td{text-align:center;padding:1.5rem;color:var(--muted);font-size:0.85rem}
+
+/* FOOTER */
+.page-footer{background:#080f1e;color:rgba(255,255,255,0.5);padding:22px 5vw;text-align:center;font-size:0.82rem}
+.page-footer a{color:rgba(255,255,255,0.4);text-decoration:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="pricing.html">שירותים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
+  </ul>
+</nav>
+
+<div class="page-hero">
+  <div class="page-tag">🔬 כלי ניתוח סיכון — ביקורת ופיקוח</div>
+  <h1>מודל סיכון לביקורת — <em>חיזוי ממצאים</em></h1>
+  <p>הזינו נתוני ביקורות עבר, הכלי לומד אילו מאפיינים מנבאים ממצאים, ואז חשבו רמת סיכון לגוף חדש לפני שנכנסים לביקורת</p>
+  <div class="flow-hint">
+    <div class="fh-step">① הגדירו מדדים</div>
+    <div class="fh-arrow">→</div>
+    <div class="fh-step">② הזינו נתוני ביקורות עבר</div>
+    <div class="fh-arrow">→</div>
+    <div class="fh-step">③ ניתוח קשרים</div>
+    <div class="fh-arrow">→</div>
+    <div class="fh-step">④ מחשבון סיכון</div>
+  </div>
+</div>
+
+<div class="tool-wrap">
+
+<div class="privacy-strip">
+  🔒 כל הנתונים נשארים בדפדפן בלבד — לא נשלחים לשרת ולא מאוחסנים
+</div>
+
+<!-- ══ STEP 1: SETUP ══ -->
+<div class="section-card">
+  <div class="section-header">
+    <div class="step-badge">1</div>
+    <h2>הגדרת מדדים ושם שדה הממצאים</h2>
+  </div>
+  <p class="section-desc">הגדירו אילו נתונים מספריים נאספים בכל ביקורת — לדוגמה: תקציב שנתי, מספר עובדים, מספר עסקאות. המדדים הם הקלט שהמודל ינסה לקשור לממצאים.</p>
+
+  <div id="metrics-setup-list"></div>
+  <button class="btn-add-metric" onclick="addMetric()">+ הוספת מדד</button>
+
+  <div class="presets">
+    <span class="preset-label">טענו דוגמה:</span>
+    <button class="preset-chip" onclick="loadPreset('municipal')">🏙️ רשויות מקומיות</button>
+    <button class="preset-chip" onclick="loadPreset('ngo')">🤝 עמותות ציבוריות</button>
+    <button class="preset-chip" onclick="loadPreset('vendor')">📦 ספקי שירות</button>
+  </div>
+
+  <div class="findings-setup">
+    <label>שם שדה הממצאים (מה שרוצים לחזות):</label>
+    <input type="text" id="findings-label-input" value="מספר ממצאים"
+      oninput="state.findingsLabel=this.value;renderDataTable()"/>
+    <span style="font-size:0.78rem;color:var(--muted)">ערך גבוה יותר = מצב חמור יותר</span>
+  </div>
+</div>
+
+<!-- ══ STEP 2: DATA ══ -->
+<div class="section-card">
+  <div class="section-header">
+    <div class="step-badge">2</div>
+    <h2>נתוני ביקורות עבר</h2>
+  </div>
+  <p class="section-desc">הזינו שורה לכל ביקורת שבוצעה: שם הגוף, הנתונים המספריים, ומספר הממצאים שנמצאו (או ציון אחר). מינימום לניתוח: 5 שורות. מומלץ: 15+.</p>
+
+  <div class="table-toolbar">
+    <button class="btn btn-secondary" onclick="addDataRow()">+ שורה</button>
+    <label class="btn btn-upload">📂 ייבוא מ-Excel
+      <input type="file" accept=".xlsx,.xls,.csv" onchange="importExcel(this)"/>
+    </label>
+    <span class="row-badge" id="row-count-badge">0 ביקורות</span>
+    <button class="btn btn-danger" onclick="clearData()">🗑 נקה הכול</button>
+  </div>
+
+  <div class="table-scroll">
+    <table class="data-tbl">
+      <thead id="data-thead"></thead>
+      <tbody id="data-tbody"></tbody>
+    </table>
+  </div>
+  <p class="info-note" id="data-info">💡 הגדירו מדדים בשלב 1 ואז הוסיפו שורות, או ייבאו קובץ Excel.</p>
+</div>
+
+<!-- ══ ANALYZE ══ -->
+<div class="analyze-wrap">
+  <button class="btn-analyze" id="analyze-btn" onclick="runAnalysis()" disabled>🔍 ניתוח וחישוב מודל</button>
+  <div class="analyze-hint" id="analyze-hint"></div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div id="results-section" style="display:none">
+  <div class="results-grid">
+
+    <!-- Correlations -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="step-badge" style="background:var(--blue)">3</div>
+        <h2>קשרים עם הממצאים</h2>
+      </div>
+      <p class="section-desc">עוצמת הקשר בין כל מדד לבין שדה הממצאים, על פי מקדם מתאם (Spearman, −1 עד +1).</p>
+      <div class="corr-legend">
+        <span><div class="legend-dot" style="background:var(--red)"></div> <span>ערך גבוה → יותר ממצאים</span></span>
+        <span><div class="legend-dot" style="background:var(--green)"></div> <span>ערך גבוה → פחות ממצאים</span></span>
+        <span><div class="legend-dot" style="background:#dde3ee"></div> <span>קשר חלש</span></span>
+      </div>
+      <div id="correlations-container"></div>
+      <div class="model-note" id="model-note"></div>
+    </div>
+
+    <!-- Calculator -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="step-badge" style="background:var(--accent);color:var(--navy)">4</div>
+        <h2>מחשבון סיכון</h2>
+      </div>
+      <p class="section-desc">הזינו נתונים של גוף שטרם נבדק — הכלי יחזיר הערכת סיכון על בסיס דפוסי הביקורות שהזנתם.</p>
+      <div id="calc-inputs"></div>
+      <button class="btn-calc" onclick="calculateRisk()">⚡ חשב רמת סיכון</button>
+      <div id="risk-output"></div>
+    </div>
+
+  </div>
+
+  <!-- Model summary -->
+  <div class="section-card">
+    <div class="section-header">
+      <span style="font-size:1.2rem;line-height:1">📊</span>
+      <h2>סיכום המודל</h2>
+    </div>
+    <div id="model-summary"></div>
+  </div>
+</div>
+
+</div><!-- /tool-wrap -->
+
+<!-- ══ MODAL: מיפוי עמודות ══ -->
+<div class="modal-overlay" id="modal-mapping">
+  <div class="modal">
+    <h3>📋 מיפוי עמודות מהקובץ</h3>
+    <div class="modal-sub">התאימו את עמודות הקובץ לשדות הכלי. שדות שלא ימופו לא ייובאו.</div>
+    <div id="modal-mapping-content"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="applyMapping()">✓ ייבוא</button>
+      <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">
+  <p>© 2025 קנדל BI — <a href="index.html">kandelbi.org</a> · <a href="terms.html">תנאי שימוש</a> · <a href="tools.html">כלים נוספים</a></p>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const state = {
+  metrics: [],        // [{id, label}]
+  findingsLabel: 'מספר ממצאים',
+  data: [],           // [{entity, values:{id:num|null}, findings:num|null}]
+  model: null
+};
+
+let _impData = null;
+let _impHeaders = null;
+
+// ════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function rankArray(arr) {
+  const indexed = arr.map((v, i) => [v, i]);
+  indexed.sort((a, b) => a[0] - b[0]);
+  const ranks = new Array(arr.length);
+  let i = 0;
+  while (i < indexed.length) {
+    let j = i;
+    while (j < indexed.length - 1 && indexed[j + 1][0] === indexed[i][0]) j++;
+    const avgRank = (i + j) / 2 + 1;
+    for (let k = i; k <= j; k++) ranks[indexed[k][1]] = avgRank;
+    i = j + 1;
+  }
+  return ranks;
+}
+
+function spearman(xs, ys) {
+  const pairs = xs.map((x, i) => [x, ys[i]])
+    .filter(([a, b]) => a != null && b != null && !isNaN(a) && !isNaN(b));
+  const n = pairs.length;
+  if (n < 4) return null;
+  const rx = rankArray(pairs.map(p => p[0]));
+  const ry = rankArray(pairs.map(p => p[1]));
+  const mx = rx.reduce((a, b) => a + b, 0) / n;
+  const my = ry.reduce((a, b) => a + b, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) {
+    num += (rx[i] - mx) * (ry[i] - my);
+    dx += (rx[i] - mx) ** 2;
+    dy += (ry[i] - my) ** 2;
+  }
+  if (dx === 0 || dy === 0) return 0;
+  return num / Math.sqrt(dx * dy);
+}
+
+function getPercentile(sortedVals, val) {
+  if (!sortedVals.length) return 0.5;
+  const below = sortedVals.filter(v => v < val).length;
+  return below / sortedVals.length;
+}
+
+function riskTier(score) {
+  if (score < 0.33) return { label: '✅ סיכון נמוך', cls: 'low' };
+  if (score < 0.67) return { label: '⚠️ סיכון בינוני', cls: 'med' };
+  return { label: '🔴 סיכון גבוה', cls: 'high' };
+}
+
+function fmtR(r) {
+  if (r === null) return '—';
+  return (r >= 0 ? '+' : '') + r.toFixed(2);
+}
+
+// ════════════════════════════════════════
+// METRICS SETUP
+// ════════════════════════════════════════
+function addMetric(label = '') {
+  state.metrics.push({ id: uid(), label });
+  renderMetricSetup();
+  renderDataTable();
+  updateAnalyzeBtn();
+}
+
+function removeMetric(id) {
+  state.metrics = state.metrics.filter(m => m.id !== id);
+  state.data.forEach(r => delete r.values[id]);
+  renderMetricSetup();
+  renderDataTable();
+  updateAnalyzeBtn();
+}
+
+function updateMetricLabel(id, label) {
+  const m = state.metrics.find(m => m.id === id);
+  if (m) m.label = label;
+  const th = document.querySelector(`th[data-mid="${id}"]`);
+  if (th) th.textContent = label || '(ללא שם)';
+}
+
+function renderMetricSetup() {
+  const el = document.getElementById('metrics-setup-list');
+  if (!el) return;
+  el.innerHTML = state.metrics.map((m, i) => `
+    <div class="metrics-row">
+      <span class="row-num">${i + 1}</span>
+      <input type="text" value="${esc(m.label)}"
+        placeholder="שם המדד (לדוגמה: תקציב שנתי)"
+        oninput="updateMetricLabel('${m.id}', this.value)"
+        onblur="renderDataTable()"/>
+      <button class="btn-icon-del" onclick="removeMetric('${m.id}')" title="הסר מדד">✕</button>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════
+// PRESETS
+// ════════════════════════════════════════
+const PRESETS = {
+  municipal: ['תקציב שנתי (₪)', 'מספר תושבים', 'מספר עובדים', 'מספר עסקאות רכש', 'מספר ספקים פעילים'],
+  ngo:       ['תקציב שנתי (₪)', 'מספר עובדים', 'מספר מוטבים', 'שנות פעילות', 'מספר ספקים'],
+  vendor:    ['היקף חוזה (₪)', 'מספר עובדים מוקצים', 'מספר חשבוניות שנתיות', 'מספר תלונות', 'וותק הספק (שנים)'],
+};
+
+function loadPreset(key) {
+  if (state.data.length > 0 && !confirm('טעינת דוגמה תאפס את המדדים הקיימים. להמשיך?')) return;
+  state.metrics = (PRESETS[key] || []).map(label => ({ id: uid(), label }));
+  state.data = [];
+  state.model = null;
+  document.getElementById('results-section').style.display = 'none';
+  renderMetricSetup();
+  renderDataTable();
+  updateAnalyzeBtn();
+}
+
+// ════════════════════════════════════════
+// DATA TABLE
+// ════════════════════════════════════════
+function renderDataTable() {
+  const thead = document.getElementById('data-thead');
+  const tbody = document.getElementById('data-tbody');
+  if (!thead || !tbody) return;
+
+  const fl = esc(state.findingsLabel || 'ממצאים');
+
+  thead.innerHTML = `<tr>
+    <th style="min-width:130px">שם הגוף / ביקורת</th>
+    ${state.metrics.map(m => `<th data-mid="${m.id}" style="min-width:105px">${esc(m.label || '(ללא שם)')}</th>`).join('')}
+    <th class="findings-th" style="min-width:110px">${fl}</th>
+    <th class="findings-th" style="min-width:36px;width:36px"></th>
+  </tr>`;
+
+  if (state.data.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="${state.metrics.length + 3}">לחצו "+ שורה" להוספת ביקורת, או ייבאו קובץ Excel</td></tr>`;
+  } else {
+    tbody.innerHTML = state.data.map((row, ri) => `<tr>
+      <td><input class="ci" value="${esc(row.entity || '')}" placeholder="שם הגוף"
+        oninput="state.data[${ri}].entity=this.value"/></td>
+      ${state.metrics.map(m => `<td><input class="ci" type="number" step="any"
+        value="${row.values[m.id] != null ? row.values[m.id] : ''}" placeholder="—"
+        oninput="setVal(${ri},'${m.id}',this.value)"/></td>`).join('')}
+      <td class="findings-td"><input class="ci" type="number" step="any"
+        value="${row.findings != null ? row.findings : ''}" placeholder="—"
+        oninput="state.data[${ri}].findings=toNum(this.value);updateAnalyzeBtn()"/></td>
+      <td><button class="cell-del" onclick="deleteDataRow(${ri})" title="מחק">✕</button></td>
+    </tr>`).join('');
+  }
+
+  const badge = document.getElementById('row-count-badge');
+  if (badge) badge.textContent = state.data.length + ' ביקורות';
+  updateAnalyzeBtn();
+}
+
+function setVal(ri, metricId, v) {
+  state.data[ri].values[metricId] = toNum(v);
+  updateAnalyzeBtn();
+}
+
+function toNum(v) {
+  const n = parseFloat(String(v).replace(/[₪$€,\s]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function addDataRow() {
+  const values = {};
+  state.metrics.forEach(m => { values[m.id] = null; });
+  state.data.push({ entity: '', values, findings: null });
+  renderDataTable();
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#data-tbody tr:not(.empty-row)');
+    if (rows.length) {
+      const inp = rows[rows.length - 1].querySelector('input');
+      if (inp) inp.focus();
+    }
+  }, 40);
+}
+
+function deleteDataRow(idx) {
+  state.data.splice(idx, 1);
+  renderDataTable();
+}
+
+function clearData() {
+  if (state.data.length && !confirm('למחוק את כל נתוני הביקורות?')) return;
+  state.data = [];
+  state.model = null;
+  document.getElementById('results-section').style.display = 'none';
+  renderDataTable();
+}
+
+// ════════════════════════════════════════
+// EXCEL IMPORT
+// ════════════════════════════════════════
+function importExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      if (!rows.length) { alert('הקובץ ריק'); return; }
+      _impHeaders = rows[0].map(String);
+      _impData = rows.slice(1).filter(r => r.some(c => c !== ''));
+      showMappingModal(_impHeaders);
+    } catch (e) {
+      alert('שגיאה בקריאת הקובץ: ' + e.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showMappingModal(headers) {
+  const opts = headers.map((h, i) => `<option value="${i}">${esc(h)}</option>`).join('');
+  const noOpt = `<option value="">— לא לייבא —</option>`;
+
+  const metricsSection = state.metrics.length
+    ? state.metrics.map(m => `
+      <div class="modal-field">
+        <label>${esc(m.label || '(ללא שם)')}</label>
+        <select id="map-m-${m.id}">${noOpt}${opts}</select>
+      </div>`).join('')
+    : `<p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">לא הוגדרו מדדים — כל עמודה מספרית שאינה ממצאים תתווסף אוטומטית.</p>`;
+
+  document.getElementById('modal-mapping-content').innerHTML = `
+    <div class="modal-field">
+      <label>עמודת שם הגוף / הביקורת</label>
+      <select id="map-entity">${noOpt}${opts}</select>
+    </div>
+    <div class="modal-field">
+      <label>${esc(state.findingsLabel || 'ממצאים')} — עמודת היעד</label>
+      <select id="map-findings">${noOpt}${opts}</select>
+    </div>
+    <hr class="modal-divider"/>
+    <div class="modal-section-title">מיפוי מדדים (עמודות קלט):</div>
+    ${metricsSection}`;
+
+  // Auto-guess
+  headers.forEach((h, i) => {
+    const hl = h.toLowerCase();
+    if (['גוף','שם','ביקורת','entity','name'].some(k => hl.includes(k))) {
+      const s = document.getElementById('map-entity');
+      if (s && s.value === '') s.value = i;
+    }
+    if (['ממצא','finding','ציון','score','result'].some(k => hl.includes(k))) {
+      const s = document.getElementById('map-findings');
+      if (s && s.value === '') s.value = i;
+    }
+    state.metrics.forEach(m => {
+      const ml = (m.label || '').toLowerCase().slice(0, 5);
+      if (ml && hl.includes(ml)) {
+        const s = document.getElementById(`map-m-${m.id}`);
+        if (s && s.value === '') s.value = i;
+      }
+    });
+  });
+
+  document.getElementById('modal-mapping').classList.add('open');
+}
+
+function applyMapping() {
+  if (!_impData || !_impHeaders) { closeModal(); return; }
+
+  const entityColStr = document.getElementById('map-entity')?.value;
+  const findingsColStr = document.getElementById('map-findings')?.value;
+  const entityCol = entityColStr !== '' ? parseInt(entityColStr) : -1;
+  const findingsCol = findingsColStr !== '' ? parseInt(findingsColStr) : -1;
+
+  // If no metrics defined, auto-create from numeric columns
+  if (!state.metrics.length) {
+    _impHeaders.forEach((h, i) => {
+      if (i === entityCol || i === findingsCol) return;
+      const hasNums = _impData.some(r => !isNaN(parseFloat(String(r[i]))));
+      if (hasNums) state.metrics.push({ id: uid(), label: h });
+    });
+    renderMetricSetup();
+  }
+
+  const metricMap = {};
+  state.metrics.forEach(m => {
+    const s = document.getElementById(`map-m-${m.id}`);
+    if (s && s.value !== '') metricMap[m.id] = parseInt(s.value);
+  });
+
+  const newRows = _impData.map(row => {
+    const values = {};
+    state.metrics.forEach(m => {
+      const ci = metricMap[m.id];
+      if (ci != null) {
+        const v = parseFloat(String(row[ci] || '').replace(/[₪$€,\s]/g, ''));
+        values[m.id] = isNaN(v) ? null : v;
+      } else { values[m.id] = null; }
+    });
+    const f = findingsCol >= 0
+      ? parseFloat(String(row[findingsCol] || '').replace(/,/g, ''))
+      : null;
+    return {
+      entity: entityCol >= 0 ? String(row[entityCol] || '').trim() : '',
+      values,
+      findings: isNaN(f) ? null : f
+    };
+  }).filter(r => r.entity || Object.values(r.values).some(v => v != null) || r.findings != null);
+
+  state.data = [...state.data, ...newRows];
+  renderDataTable();
+  closeModal();
+  _impData = null;
+  _impHeaders = null;
+}
+
+function closeModal() {
+  document.getElementById('modal-mapping').classList.remove('open');
+}
+
+// ════════════════════════════════════════
+// ANALYZE BUTTON
+// ════════════════════════════════════════
+function updateAnalyzeBtn() {
+  const btn = document.getElementById('analyze-btn');
+  const hint = document.getElementById('analyze-hint');
+  if (!btn) return;
+
+  const valid = state.data.filter(r =>
+    r.findings != null && Object.values(r.values).some(v => v != null)
+  );
+  const hasMetrics = state.metrics.length > 0;
+  const enough = valid.length >= 5;
+
+  btn.disabled = !hasMetrics || !enough;
+
+  if (!hasMetrics) {
+    hint.textContent = 'הגדירו לפחות מדד אחד בשלב 1';
+    hint.style.color = 'var(--muted)';
+  } else if (!enough) {
+    hint.textContent = `נדרשות לפחות 5 ביקורות עם נתוני ממצאים — יש ${valid.length}`;
+    hint.style.color = 'var(--muted)';
+  } else {
+    const warn = valid.length < 10 ? ` (מומלץ 10+ לדיוק טוב יותר — יש ${valid.length})` : '';
+    hint.textContent = `${valid.length} ביקורות תקפות${warn}`;
+    hint.style.color = valid.length < 10 ? 'var(--orange)' : 'var(--green)';
+  }
+}
+
+// ════════════════════════════════════════
+// ANALYSIS
+// ════════════════════════════════════════
+function runAnalysis() {
+  const validRows = state.data.filter(r => r.findings != null);
+  if (validRows.length < 5) { alert('נדרשות לפחות 5 ביקורות עם ציון ממצאים'); return; }
+
+  const findingsArr = validRows.map(r => r.findings);
+
+  const correlations = state.metrics.map(m => {
+    const vals = validRows.map(r => r.values[m.id] ?? null);
+    const r = spearman(vals, findingsArr);
+    const sortedVals = vals.filter(v => v != null).sort((a, b) => a - b);
+    return {
+      id: m.id,
+      label: m.label,
+      r,
+      included: r !== null && Math.abs(r) >= 0.1,
+      sortedVals
+    };
+  });
+
+  correlations.sort((a, b) => Math.abs(b.r || 0) - Math.abs(a.r || 0));
+
+  const findings = validRows.map(r => r.findings);
+  state.model = {
+    correlations,
+    validRows,
+    findingsRange: { min: Math.min(...findings), max: Math.max(...findings) },
+    findingsAvg: findings.reduce((a, b) => a + b, 0) / findings.length
+  };
+
+  renderCorrelations();
+  renderCalculatorInputs();
+  renderModelSummary();
+
+  const sec = document.getElementById('results-section');
+  sec.style.display = 'block';
+  setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function renderCorrelations() {
+  const container = document.getElementById('correlations-container');
+  const { correlations } = state.model;
+
+  if (!correlations.length) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">לא הוגדרו מדדים</p>';
+    return;
+  }
+
+  const allNull = correlations.every(c => c.r === null);
+  if (allNull) {
+    container.innerHTML = `<div class="warn-box">לא נמצאו קשרים ניתנים לחישוב — ייתכן שחסרים נתונים. ודאו שכל שורת ביקורת כוללת גם ערכי מדדים וגם ציון ממצאים.</div>`;
+    return;
+  }
+
+  container.innerHTML = correlations.map(c => {
+    if (c.r === null) return `
+      <div class="corr-item">
+        <div class="corr-label">${esc(c.label)}</div>
+        <div style="flex:1;font-size:0.77rem;color:var(--muted)">אין מספיק נתונים</div>
+      </div>`;
+
+    const pct = Math.abs(c.r) * 100;
+    const isPos = c.r >= 0;
+    const barCls = pct < 10 ? 'weak' : isPos ? 'pos' : 'neg';
+    const rCls = pct < 10 ? 'weak' : isPos ? 'pos' : 'neg';
+    const strength = pct >= 55 ? 'חזק' : pct >= 25 ? 'בינוני' : 'חלש';
+    const dir = isPos ? '↑ יותר → יותר ממצאים' : '↑ יותר → פחות ממצאים';
+
+    return `<div class="corr-item">
+      <div class="corr-label" title="${esc(dir)}">${esc(c.label)}</div>
+      <div class="corr-bar-wrap">
+        <div class="corr-bar ${barCls}" style="width:${Math.min(pct * 1.2, 100)}%"></div>
+      </div>
+      <div class="corr-r ${rCls}">${fmtR(c.r)}</div>
+      <div class="corr-tag" title="${esc(dir)}">${strength}</div>
+    </div>`;
+  }).join('');
+
+  const active = correlations.filter(c => c.included).length;
+  document.getElementById('model-note').textContent =
+    `המודל משתמש ב-${active} מתוך ${correlations.length} מדדים (|r| ≥ 0.1). מקדם Spearman — עמיד בפני ערכים קיצוניים.`;
+}
+
+function renderCalculatorInputs() {
+  const { correlations } = state.model;
+  const container = document.getElementById('calc-inputs');
+  container.innerHTML = correlations.map(c => `
+    <div class="calc-field">
+      <label>${esc(c.label)}${!c.included ? ' <span class="weak-note">(קשר חלש)</span>' : ''}</label>
+      <input type="number" step="any" id="calc-${c.id}" placeholder="הזינו ערך"/>
+    </div>`).join('');
+  document.getElementById('risk-output').innerHTML = '';
+}
+
+function calculateRisk() {
+  const { correlations } = state.model;
+  let weightedSum = 0, totalWeight = 0;
+  const breakdown = [];
+
+  for (const c of correlations) {
+    if (!c.included || c.r === null || !c.sortedVals.length) continue;
+    const inp = document.getElementById(`calc-${c.id}`);
+    const val = parseFloat(inp?.value ?? '');
+    if (isNaN(val)) continue;
+
+    const pct = getPercentile(c.sortedVals, val);
+    // riskPct: 0=low risk direction, 1=high risk direction
+    const riskPct = c.r < 0 ? (1 - pct) : pct;
+    const weight = Math.abs(c.r);
+    weightedSum += weight * riskPct;
+    totalWeight += weight;
+    breakdown.push({ label: c.label, riskPct, val, weight, r: c.r });
+  }
+
+  const output = document.getElementById('risk-output');
+  if (totalWeight === 0) {
+    output.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;margin-top:0.8rem">הזינו ערך עבור לפחות מדד אחד שנכלל במודל</p>';
+    return;
+  }
+
+  const score = weightedSum / totalWeight;
+  const pctDisplay = Math.round(score * 100);
+  const tier = riskTier(score);
+  breakdown.sort((a, b) => b.riskPct - a.riskPct);
+
+  output.innerHTML = `
+    <div class="risk-output ${tier.cls}">
+      <div class="risk-tier-label">${tier.label}</div>
+      <div class="risk-score-line">ציון: ${pctDisplay} מתוך 100 — לפי ${breakdown.length} מדד${breakdown.length === 1 ? '' : 'ים'}</div>
+      <div class="risk-gauge-track">
+        <div class="risk-marker" style="left:${pctDisplay}%"></div>
+      </div>
+      <div class="risk-breakdown">
+        <div class="rbd-title">פירוט תרומת כל מדד לציון:</div>
+        ${breakdown.map(b => {
+          const cls = b.riskPct > 0.67 ? 'contrib-high' : b.riskPct < 0.33 ? 'contrib-low' : 'contrib-med';
+          const arrow = b.riskPct > 0.67 ? '▲ גבוה' : b.riskPct < 0.33 ? '▼ נמוך' : '→ בינוני';
+          return `<div class="rbd-item">
+            <span>${esc(b.label)}: ${Number(b.val).toLocaleString()}</span>
+            <span class="rbd-contrib ${cls}">${arrow}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="risk-disclaimer">⚠️ זוהי הערכה סטטיסטית מבוססת דפוסי עבר בלבד. אינה קובעת שמדובר בליקוי ואינה מחליפה שיקול דעת מקצועי.</div>
+    </div>`;
+}
+
+function renderModelSummary() {
+  const { validRows, findingsRange, findingsAvg, correlations } = state.model;
+  const included = correlations.filter(c => c.included);
+  const strongest = correlations.filter(c => c.r !== null && Math.abs(c.r) >= 0.4);
+
+  document.getElementById('model-summary').innerHTML = `
+    <div class="model-stats">
+      <div class="model-stat">
+        <div class="model-stat-num">${validRows.length}</div>
+        <div class="model-stat-lbl">ביקורות בבסיס</div>
+      </div>
+      <div class="model-stat">
+        <div class="model-stat-num">${included.length}</div>
+        <div class="model-stat-lbl">מדדים במודל</div>
+      </div>
+      <div class="model-stat">
+        <div class="model-stat-num" style="color:var(--blue)">${findingsAvg.toFixed(1)}</div>
+        <div class="model-stat-lbl">ממוצע ממצאים</div>
+      </div>
+      <div class="model-stat">
+        <div class="model-stat-num" style="color:var(--blue)">${findingsRange.min}–${findingsRange.max}</div>
+        <div class="model-stat-lbl">טווח ממצאים</div>
+      </div>
+    </div>
+    ${strongest.length
+      ? `<p class="model-included"><strong>מדדים עם קשר חזק (|r|≥0.4):</strong> ${strongest.map(c => `${esc(c.label)} (${fmtR(c.r)})`).join(' · ')}</p>`
+      : `<p class="model-included" style="color:var(--muted)">לא נמצא קשר חזק (|r|≥0.4) באף מדד — המודל מבוסס על קשרים חלשים. שקלו להוסיף מדדים נוספים או לאסוף יותר נתוני ביקורת.</p>`}
+    ${validRows.length < 10 ? `<div class="warn-box" style="margin-top:0.8rem">⚠️ בסיס נתונים קטן (${validRows.length} ביקורות). מומלץ לפחות 10–15 ביקורות לאמינות גבוהה יותר.</div>` : ''}
+    ${included.length < 2 ? `<div class="warn-box" style="margin-top:0.8rem">⚠️ פחות מ-2 מדדים נכללו במודל — הדיוק מוגבל. שקלו להוסיף מדדים נוספים.</div>` : ''}`;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderMetricSetup();
+  renderDataTable();
+  updateAnalyzeBtn();
+  document.getElementById('modal-mapping').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-mapping')) closeModal();
+  });
+});
+</script>
+</body>
+</html>

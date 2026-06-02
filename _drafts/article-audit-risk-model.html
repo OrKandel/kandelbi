@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-FR9DZSW3M4');</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ביקורת מבוססת סיכון: כיצד לחזות אילו גופים יניבו יותר ממצאים | קנדל BI</title>
+<meta name="description" content="גופי ביקורת שעובדים עם עשרות ישויות יכולים ללמוד מביקורות עבר כדי לחזות היכן צפויים ממצאים — ולתעדף בהתאם. כך בונים מודל סיכון מבוסס נתונים."/>
+<meta name="keywords" content="ביקורת מבוססת סיכון, מודל חיזוי ממצאים, תיעדוף ביקורת, ביקורת פנימית, פיקוח על גופים ציבוריים, ניתוח סיכון"/>
+<meta name="robots" content="index,follow"/>
+<link rel="canonical" href="https://kandelbi.org/article-audit-risk-model.html"/>
+<meta property="og:title" content="ביקורת מבוססת סיכון: כיצד לחזות אילו גופים יניבו יותר ממצאים"/>
+<meta property="og:description" content="גופי ביקורת שעובדים עם עשרות ישויות יכולים ללמוד מביקורות עבר כדי לחזות היכן צפויים ממצאים — ולתעדף בהתאם."/>
+<meta property="og:url" content="https://kandelbi.org/article-audit-risk-model.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
+.article-meta{color:var(--muted);font-size:0.85rem;margin-bottom:2.5rem;display:flex;gap:1.5rem;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.5rem}
+h2{font-size:1.15rem;font-weight:800;color:var(--navy);margin:2rem 0 0.8rem}
+h3{font-size:1rem;font-weight:700;color:var(--navy2);margin:1.2rem 0 0.4rem}
+p{margin-bottom:1rem;font-size:0.97rem}
+ul,ol{padding-right:1.4rem;margin-bottom:1rem}
+li{margin-bottom:0.5rem;font-size:0.97rem}
+.highlight-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.check-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 1.6rem;margin:1.2rem 0;border-right:5px solid var(--blue)}
+.check-card h3{margin-top:0}
+.cta-box{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:1.8rem 2rem;margin:2.5rem 0;color:#fff;text-align:center}
+.cta-box p{color:rgba(255,255,255,0.85);margin-bottom:0}
+.cta-title{font-weight:900;font-size:1.1rem;color:var(--accent);margin-bottom:0.8rem;display:block}
+.tool-link{display:inline-block;background:var(--accent);color:var(--navy);text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:900;font-size:0.92rem;margin-top:0.9rem;transition:all 0.2s}
+.tool-link:hover{background:#e09800}
+.danger-box{background:#fef2f2;border-right:4px solid var(--red);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.green-box{background:#f0faf6;border-right:4px solid var(--green);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.info-box{background:#f0f7ff;border-right:4px solid var(--blue);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem;color:var(--navy2)}
+.divider{border:none;border-top:2px solid var(--border);margin:2.5rem 0}
+.example-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+@media(max-width:520px){.example-grid{grid-template-columns:1fr}}
+.example-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem}
+.example-card .ex-metric{font-size:0.82rem;font-weight:700;color:var(--blue);margin-bottom:0.3rem}
+.example-card .ex-finding{font-size:0.85rem;color:var(--muted)}
+.example-card .ex-arrow{font-size:0.88rem;font-weight:700;margin-top:0.4rem}
+.arrow-pos{color:var(--red)}
+.arrow-neg{color:var(--green)}
+.flow-steps{display:flex;flex-direction:column;gap:0;margin:1.2rem 0}
+.flow-step{display:flex;gap:1rem;align-items:flex-start;padding:.9rem 0;border-bottom:1px solid var(--border)}
+.flow-step:last-child{border-bottom:none}
+.flow-num{background:var(--navy);color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;flex-shrink:0;margin-top:.1rem}
+.flow-content strong{display:block;color:var(--navy);font-size:.95rem;margin-bottom:.2rem}
+.flow-content p{font-size:.88rem;color:var(--muted);margin:0}
+.related-section{margin:2.5rem 0;padding:1.4rem 1.6rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px}
+.related-title{font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.related-grid{grid-template-columns:1fr}}
+.related-card{display:block;padding:0.8rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.2s}
+.related-card:hover{border-color:var(--blue);background:#eef3fb}
+.related-card-cat{font-size:0.72rem;color:var(--blue);font-weight:700;display:block;margin-bottom:0.3rem}
+.related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
+nav{position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif}
+nav .logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none}
+nav .logo span{color:#f0a500}
+nav ul{list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap}
+nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav ul li a:hover{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-cta{background:#f0a500!important;color:#0d1f3c!important;font-weight:800!important;padding:0.45rem 1rem!important}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"ביקורת מבוססת סיכון: כיצד לחזות אילו גופים יניבו יותר ממצאים","description":"גופי ביקורת שעובדים עם עשרות ישויות יכולים ללמוד מביקורות עבר כדי לחזות היכן צפויים ממצאים — ולתעדף בהתאם.","datePublished":"2025-06-01","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-audit-risk-model.html","inLanguage":"he"}
+</script>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="tools.html">כלים להורדה</a></li>
+    <li><a href="pricing.html">שירותים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<main>
+
+<h1>ביקורת מבוססת סיכון: כיצד לחזות אילו גופים יניבו יותר ממצאים</h1>
+<div class="article-meta">
+  <span>✍️ אור קנדל, רו"ח CISA | ביקורת פנימית ופיקוח ציבורי</span>
+  <span>⏱️ קריאה של 7 דקות</span>
+</div>
+
+<p>
+לכל גוף ביקורת יש מגבלת משאבים — מספר מבקרים קבוע, תקציב שנתי, ולוח שנה שכבר מלא. מנגד, מספר הישויות שהוא אמור לפקח עליהן גדל בכל שנה: עמותות, ספקי שירות, רשויות, יחידות מינהל. לא ניתן לבצע ביקורת מעמיקה לכולן — ובכל שנה מישהו מחליט מה לבדוק.
+</p>
+<p>
+הבעיה היא שהחלטה זו מתקבלת לעיתים קרובות על בסיס אינטואיציה, שיגרת סבב קבועה, או קריטריונים שרירותיים. והגוף עם הממצאים הכי חמורים — נשאר מחוץ לתוכנית העבודה.
+</p>
+
+<hr class="divider"/>
+
+<h2>הגישה הנוכחית: סבב שרירותי</h2>
+
+<p>
+שני מודלים נפוצים של תכנון ביקורת — ושניהם לוקים בבעיה יסודית:
+</p>
+
+<div class="check-card">
+  <h3>🔄 סבב מחזורי קבוע</h3>
+  <p>"כל גוף מבוקר אחת לשלוש שנים." נשמע הוגן, אבל בפועל: גוף שנמצא בו ממצא חמור לפני שנתיים — לא יבוקר שוב עד עוד שנה. וגוף נקי ומסודר — יבוקר בדיוק כמו כולם.</p>
+</div>
+
+<div class="check-card">
+  <h3>🎲 תלונות ואקראיות</h3>
+  <p>"נבדוק את מה שעלה לכותרות." מגיב לאירועים, לא מונע אותם. גופים שפועלים בשקט — לא נכנסים לראדאר.</p>
+</div>
+
+<p>
+שני המודלים מתעלמים ממידע שכבר יש בידי הגוף המבקר: נתוני הביקורות שבוצעו בעבר. כל גוף ביקורת שמבקר עשרות ישויות לאורך שנים מחזיק בבסיס ידע יקר שערך — וברוב הארגונים הוא לא מנוצל.
+</p>
+
+<hr class="divider"/>
+
+<h2>הרעיון: ללמוד מהדפוסים</h2>
+
+<p>
+אם ביקרתם 40 גופים בשלוש השנים האחרונות ורשמתם לכל אחד מהם נתונים מספריים — תקציב, מספר עובדים, מספר עסקאות, וותק ההתקשרות — ועם זאת גם את מספר הממצאים שנמצאו, יש לכם בסיס לניתוח:
+</p>
+
+<ul>
+  <li>האם גופים עם תקציב גדול יותר מניבים יותר ממצאים?</li>
+  <li>האם ספקים עם מספר עובדים מוקצים גבוה חורגים יותר בתעריפים?</li>
+  <li>האם עמותות צעירות (פחות שנות פעילות) פחות בשלות בנהלים?</li>
+  <li>האם מספר ספקי משנה גבוה מנבא בעיות בתיעוד?</li>
+</ul>
+
+<p>
+ייתכן שכן, ייתכן שלא — הנתונים יגידו. וכשיש קשר, אפשר להשתמש בו כדי לתעדף ביקורות עתידיות.
+</p>
+
+<hr class="divider"/>
+
+<h2>מה הכלי עושה</h2>
+
+<p>
+כלי מודל הסיכון לביקורת מאפשר לגוף ביקורת לבנות מודל חיזוי פשוט מנתוניו שלו, בארבעה שלבים:
+</p>
+
+<div class="flow-steps">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-content">
+      <strong>הגדרת מדדים</strong>
+      <p>מגדירים אילו נתונים נאספים לכל ביקורת — לדוגמה: תקציב שנתי, מספר עובדים, מספר חשבוניות, וותק. אפשר לטעון פרסט לפי סוג הגוף הנבדק.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-content">
+      <strong>הזנת נתוני ביקורות עבר</strong>
+      <p>לכל ביקורת שבוצעה — שם הגוף, הנתונים המספריים, ומספר הממצאים שנמצאו (או כל ציון מספרי אחר שמייצג את חומרת הממצאים). ייבוא מ-Excel נתמך.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-content">
+      <strong>ניתוח קשרים</strong>
+      <p>הכלי מחשב את מקדם המתאם בין כל מדד לבין מספר הממצאים. מציג אילו גורמים קשורים לממצאים יותר, ובאיזה כיוון — ואיזה מהמדדים כמעט ולא משפיע.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">4</div>
+    <div class="flow-content">
+      <strong>מחשבון סיכון לגוף חדש</strong>
+      <p>מזינים את הנתונים של גוף שטרם נבדק — והכלי מחשב ציון סיכון (0–100) ומפרט את תרומת כל מדד. הגופים עם הציונים הגבוהים ביותר — מועמדים ראשוניים לביקורת.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<h2>דוגמאות לקשרים שהמודל עשוי לחשוף</h2>
+
+<p>
+הקשרים שהמודל מוצא תלויים בסוג הגוף הנבדק ובסוג הביקורת. להלן דוגמאות מסוגים שונים:
+</p>
+
+<div class="example-grid">
+  <div class="example-card">
+    <div class="ex-metric">📊 מספר ספקי משנה</div>
+    <div class="ex-finding">ביקורת על ספקי שירות: מספר גדול של ספקי משנה מקשה על מעקב ומוביל לפערי תיעוד.</div>
+    <div class="ex-arrow arrow-pos">▲ יותר ספקים → יותר ממצאים</div>
+  </div>
+  <div class="example-card">
+    <div class="ex-metric">📅 שנות פעילות</div>
+    <div class="ex-finding">ביקורת על עמותות: גופים צעירים (פחות שנות פעילות) נמצאים עדיין בגיבוש הנהלים — ומחמיצים חובות דיווח.</div>
+    <div class="ex-arrow arrow-pos">▲ גיל צעיר → יותר ממצאים</div>
+  </div>
+  <div class="example-card">
+    <div class="ex-metric">💰 אחוז ביצוע תקציב</div>
+    <div class="ex-finding">ביקורת על יחידות מינהל: תת-ביצוע קיצוני לעיתים קרובות מלווה בבעיות תכנון ורכש חפוז בסוף השנה.</div>
+    <div class="ex-arrow arrow-pos">▲ חריגה מהצפוי → יותר ממצאים</div>
+  </div>
+  <div class="example-card">
+    <div class="ex-metric">👥 ותק ממוצע של עובדים</div>
+    <div class="ex-finding">ביקורת על ספקי כוח אדם: עובדים ותיקים מכירים את הנהלים טוב יותר — גוף עם ותק גבוה מדווח פחות שגיאות.</div>
+    <div class="ex-arrow arrow-neg">▼ ותק גבוה → פחות ממצאים</div>
+  </div>
+</div>
+
+<div class="info-box">
+  <strong>חשוב:</strong> קשר סטטיסטי אינו בהכרח סיבתי. המדדים שהמודל מזהה כקשורים לממצאים הם סימנים — לא הסבר. לפני שמסיקים מסקנות, כדאי לשאול: האם יש הסבר הגיוני לקשר הזה, או שמא מדובר בצירוף מקרים?
+</div>
+
+<hr class="divider"/>
+
+<h2>התנאי המוקדם: סיכום ביקורת אחיד</h2>
+
+<p>
+הכלי עובד רק אם הנתונים שנאספו בביקורות עבר <strong>עקביים ומובנים</strong>. זה הצעד הקריטי שקודם לכל שימוש בכלי.
+</p>
+
+<div class="highlight-box">
+  <strong>בנו טופס סיכום ביקורת אחיד.</strong><br/>
+  מסמך (Excel, Word, או מערכת) שבו כל מבקר ממלא לאחר כל ביקורת: שם הגוף, תאריך, המדדים המספריים שנאספו, ומספר הממצאים (או ציון מובנה אחר). אחידות הנתונים היא מה שמאפשר ניתוח השוואתי.
+</div>
+
+<p>
+אם הממצאים מתועדים בפורמטים שונים בכל ביקורת — חלקם ב-Word, חלקם ב-Excel, חלקם כמספרים וחלקם כטקסט — הנתונים לא יהיו ניתנים לניתוח. ההשקעה בתבנית אחת עקבית מחזירה את עצמה מהר מאוד.
+</p>
+
+<hr class="divider"/>
+
+<h2>כמה נתונים צריך?</h2>
+
+<p>
+אין תשובה חד-משמעית, אבל כלל אצבע:
+</p>
+
+<ul>
+  <li><strong>פחות מ-5 ביקורות</strong> — אין מה לנתח. הכלי לא יפעל.</li>
+  <li><strong>5–10 ביקורות</strong> — אפשר להריץ ניתוח ראשוני, אבל הממצאים חלשים. הכלי יציג אזהרה.</li>
+  <li><strong>10–20 ביקורות</strong> — בסיס סביר לתכנון ראשוני.</li>
+  <li><strong>20+ ביקורות</strong> — הניתוח אמין יותר ומאפשר בנייה הדרגתית של המודל לאורך שנים.</li>
+</ul>
+
+<p>
+גוף ביקורת שמבצע 15–20 ביקורות בשנה יכול תוך שנתיים לצבור בסיס נתונים מספק לתכנון מבוסס-סיכון.
+</p>
+
+<hr class="divider"/>
+
+<h2>פרשנות הציון — מה לעשות עם התוצאה</h2>
+
+<div class="green-box">
+  <strong>הציון הוא כלי תיעדוף — לא פסיקה.</strong><br/>
+  גוף עם ציון סיכון גבוה הוא מועמד ראשוני לביקורת, לא גוף שנמצא בו ממצא. המבקר עדיין צריך לשקול גורמים נוספים שאינם מתועדים במודל: שינוי הנהלה, תלונות, פניות ציבור, שינויים תקציביים חריגים.
+</div>
+
+<div class="check-card">
+  <h3>רצף עבודה מומלץ לתכנון עם המודל</h3>
+  <ol>
+    <li><strong>הריצו את המחשבון</strong> עבור כל הגופים שבסבב הצפוי.</li>
+    <li><strong>מיינו לפי ציון</strong> — זהו את 20-30% עם הציון הגבוה ביותר.</li>
+    <li><strong>צלבו עם שיקולים נוספים</strong> — מתי בוצעה הביקורת האחרונה? האם היו שינויים מהותיים? האם הגוף חיוני לפעילות מרכזית?</li>
+    <li><strong>בנו תוכנית עבודה מנומקת</strong> — לא "בחרנו על פי סבב", אלא "בחרנו על פי ניתוח סיכון מבוסס-נתונים".</li>
+    <li><strong>עדכנו את המודל</strong> לאחר כל ביקורת — הוסיפו את הנתונים והממצאים החדשים.</li>
+  </ol>
+</div>
+
+<hr class="divider"/>
+
+<h2>מה המודל לא יכול לעשות</h2>
+
+<div class="danger-box">
+  <strong>מגבלות חשובות לדעת לפני שמסתמכים על המודל:</strong>
+  <ul style="margin-top:0.6rem">
+    <li><strong>קשר ≠ סיבתיות.</strong> מקדם המתאם אומר "כשזה גבוה, גם זה גבוה" — לא "זה גורם לזה".</li>
+    <li><strong>המודל מבוסס על העבר.</strong> אם הנסיבות השתנו (רגולציה חדשה, הנהלה חדשה, שינוי בסוג הפעילות) — הדפוסים הישנים עלולים להטעות.</li>
+    <li><strong>גופים שמעולם לא בוקרו</strong> לא נמצאים בבסיס הנתונים. הציון שלהם מבוסס על ממצאי גופים דומים — לא על נתוניהם הספציפיים.</li>
+    <li><strong>ביקורות חובה</strong> — שנקבעות על פי חוק, תקנון, או הנחיות פיקוח — אינן נתונות לשיקול הכלי.</li>
+    <li><strong>מדדים חסרים</strong> פוגמים בדיוק. גוף שחסרים לו נתונים במספר מדדים יקבל ציון פחות אמין.</li>
+  </ul>
+</div>
+
+<hr class="divider"/>
+
+<h2>כלי לשיפור מתמיד — לא לשימוש חד-פעמי</h2>
+
+<p>
+הערך האמיתי של כלי זה גדל עם הזמן. בשנה הראשונה — הנתונים דלים והקשרים חלשים. בשנה השלישית — יש בסיס של 30–40 ביקורות, חלק מהקשרים מתחזקים, חלק נעלמים, וכלי התיעדוף הופך לאמין יותר.
+</p>
+<p>
+המסר לארגונים שעוסקים בביקורת: <strong>תעדו עכשיו</strong>. כל ביקורת שנעשית בלי לתעד את הנתונים המספריים — היא הזדמנות שאבדה לשפר את תכנון הביקורת בעתיד.
+</p>
+
+<div class="cta-box">
+  <span class="cta-title">נסו את מחשבון הסיכון — חינמי, בדפדפן, ללא שליחת נתונים לשרת</span>
+  <p>הכלי פועל ישירות בדפדפן שלכם. הנתונים נשארים אצלכם בלבד.</p>
+  <a href="tool-audit-risk-model.html" class="tool-link">🔬 פתחו את מודל הסיכון ←</a>
+</div>
+
+<div class="related-section">
+  <div class="related-title">📖 קראו גם</div>
+  <div class="related-grid">
+    <a href="article-outlier-tool.html" class="related-card">
+      <span class="related-card-cat">ניהול נתונים וביקורת</span>
+      <span class="related-card-title">כיצד לאתר חריגים בין גופים מתוקצבים — בלי לבדוק כל דוח בנפרד</span>
+    </a>
+    <a href="article-audit-reality-gap.html" class="related-card">
+      <span class="related-card-cat">ביקורת פנימית</span>
+      <span class="related-card-title">הפער בין מה שאפשר לבדוק למה שנבדק בפועל</span>
+    </a>
+    <a href="article-auditor-visit.html" class="related-card">
+      <span class="related-card-cat">ביקורת פנימית</span>
+      <span class="related-card-title">מבקר הפנים הגיע — איפה תיעוד הבקרה?</span>
+    </a>
+    <a href="article-professional-unit-trust.html" class="related-card">
+      <span class="related-card-cat">בקרה עצמאית</span>
+      <span class="related-card-title">האם תמיד אפשר לסמוך על היחידה המקצועית?</span>
+    </a>
+  </div>
+</div>
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצים <strong style="color:#1a1a2e;">מודל סיכון שתפור לצורכי הפיקוח הספציפיים שלכם</strong>? <a href="contact.html" style="color:#1e6abf;font-weight:700;">צרו קשר ←</a> &nbsp;·&nbsp; <a href="https://chat.whatsapp.com/CRa87SHUF0rDbfjsPDoAcQ" target="_blank" rel="noopener" style="color:#25d366;font-weight:700;">💬 קבוצת WhatsApp</a></span>
+  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות</span>
+</div>
+
+</main>
+</body>
+</html>

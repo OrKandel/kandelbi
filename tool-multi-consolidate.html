@@ -1,0 +1,397 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-FR9DZSW3M4');</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>איחוד קבצים לטבלה מאוחדת | קנדל BI</title>
+<meta name="description" content="העלו קבצי אקסל רבים במבנה אחיד — הכלי מאחד אותם לטבלה עם שורה לכל ישות. עובד בדפדפן, הנתונים אצלכם."/>
+<meta name="robots" content="index,follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-multi-consolidate.html"/>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+main{max-width:960px;margin:0 auto;padding:2rem 5vw 5rem}
+.tool-title{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:900;color:var(--navy);margin-bottom:.3rem}
+.tool-sub{color:var(--muted);font-size:.93rem;margin-bottom:1.5rem}
+.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:1.6rem;margin-bottom:1.4rem;box-shadow:0 3px 18px rgba(13,31,60,.07)}
+.card-title{font-size:.97rem;font-weight:800;color:var(--navy);margin-bottom:1rem}
+.upload-zone{border:2.5px dashed var(--border);border-radius:10px;padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:#eef3fb}
+.upload-zone.loaded{border-color:var(--green);background:#edf7f3;border-style:solid}
+.uz-icon{font-size:2.2rem;margin-bottom:.5rem}
+.uz-text{font-weight:700;font-size:.93rem}
+.uz-sub{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1rem}
+.fg label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+.fg select,.fg input[type=number],.fg input[type=text]{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:.88rem;outline:none}
+.fg select:focus,.fg input:focus{border-color:var(--blue)}
+.btn{padding:10px 22px;border-radius:9px;border:none;font-family:inherit;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy2)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy)}.btn-accent:hover{opacity:.88}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{opacity:.88}
+.btn-outline{background:var(--white);color:var(--navy);border:2px solid var(--navy)}.btn-outline:hover{background:var(--navy);color:#fff}
+.btn-row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;margin-top:1.2rem}
+.preview-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;max-height:260px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{background:var(--navy);color:#fff;padding:7px 12px;text-align:right;white-space:nowrap;position:sticky;top:0}
+td{padding:6px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:var(--bg)}
+.col-highlight{background:#fff8ed!important;font-weight:700}
+.col-highlight-green{background:#edf7f3!important;font-weight:700}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700}
+.badge-blue{background:#eef3fb;color:var(--blue)}
+.badge-green{background:#edf7f3;color:var(--green)}
+.hidden{display:none}
+.step-bar{display:flex;gap:0;margin-bottom:1.8rem}
+.step{flex:1;padding:.6rem;text-align:center;font-size:.78rem;font-weight:700;color:var(--muted);border-bottom:3px solid var(--border)}
+.step.active{color:var(--blue);border-color:var(--blue)}
+.step.done{color:var(--green);border-color:var(--green)}
+.info-box{background:#f0f7ff;border-right:4px solid var(--blue);border-radius:8px;padding:.9rem 1.1rem;font-size:.88rem;margin-bottom:1rem;color:var(--navy2)}
+.warn-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:.9rem 1.1rem;font-size:.88rem;margin-bottom:1rem}
+.result-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem;margin-bottom:1rem}
+.stat{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center}
+.stat-val{font-size:1.7rem;font-weight:900;color:var(--navy);display:block;line-height:1}
+.stat-lbl{font-size:.73rem;color:var(--muted);margin-top:3px}
+.entity-name-edit{border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-family:inherit;font-size:.8rem;width:100%;max-width:200px}
+</style>
+</head>
+<body>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:.88rem;font-weight:500;padding:.45rem .75rem;border-radius:6px;transition:all .2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:.88rem;font-weight:500;padding:.45rem .75rem;border-radius:6px;transition:all .2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="services.html" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:.88rem;font-weight:500;padding:.45rem .75rem;border-radius:6px;transition:all .2s;white-space:nowrap;display:block">שירותים</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:.88rem;font-weight:500;padding:.45rem .75rem;border-radius:6px;transition:all .2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:.88rem;font-weight:800;padding:.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<main>
+
+<div class="tool-title">📂 איחוד קבצים לטבלה מאוחדת</div>
+<div class="tool-sub">מעלים קבצי אקסל רבים במבנה אחיד — הכלי מייצר טבלה עם שורה לכל ישות וסעיפים כעמודות</div>
+
+<div class="step-bar">
+  <div class="step active" id="s1">① העלאת קבצים</div>
+  <div class="step" id="s2">② הגדרת מבנה</div>
+  <div class="step" id="s3">③ תצוגה ויצוא</div>
+</div>
+
+<!-- STEP 1: Upload -->
+<div id="step1">
+  <div class="card">
+    <div class="card-title">📁 העלאת קבצים</div>
+    <div class="info-box">כל קובץ מייצג ישות אחת (סניף, גוף, ספק וכד'). אפשר להעלות גם כמה קבצים לאותה ישות — תקופות שונות. הקבצים חייבים להיות באותו מבנה.</div>
+    <div class="upload-zone" id="dz" onclick="document.getElementById('fi').click()">
+      <div class="uz-icon">📊</div>
+      <div class="uz-text">לחצו לבחירת קבצים או גררו לכאן</div>
+      <div class="uz-sub">xlsx / xls / csv — ניתן לבחור מספר קבצים בו-זמנית</div>
+    </div>
+    <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
+    <div class="file-chips" id="chips"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-next1" disabled onclick="goStep2()">הגדרת מבנה ←</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2: Configure -->
+<div id="step2" class="hidden">
+  <div class="card">
+    <div class="card-title">⚙️ הגדרת מבנה הקובץ</div>
+    <div class="warn-box">📋 להלן תצוגה מקדימה של הקובץ הראשון. בחרו איזו עמודה מכילה את <strong>שם הסעיף</strong> ואיזו את <strong>הערך המספרי</strong>.</div>
+    <div class="preview-wrap" id="preview-table-wrap"></div>
+    <div class="form-row" style="margin-top:1rem">
+      <div class="fg">
+        <label>עמודת שם הסעיף (טקסט)</label>
+        <select id="col-cat" onchange="refreshPreview()"></select>
+      </div>
+      <div class="fg">
+        <label>עמודת הסכום / הערך</label>
+        <select id="col-val" onchange="refreshPreview()"></select>
+      </div>
+      <div class="fg">
+        <label>שורות כותרת לדלג (בד"כ 1)</label>
+        <input type="number" id="skip-rows" value="1" min="0" max="10" onchange="refreshPreview()"/>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:1rem">
+      <label>שם הישות ייקבע לפי: </label>
+      <select id="entity-source">
+        <option value="filename">שם הקובץ (ברירת מחדל)</option>
+        <option value="manual">ידני — אקבע בעצמי</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep1()">← חזרה</button>
+      <button class="btn btn-primary" onclick="processAll()">עבד את כל הקבצים ←</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 3: Result -->
+<div id="step3" class="hidden">
+  <div class="card">
+    <div class="card-title">✅ טבלה מאוחדת</div>
+    <div class="result-stats" id="result-stats"></div>
+
+    <div id="entity-names-edit" class="hidden" style="margin-bottom:1rem">
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--navy)">ערכו את שמות הישויות לפני הייצוא:</div>
+      <div id="names-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
+    </div>
+
+    <div class="preview-wrap" id="result-table-wrap"></div>
+    <div class="btn-row">
+      <button class="btn btn-accent" onclick="exportExcel()">⬇ הורד כאקסל</button>
+      <button class="btn btn-green" onclick="openDashboard()">📊 פתח בדשבורד חריגים ←</button>
+      <button class="btn btn-outline" onclick="goStep1()">← העלה קבצים נוספים</button>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem">
+  <span style="font-size:.85rem;color:#6b7a99">רוצים <strong style="color:#1a1a2e">כלי מותאם לחוזה הספציפי שלכם</strong>? <a href="contact.html" style="color:#1e6abf;font-weight:700">צרו קשר ←</a></span>
+  <span style="font-size:.78rem;color:#9aa5bb">© 2025 קנדל BI | כל הזכויות שמורות</span>
+</div>
+</main>
+
+<script>
+let filesData = []; // [{file, name, rows}]
+let consolidated = null; // {headers:[], rows:[][]}
+
+/* ───── DRAG & DROP ───── */
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+document.getElementById('fi').addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(fileList) {
+  Array.from(fileList).forEach(f => {
+    if (filesData.some(x => x.file.name === f.name)) return;
+    filesData.push({ file: f, name: f.name.replace(/\.[^.]+$/, ''), rows: null });
+  });
+  renderChips();
+  readAllFiles();
+}
+
+function renderChips() {
+  const chips = document.getElementById('chips');
+  chips.innerHTML = filesData.map((d, i) =>
+    `<div class="chip">📄 ${d.file.name} <span class="x" onclick="removeFile(${i})">✕</span></div>`
+  ).join('');
+  document.getElementById('btn-next1').disabled = filesData.length === 0;
+}
+
+function removeFile(i) {
+  filesData.splice(i, 1);
+  renderChips();
+}
+
+function readAllFiles() {
+  const promises = filesData
+    .filter(d => !d.rows)
+    .map(d => new Promise(resolve => {
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          d.rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        } catch(e) { d.rows = []; }
+        resolve();
+      };
+      r.readAsArrayBuffer(d.file);
+    }));
+  Promise.all(promises).then(() => {
+    if (filesData.every(d => d.rows)) {
+      document.getElementById('btn-next1').disabled = false;
+    }
+  });
+}
+
+/* ───── NAVIGATION ───── */
+function goStep1() {
+  show('step1'); hide('step2'); hide('step3');
+  setStepBar(1);
+}
+function goStep2() {
+  show('step2'); hide('step1'); hide('step3');
+  setStepBar(2);
+  populateConfig();
+}
+function setStepBar(n) {
+  ['s1','s2','s3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'step' + (i+1 < n ? ' done' : i+1 === n ? ' active' : '');
+  });
+}
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+/* ───── CONFIG STEP ───── */
+function populateConfig() {
+  const first = filesData[0];
+  if (!first || !first.rows || !first.rows.length) return;
+  const headers = first.rows[0] || [];
+  const selCat = document.getElementById('col-cat');
+  const selVal = document.getElementById('col-val');
+  selCat.innerHTML = headers.map((h,i) => `<option value="${i}">${h || 'עמודה '+(i+1)}</option>`).join('');
+  selVal.innerHTML = headers.map((h,i) => `<option value="${i}">${h || 'עמודה '+(i+1)}</option>`).join('');
+  // auto-detect: first text col = cat, first numeric col = val
+  const skip = parseInt(document.getElementById('skip-rows').value) || 1;
+  const dataRow = first.rows[skip] || [];
+  let catIdx = 0, valIdx = 1;
+  dataRow.forEach((cell, i) => {
+    if (typeof cell === 'number' && valIdx === 1) valIdx = i;
+    if (typeof cell === 'string' && cell && catIdx === 0) catIdx = i;
+  });
+  selCat.value = catIdx;
+  selVal.value = valIdx !== catIdx ? valIdx : (catIdx === 0 ? 1 : 0);
+  refreshPreview();
+}
+
+function refreshPreview() {
+  const first = filesData[0];
+  if (!first || !first.rows) return;
+  const skip = parseInt(document.getElementById('skip-rows').value) || 0;
+  const cat = parseInt(document.getElementById('col-cat').value);
+  const val = parseInt(document.getElementById('col-val').value);
+  const rows = first.rows.slice(0, skip + 8);
+  let html = '<table><thead><tr>';
+  const header = first.rows[0] || [];
+  header.forEach((h, i) => {
+    let cls = i === cat ? 'col-highlight' : i === val ? 'col-highlight-green' : '';
+    html += `<th class="${cls}">${h || 'עמודה '+(i+1)}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  for (let r = 1; r < rows.length; r++) {
+    html += '<tr>';
+    rows[r].forEach((cell, i) => {
+      let cls = i === cat ? 'col-highlight' : i === val ? 'col-highlight-green' : '';
+      html += `<td class="${cls}">${cell}</td>`;
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('preview-table-wrap').innerHTML = html;
+}
+
+/* ───── PROCESS ALL FILES ───── */
+function processAll() {
+  const skip = parseInt(document.getElementById('skip-rows').value) || 1;
+  const colCat = parseInt(document.getElementById('col-cat').value);
+  const colVal = parseInt(document.getElementById('col-val').value);
+  const entitySource = document.getElementById('entity-source').value;
+
+  const allCats = new Set();
+  const entities = [];
+
+  for (const fd of filesData) {
+    const data = {};
+    const rows = fd.rows || [];
+    for (let i = skip; i < rows.length; i++) {
+      const row = rows[i];
+      const cat = String(row[colCat] ?? '').trim();
+      const raw = String(row[colVal] ?? '').replace(/,/g, '').replace(/[₪$€]/g, '').trim();
+      const val = parseFloat(raw);
+      if (cat && !isNaN(val)) {
+        data[cat] = (data[cat] || 0) + val;
+        allCats.add(cat);
+      }
+    }
+    entities.push({ name: fd.name, data });
+  }
+
+  if (allCats.size === 0) {
+    alert('לא נמצאו נתונים תקינים. בדקו את בחירת העמודות.');
+    return;
+  }
+
+  const cats = [...allCats].sort();
+  consolidated = {
+    headers: ['ישות', ...cats],
+    rows: entities.map(e => [e.name, ...cats.map(c => e.data[c] !== undefined ? e.data[c] : '')])
+  };
+
+  show('step3'); hide('step2');
+  setStepBar(3);
+  renderResult(entitySource === 'manual');
+}
+
+/* ───── RENDER RESULT ───── */
+function renderResult(showNameEdit) {
+  const stats = document.getElementById('result-stats');
+  stats.innerHTML = [
+    { val: consolidated.rows.length, lbl: 'ישויות' },
+    { val: consolidated.headers.length - 1, lbl: 'סעיפים' },
+    { val: filesData.length, lbl: 'קבצים עובדו' }
+  ].map(s => `<div class="stat"><span class="stat-val">${s.val}</span><span class="stat-lbl">${s.lbl}</span></div>`).join('');
+
+  // Name editor
+  const nameEdit = document.getElementById('entity-names-edit');
+  if (showNameEdit) {
+    nameEdit.classList.remove('hidden');
+    document.getElementById('names-list').innerHTML = consolidated.rows.map((row, i) =>
+      `<input class="entity-name-edit" value="${row[0]}" onchange="consolidated.rows[${i}][0]=this.value; rebuildResultTable()"/>`
+    ).join('');
+  } else {
+    nameEdit.classList.add('hidden');
+  }
+
+  rebuildResultTable();
+}
+
+function rebuildResultTable() {
+  const allRows = [consolidated.headers, ...consolidated.rows];
+  let html = '<table><thead><tr>' + consolidated.headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  consolidated.rows.forEach(row => {
+    html += '<tr>' + row.map((cell, i) =>
+      `<td style="${i>0?'text-align:left;font-family:monospace':'font-weight:700'}">${
+        i > 0 && cell !== '' ? Number(cell).toLocaleString('he-IL') : cell
+      }</td>`
+    ).join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('result-table-wrap').innerHTML = html;
+}
+
+/* ───── EXPORT ───── */
+function exportExcel() {
+  const ws = XLSX.utils.aoa_to_sheet([consolidated.headers, ...consolidated.rows]);
+  // Style header row (basic)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[addr]) ws[addr].s = { font: { bold: true } };
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'מאוחד');
+  XLSX.writeFile(wb, 'טבלה-מאוחדת.xlsx');
+}
+
+/* ───── OPEN DASHBOARD ───── */
+function openDashboard() {
+  // Save consolidated data to sessionStorage for dashboard to pick up
+  try {
+    sessionStorage.setItem('consolidatedData', JSON.stringify({
+      headers: consolidated.headers,
+      rows: consolidated.rows
+    }));
+    window.open('tool-outlier-dashboard.html', '_blank');
+  } catch(e) {
+    alert('הורידו את הקובץ והעלו אותו לדשבורד.');
+  }
+}
+</script>
+</body>
+</html>

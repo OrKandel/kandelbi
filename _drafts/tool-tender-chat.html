@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date());gtag('config','G-FR9DZSW3M4');
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>חילוץ נתוני מכרז — קנדל BI</title>
+<meta name="description" content="מעלים PDF של מכרז פומבי, הכלי מחלץ אוטומטית תנאי סף, מועדים, שירותים ותעריפים — סוקרים, עורכים ומייצאים לאקסל."/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-tender-chat.html"/>
+<meta property="og:title" content="חילוץ נתוני מכרז — קנדל BI"/>
+<meta property="og:url" content="https://kandelbi.org/tool-tender-chat.html"/>
+<meta property="og:locale" content="he_IL"/>
+<meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--orange:#e67e22;
+  --gbg:#edf7f3;--rbg:#fef2f2;--obg:#fff8ed;
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;right:0;left:0;z-index:100;background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25)}
+.logo{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+nav ul{list-style:none;display:flex;gap:0.1rem;margin:0;padding:0}
+nav a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block}
+nav a.cta{background:var(--accent);color:var(--navy);font-weight:800;padding:0.45rem 1rem}
+nav a:hover:not(.cta){background:rgba(255,255,255,0.1);color:#fff}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:3rem 5vw 2rem;text-align:center;margin-top:64px}
+.hero-badge{display:inline-block;background:rgba(240,165,0,0.2);border:1px solid rgba(240,165,0,0.4);color:var(--accent);font-size:0.75rem;font-weight:800;padding:4px 14px;border-radius:20px;margin-bottom:0.8rem}
+.hero h1{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:#fff;margin-bottom:0.4rem}
+.hero p{font-size:0.93rem;color:rgba(255,255,255,0.72);max-width:540px;margin:0 auto}
+
+/* ── STEPS BAR ── */
+.steps-bar{background:var(--white);border-bottom:2px solid var(--border);padding:0.9rem 5vw;display:flex;align-items:center;justify-content:center;gap:4px;position:sticky;top:64px;z-index:50}
+.step{display:flex;align-items:center;gap:7px;font-size:0.83rem;font-weight:600;color:var(--muted);padding:5px 14px;border-radius:8px;transition:all 0.3s}
+.step.active{color:var(--navy);background:rgba(13,31,60,0.07)}
+.step.done{color:var(--green)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:900;flex-shrink:0;transition:all 0.3s}
+.step.active .step-num{background:var(--navy);color:#fff}
+.step.done .step-num{background:var(--green);color:#fff}
+.step-sep{color:var(--border);font-size:0.9rem;padding:0 2px}
+
+/* ── MAIN ── */
+.main{max-width:860px;margin:0 auto;padding:2rem 5vw 5rem}
+
+/* ── UPLOAD ── */
+.upload-zone{background:var(--white);border-radius:16px;border:2.5px dashed var(--border);padding:2.8rem 2rem;text-align:center;cursor:pointer;transition:all 0.25s;margin-bottom:1.5rem}
+.upload-zone:hover{border-color:var(--blue);background:#eef3fb}
+.upload-zone.drag{border-color:var(--blue);background:#e8f0fb;transform:scale(1.01)}
+.upload-zone.processing{border-style:solid;border-color:var(--accent);background:var(--obg);cursor:wait}
+.upload-zone.loaded{border-style:solid;border-color:var(--green);background:var(--gbg)}
+.upload-zone.errored{border-style:solid;border-color:var(--red);background:var(--rbg)}
+.up-icon{font-size:2.8rem;margin-bottom:0.6rem}
+.up-title{font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:0.3rem}
+.up-sub{font-size:0.83rem;color:var(--muted)}
+.up-retry{display:inline-block;margin-top:0.6rem;font-size:0.8rem;color:var(--blue);font-weight:700;cursor:pointer;text-decoration:underline}
+
+/* SPINNER */
+.spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(240,165,0,0.3);border-top-color:var(--accent);border-radius:50%;animation:rot 0.8s linear infinite;vertical-align:middle;margin-left:5px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── SECTION CARDS ── */
+.sec{background:var(--white);border-radius:14px;border:1px solid var(--border);margin-bottom:1rem;overflow:hidden;box-shadow:0 2px 10px rgba(13,31,60,0.05)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1.2rem;background:var(--navy);cursor:pointer;user-select:none;-webkit-user-select:none}
+.sec-left{display:flex;align-items:center;gap:9px}
+.sec-ico{font-size:1rem}
+.sec-title{font-size:0.92rem;font-weight:800;color:#fff}
+.sec-badge{font-size:0.68rem;color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.12);padding:2px 8px;border-radius:10px}
+.sec-toggle{color:rgba(255,255,255,0.5);font-size:0.78rem;transition:transform 0.2s}
+.sec-body{padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:0.75rem}
+.sec-body.collapsed{display:none}
+
+/* ── FIELDS ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem}
+.fgrid.cols3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg.full{grid-column:1/-1}
+.flabel{font-size:0.72rem;font-weight:700;color:var(--muted);letter-spacing:0.3px;text-transform:uppercase}
+.finp{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.87rem;font-family:'Heebo',sans-serif;color:var(--text);background:var(--bg);direction:rtl;outline:none;transition:border-color 0.2s;width:100%}
+.finp:focus{border-color:var(--blue);background:#fff}
+.finp.edited{border-color:var(--accent);background:#fffbf0}
+textarea.finp{resize:vertical;min-height:72px;line-height:1.55}
+select.finp{cursor:pointer}
+
+/* ── DYNAMIC ROWS ── */
+.dlist{display:flex;flex-direction:column;gap:5px}
+.drow{display:flex;align-items:center;gap:5px;background:var(--bg);border-radius:8px;padding:5px 7px;border:1.5px solid transparent;transition:border-color 0.2s}
+.drow:hover{border-color:var(--border)}
+.drow .finp{background:#fff}
+.drow .finp.w80{width:80px;flex:none}
+.drow .finp.w90{width:90px;flex:none}
+.drow .finp.w110{width:110px;flex:none}
+.drow .finp.w130{width:130px;flex:none}
+.btn-rm{background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.9rem;padding:3px 6px;border-radius:5px;transition:all 0.2s;flex-shrink:0;line-height:1}
+.btn-rm:hover{color:var(--red);background:var(--rbg)}
+.btn-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px 12px;background:none;border:1.5px dashed var(--border);border-radius:8px;color:var(--muted);font-family:'Heebo',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:2px}
+.btn-add:hover{border-color:var(--blue);color:var(--blue);background:#eef3fb}
+
+/* col headers for tables */
+.col-heads{display:grid;gap:5px;padding:2px 7px 0;font-size:0.7rem;font-weight:700;color:var(--muted)}
+
+/* ── EXPORT BAR ── */
+.export-bar{position:sticky;bottom:0;background:var(--white);border-top:2px solid var(--border);padding:0.9rem 5vw;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(13,31,60,0.1);display:none}
+.ebar-info{font-size:0.83rem;color:var(--muted);line-height:1.5}
+.ebar-info strong{color:var(--navy);display:block;font-size:0.9rem}
+.btn-export{display:flex;align-items:center;gap:7px;padding:11px 26px;background:var(--accent);color:var(--navy);border:none;border-radius:10px;font-family:'Heebo',sans-serif;font-size:0.95rem;font-weight:900;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.btn-export:hover{background:#ffc940;transform:translateY(-1px)}
+.btn-reanalyze{padding:9px 18px;background:none;border:2px solid var(--border);border-radius:9px;font-family:'Heebo',sans-serif;font-size:0.82rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.2s}
+.btn-reanalyze:hover{border-color:var(--navy);color:var(--navy)}
+
+@media(max-width:640px){
+  .fgrid,.fgrid.cols3{grid-template-columns:1fr}
+  .step span:not(.step-num){display:none}
+  .drow{flex-wrap:wrap}
+  .drow .finp.w80,.drow .finp.w110,.drow .finp.w130{width:100%}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="tools.html">כלים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="contact.html" class="cta">צרו קשר</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">⚖️ כלי מכרזים</div>
+  <h1>חילוץ נתוני מכרז — מחצית אוטומטי</h1>
+  <p>מעלים PDF של מכרז פומבי, הכלי מחלץ אוטומטית את כל הנתונים — סוקרים, עורכים ומייצאים לאקסל</p>
+</div>
+
+<div class="steps-bar">
+  <div class="step active" id="step1"><span class="step-num">1</span><span>העלאת מכרז</span></div>
+  <span class="step-sep">›</span>
+  <div class="step" id="step2"><span class="step-num">2</span><span>סקירה ועריכה</span></div>
+  <span class="step-sep">›</span>
+  <div class="step" id="step3"><span class="step-num">3</span><span>ייצוא לאקסל</span></div>
+</div>
+
+<div class="main">
+
+  <!-- אזהרת פרטיות -->
+  <div style="background:#fff8ed;border:1.5px solid #f5d48a;border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem;display:flex;gap:10px;align-items:flex-start">
+    <span style="font-size:1.2rem;flex-shrink:0">⚠️</span>
+    <div style="font-size:0.84rem;color:#7a4f00;line-height:1.6">
+      <strong style="display:block;margin-bottom:2px;">שימו לב לפני ההעלאה</strong>
+      הPDF שתעלו יישלח לשרת חיצוני לצורך ניתוח אוטומטי. <strong>העלו מכרזים פומביים בלבד</strong> — מסמכים שפורסמו בפומבי ואינם מכילים מידע עסקי סודי, מידע אישי רגיש או נתונים פנימיים מסווגים. אין להעלות מסמכים פנימיים, הצעות מחיר או חוזים חתומים.
+    </div>
+  </div>
+
+  <!-- UPLOAD — מכרז ראשי -->
+  <div class="upload-zone" id="upzone">
+    <div class="up-icon" id="up-ico">📑</div>
+    <div class="up-title" id="up-title">לחצו להעלאת PDF מכרז</div>
+    <div class="up-sub" id="up-sub">גררו לכאן או לחצו לבחירת קובץ · עד 20 מגה · מכרזים פומביים בלבד</div>
+  </div>
+  <input type="file" id="finput" accept=".pdf" hidden/>
+
+  <!-- UPLOAD — שאלות הבהרה (אופציונלי) -->
+  <div style="background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:0.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+    <div>
+      <div style="font-size:0.87rem;font-weight:800;color:var(--navy);margin-bottom:2px">📎 שאלות הבהרה — אופציונלי</div>
+      <div style="font-size:0.78rem;color:var(--muted)" id="clar-sub">העלו PDF שאלות הבהרה לניתוח משולב עם המכרז</div>
+    </div>
+    <button id="clar-btn" onclick="document.getElementById('clarinput').click()" style="padding:8px 18px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Heebo',sans-serif;font-size:0.82rem;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.2s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📂 בחרו קובץ</button>
+  </div>
+  <input type="file" id="clarinput" accept=".pdf" hidden/>
+
+  <!-- RESULTS -->
+  <div id="results" style="display:none">
+
+    <!-- פרטי מכרז -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sg')">
+        <div class="sec-left"><span class="sec-ico">📋</span><span class="sec-title">פרטי מכרז כלליים</span></div>
+        <span class="sec-toggle" id="tg-sg">▲</span>
+      </div>
+      <div class="sec-body" id="sg">
+        <div class="fgrid">
+          <div class="fg full"><label class="flabel">שם המכרז</label><input class="finp" id="f-name" placeholder="שם המכרז המלא" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">מספר מכרז</label><input class="finp" id="f-num" placeholder="מספר מכרז" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">גוף מפרסם</label><input class="finp" id="f-pub" placeholder="שם הרשות / הגוף" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">תאריך פרסום</label><input class="finp" id="f-pubdate" placeholder="תאריך פרסום" oninput="ed(this)"/></div>
+          <div class="fg"><label class="flabel">תקופת התקשרות</label><input class="finp" id="f-dur" placeholder="לדוגמה: שנה + אופציה לשנתיים" oninput="ed(this)"/></div>
+          <div class="fg full"><label class="flabel">סוג מכרז</label>
+            <select class="finp" id="f-type" onchange="ed(this)">
+              <option value="">— בחר —</option>
+              <option value="לפי שעות">לפי שעות</option>
+              <option value="לפי תפוקות">לפי תפוקות</option>
+              <option value="מעורב">מעורב — שעות ותפוקות</option>
+              <option value="לא ידוע">לא ידוע</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- תנאי סף -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('st')">
+        <div class="sec-left"><span class="sec-ico">🔒</span><span class="sec-title">תנאי סף</span><span class="sec-badge" id="cnt-t">0</span></div>
+        <span class="sec-toggle" id="tg-st">▲</span>
+      </div>
+      <div class="sec-body" id="st">
+        <div style="font-size:0.78rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:7px 10px;line-height:1.5">
+          <strong style="color:var(--navy)">ראשוני</strong> — נבדק פעם אחת בתחילת ההתקשרות &nbsp;·&nbsp; <strong style="color:var(--navy)">מתמשך</strong> — חייב להישמר לאורך כל תקופת החוזה
+        </div>
+        <div class="col-heads" style="grid-template-columns:110px 1fr 110px 28px">
+          <span>קטגוריה</span><span>תיאור התנאי</span><span>שלב</span><span></span>
+        </div>
+        <div class="dlist" id="list-t"></div>
+        <button class="btn-add" onclick="addT()">+ הוספת תנאי סף</button>
+      </div>
+    </div>
+
+    <!-- שירותים -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('ss')">
+        <div class="sec-left"><span class="sec-ico">🛠️</span><span class="sec-title">שירותים ותעריפים</span><span class="sec-badge" id="cnt-s">0</span></div>
+        <span class="sec-toggle" id="tg-ss">▲</span>
+      </div>
+      <div class="sec-body" id="ss">
+        <div class="col-heads" style="grid-template-columns:1fr 90px 90px 90px 90px 28px">
+          <span>שם השירות</span><span>יחידת מידה</span><span>תעריף</span><span>כמות משוערת</span><span>כמות מקסימלית</span><span></span>
+        </div>
+        <div class="dlist" id="list-s"></div>
+        <button class="btn-add" onclick="addS()">+ הוספת שירות</button>
+      </div>
+    </div>
+
+    <!-- דרישות מהספק -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sr')">
+        <div class="sec-left"><span class="sec-ico">📌</span><span class="sec-title">דרישות מהספק — הגדרת העבודה</span><span class="sec-badge" id="cnt-r">0</span></div>
+        <span class="sec-toggle" id="tg-sr">▲</span>
+      </div>
+      <div class="sec-body" id="sr">
+        <div class="col-heads" style="grid-template-columns:0.8fr 1.5fr 28px">
+          <span>נושא / דרישה</span><span>תיאור מפורט</span><span></span>
+        </div>
+        <div class="dlist" id="list-r"></div>
+        <button class="btn-add" onclick="addR()">+ הוספת דרישה</button>
+      </div>
+    </div>
+
+    <!-- מסמכים -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sm')">
+        <div class="sec-left"><span class="sec-ico">📄</span><span class="sec-title">מסמכים נדרשים</span><span class="sec-badge" id="cnt-m">0</span></div>
+        <span class="sec-toggle" id="tg-sm">▲</span>
+      </div>
+      <div class="sec-body" id="sm">
+        <div class="col-heads" style="grid-template-columns:1fr 1fr 28px">
+          <span>שם המסמך</span><span>הערות</span><span></span>
+        </div>
+        <div class="dlist" id="list-m"></div>
+        <button class="btn-add" onclick="addM()">+ הוספת מסמך</button>
+      </div>
+    </div>
+
+    <!-- מדדי שירות -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sl')">
+        <div class="sec-left"><span class="sec-ico">📊</span><span class="sec-title">מדדי רמת שירות</span><span class="sec-badge" id="cnt-l">0</span></div>
+        <span class="sec-toggle" id="tg-sl">▲</span>
+      </div>
+      <div class="sec-body" id="sl">
+        <div class="col-heads" style="grid-template-columns:1fr 120px 140px 28px">
+          <span>שם המדד</span><span>יעד חוזי</span><span>פיצוי / קנס</span><span></span>
+        </div>
+        <div class="dlist" id="list-l"></div>
+        <button class="btn-add" onclick="addL()">+ הוספת מדד</button>
+      </div>
+    </div>
+
+    <!-- בקרות חודשיות -->
+    <div class="sec">
+      <div class="sec-head" onclick="tog('sc')">
+        <div class="sec-left"><span class="sec-ico">📅</span><span class="sec-title">בקרות חודשיות / תקופתיות</span><span class="sec-badge" id="cnt-c">0</span></div>
+        <span class="sec-toggle" id="tg-sc">▲</span>
+      </div>
+      <div class="sec-body" id="sc">
+        <div class="col-heads" style="grid-template-columns:1fr 110px 1fr 28px">
+          <span>שם הבקרה</span><span>תדירות</span><span>מסמכים נדרשים לביצוע</span><span></span>
+        </div>
+        <div class="dlist" id="list-c"></div>
+        <button class="btn-add" onclick="addC()">+ הוספת בקרה</button>
+      </div>
+    </div>
+
+    <div style="height:80px"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- EXPORT BAR -->
+<div class="export-bar" id="ebar">
+  <div class="ebar-info">
+    <strong id="ebar-title">מכרז מוכן לייצוא</strong>
+    בדקו ועדכנו את הנתונים לפי הצורך
+  </div>
+  <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
+    <button class="btn-reanalyze" onclick="reanalyze()">🔄 ניתוח מחדש</button>
+    <button class="btn-export" onclick="exportXls()">📥 ייצוא לאקסל</button>
+  </div>
+</div>
+
+<script>
+const PROXY = 'https://gemini-proxy.orkandel11.workers.dev/';
+const MODEL  = 'gemini-2.0-flash';
+let lastB64  = null;
+let lastClarB64 = null;
+
+// ── STEPS ──
+function setStep(n){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('step'+i);
+    el.className='step'+(i===n?' active':i<n?' done':'');
+  });
+}
+
+// ── UPLOAD ──
+const zone  = document.getElementById('upzone');
+const finput = document.getElementById('finput');
+zone.addEventListener('click', ()=>{ if(!zone.classList.contains('processing')&&!zone.classList.contains('loaded')) finput.click(); });
+zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', ()=>zone.classList.remove('drag'));
+zone.addEventListener('drop', e=>{ e.preventDefault(); zone.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f&&f.type==='application/pdf') go(f); else alert('נא להעלות קובץ PDF בלבד'); });
+finput.addEventListener('change', e=>{ const f=e.target.files[0]; if(f) go(f); });
+
+// ── UPLOAD — שאלות הבהרה ──
+document.getElementById('clarinput').addEventListener('change', e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  if(f.size>20*1024*1024){ alert('הקובץ גדול מ-20 מגה'); return; }
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    lastClarB64=ev.target.result.split(',')[1];
+    document.getElementById('clar-sub').textContent='✅ '+f.name+' — יכלל בניתוח';
+    document.getElementById('clar-btn').textContent='🔄 החלף קובץ';
+  };
+  reader.readAsDataURL(f);
+});
+
+function setZone(state, ico, title, sub){
+  zone.className='upload-zone '+state;
+  document.getElementById('up-ico').textContent=ico;
+  document.getElementById('up-title').textContent=title;
+  document.getElementById('up-sub').textContent=sub||'';
+}
+
+async function go(file){
+  if(file.size>20*1024*1024){ alert('הקובץ גדול מ-20 מגה'); return; }
+  setZone('processing','🔍','בודק שזה מכרז פומבי...','מאמת את סוג המסמך — אנא המתן');
+  setStep(1);
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const b64=ev.target.result.split(',')[1];
+    lastB64=b64;
+
+    // ניתוח מלא
+    const clarNote=lastClarB64?' + שאלות הבהרה':'';
+    setZone('processing','⏳','מנתח את המכרז...','חולץ תנאי סף, שירותים, בקרות'+clarNote+' — אנא המתן כחצי דקה');
+    await analyze(b64, file.name, file.size);
+  };
+  reader.readAsDataURL(file);
+}
+
+
+async function analyze(b64, fname, fsize){
+  try{
+    const data=await extract(b64);
+    populate(data);
+
+    // בדיקה אם חזר תוכן אמיתי
+    const hasContent = !!(
+      data.general?.name || data.general?.number || data.general?.publisher ||
+      (data.thresholds||[]).length || (data.services||[]).length ||
+      (data.requirements||[]).length || (data.controls||[]).length
+    );
+
+    const sz=fsize?`${(fsize/1024).toFixed(0)} ק"ב · `:'';
+    if(hasContent){
+      setZone('loaded','✅', fname||'קובץ הועלה', sz+'ניתוח הושלם בהצלחה');
+    } else {
+      setZone('loaded','⚠️', fname||'קובץ הועלה', sz+'לא הצלחנו לחלץ נתונים אוטומטית — מלאו ידנית');
+      showNotice('לא הצלחנו לחלץ נתונים מהמסמך. ייתכן שמדובר בקובץ סרוק, מוצפן, או שהתוכן אינו זמין לקריאה. ניתן למלא את הטופס ידנית.');
+    }
+
+    document.getElementById('results').style.display='block';
+    document.getElementById('ebar').style.display='flex';
+    document.getElementById('ebar-title').textContent=data.general?.name||fname||'מכרז מוכן לייצוא';
+    setStep(2);
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    setZone('errored','❌','שגיאה בניתוח',err.message+' — לחצו להעלאה מחדש');
+  }
+}
+
+function showNotice(msg){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:80px;right:50%;transform:translateX(50%);z-index:999;background:#1a3561;color:#fff;padding:14px 22px;border-radius:12px;font-size:0.87rem;max-width:480px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.25);line-height:1.6';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 7000);
+}
+
+async function reanalyze(){
+  if(!lastB64){alert('העלו קובץ קודם');return;}
+  setZone('processing','⏳','מנתח מחדש...','');
+  await analyze(lastB64, document.getElementById('up-title').textContent);
+}
+
+// ── EXTRACT ──
+async function extract(b64){
+  const prompt=`אתה מומחה לניתוח מכרזים ציבוריים בישראל.
+קרא את כל המסמכים המצורפים וחלץ את המידע הבא.
+אם צורפו שאלות הבהרה — שלב את המידע שלהן עם המכרז.
+החזר JSON בלבד ללא שום טקסט נוסף:
+
+{
+  "general":{
+    "name":"שם המכרז המלא",
+    "number":"מספר המכרז",
+    "publisher":"שם הגוף המפרסם",
+    "publishDate":"תאריך פרסום",
+    "contractDuration":"תקופת ההתקשרות",
+    "tenderType":"לפי שעות/לפי תפוקות/מעורב/לא ידוע"
+  },
+  "thresholds":[
+    {"category":"ניסיון","description":"תיאור מלא של התנאי","stage":"ראשוני/מתמשך"}
+  ],
+  "services":[
+    {"name":"שם השירות","unit":"יחידת מידה","rate":"תעריף","quantity":"כמות משוערת","maxQuantity":"כמות מקסימלית אם קיימת"}
+  ],
+  "requirements":[
+    {"name":"נושא הדרישה","description":"תיאור מפורט של מה שהספק נדרש לספק"}
+  ],
+  "documents":[
+    {"name":"שם המסמך","notes":"הערות"}
+  ],
+  "sla":[
+    {"metric":"שם המדד","target":"יעד חוזי","penalty":"פיצוי או קנס"}
+  ],
+  "controls":[
+    {"name":"שם הבקרה","frequency":"חודשי/רבעוני/שנתי/לפי אירוע","documents":"מסמך א, מסמך ב"}
+  ]
+}
+
+הנחיות חשובות:
+1. תנאי סף — stage=ראשוני אם נבדק רק בתחילת ההתקשרות, stage=מתמשך אם חייב להישמר לאורך כל תקופת החוזה (לדוגמה: חובת העסקת X עובדים בעלי ותק, קיום רישיון בתוקף). קטגוריות: ניסיון, כספי, רישיון, כוח אדם, אחר.
+2. מסמכים נדרשים ובקרות חודשיות — כלול רק מה שרלוונטי לניהול ההתקשרות השוטפת. אל תכלול מסמכים שמוגשים רק פעם אחת בעת ההתקשרות (כגון: ערבות ביצוע, הצהרות, כתב התחייבות).
+3. דרישות מהספק — פרט את הגדרת העבודה: מה בדיוק הספק נדרש לספק, להעמיד, לבצע. לא תנאי סף אלא תיאור השירות עצמו.
+4. בקרות חודשיות — כלול את כל הבקרות הרלוונטיות להתקשרות השוטפת: בדיקת דוחות תשומות/תפוקות, אימות נוכחות, בדיקת תעריפים, עמידה במדדי שירות, דגימות, בדיקת עמידה בתנאים המתמשכים ועוד.
+5. אם שדה אינו קיים, השאר ריק. החזר JSON בלבד.`;
+
+  // בונה את חלקי הבקשה — מכרז + שאלות הבהרה אם קיימות
+  const parts=[{inline_data:{mime_type:'application/pdf',data:b64}}];
+  if(lastClarB64) parts.push({inline_data:{mime_type:'application/pdf',data:lastClarB64}});
+  parts.push({text:prompt});
+
+  const res=await fetch(PROXY,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:MODEL,
+      payload:{
+        contents:[{parts}],
+        generationConfig:{maxOutputTokens:5000,temperature:0}
+      }
+    })
+  });
+  if(!res.ok) throw new Error('שגיאת שרת '+res.status);
+  const json=await res.json();
+  console.log('[KandelBI] תשובת ג\'מיני:', JSON.stringify(json).substring(0,500));
+  const raw=json.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
+  console.log('[KandelBI] טקסט גולמי:', raw.substring(0,300));
+  if(json.error) throw new Error('שגיאת API: '+JSON.stringify(json.error));
+  const clean=raw.replace(/```json|```/g,'').trim();
+  try{
+    return JSON.parse(clean);
+  }catch(e){
+    console.log('[KandelBI] JSON לא תקין:', clean.substring(0,200));
+    throw new Error('תשובה לא תקינה מהמודל — נסו שוב');
+  }
+}
+
+// ── POPULATE ──
+function populate(d){
+  const g=d.general||{};
+  sv('f-name',g.name); sv('f-num',g.number); sv('f-pub',g.publisher);
+  sv('f-pubdate',g.publishDate); sv('f-dur',g.contractDuration);
+  const tm={'שעות':'לפי שעות','תפוקות':'לפי תפוקות','מעורב':'מעורב','לפי שעות':'לפי שעות','לפי תפוקות':'לפי תפוקות'};
+  const tv=tm[g.tenderType]||g.tenderType||'';
+  const sel=document.getElementById('f-type');
+  for(let o of sel.options) if(o.value===tv){o.selected=true;break;}
+
+  renderT(d.thresholds||[]);
+  renderS(d.services||[]);
+  renderR(d.requirements||[]);
+  renderM(d.documents||[]);
+  renderL(d.sla||[]);
+  renderC(d.controls||[]);
+}
+function sv(id,v){ const el=document.getElementById(id); if(el&&v) el.value=v; }
+function ed(el){ el.classList.add('edited'); }
+
+// ── TOGGLES ──
+function tog(id){
+  const b=document.getElementById(id);
+  const t=document.getElementById('tg-'+id);
+  b.classList.toggle('collapsed');
+  t.textContent=b.classList.contains('collapsed')?'▼':'▲';
+}
+
+// ── THRESHOLDS ──
+function renderT(arr){ document.getElementById('list-t').innerHTML=''; arr.forEach(x=>addT(x)); }
+function addT(x){
+  x=x||{};
+  const cats=['ניסיון','כספי','רישיון','כוח אדם','אחר'];
+  const catOpts=cats.map(c=>`<option value="${c}" ${(x.category||'')===(c)?'selected':''}>${c}</option>`).join('');
+  const stageOpts=`
+    <option value="ראשוני" ${(x.stage||'ראשוני')==='ראשוני'?'selected':''}>ראשוני</option>
+    <option value="מתמשך" ${(x.stage||'')==='מתמשך'?'selected':''}>מתמשך</option>`;
+  const row=mk('drow',`
+    <select class="finp w110" onchange="ed(this)">${catOpts}</select>
+    <input class="finp" value="${es(x.description||'')}" placeholder="תיאור התנאי המלא" oninput="ed(this)" style="flex:1"/>
+    <select class="finp w110" onchange="ed(this)">${stageOpts}</select>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-t').appendChild(row);
+  cnt('cnt-t','list-t');
+}
+
+// ── SERVICES ──
+function renderS(arr){ document.getElementById('list-s').innerHTML=''; arr.forEach(x=>addS(x)); }
+function addS(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="שם השירות" oninput="ed(this)" style="flex:1"/>
+    <input class="finp w90" value="${es(x.unit||'')}" placeholder="יחידה" oninput="ed(this)"/>
+    <input class="finp w90" value="${es(x.rate||'')}" placeholder="תעריף" oninput="ed(this)"/>
+    <input class="finp w90" value="${es(x.quantity||'')}" placeholder="כמות משוערת" oninput="ed(this)"/>
+    <input class="finp w90" value="${es(x.maxQuantity||'')}" placeholder="כמות מקס׳" oninput="ed(this)"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-s').appendChild(row);
+  cnt('cnt-s','list-s');
+}
+
+// ── DOCUMENTS ──
+function renderM(arr){ document.getElementById('list-m').innerHTML=''; arr.forEach(x=>addM(x)); }
+function addM(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="שם המסמך" oninput="ed(this)" style="flex:1.2"/>
+    <input class="finp" value="${es(x.notes||'')}" placeholder="הערות" oninput="ed(this)" style="flex:1"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-m').appendChild(row);
+  cnt('cnt-m','list-m');
+}
+
+// ── SLA ──
+function renderL(arr){ document.getElementById('list-l').innerHTML=''; arr.forEach(x=>addL(x)); }
+function addL(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.metric||'')}" placeholder="שם המדד" oninput="ed(this)" style="flex:1"/>
+    <input class="finp w130" value="${es(x.target||'')}" placeholder="יעד חוזי" oninput="ed(this)"/>
+    <input class="finp w130" value="${es(x.penalty||'')}" placeholder="פיצוי/קנס" oninput="ed(this)"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-l').appendChild(row);
+  cnt('cnt-l','list-l');
+}
+
+// ── REQUIREMENTS ──
+function renderR(arr){ document.getElementById('list-r').innerHTML=''; arr.forEach(x=>addR(x)); }
+function addR(x){
+  x=x||{};
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="נושא / כותרת הדרישה" oninput="ed(this)" style="flex:0.8"/>
+    <input class="finp" value="${es(x.description||'')}" placeholder="תיאור מפורט של מה שהספק נדרש לספק" oninput="ed(this)" style="flex:1.5"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-r').appendChild(row);
+  cnt('cnt-r','list-r');
+}
+
+// ── CONTROLS ──
+function renderC(arr){ document.getElementById('list-c').innerHTML=''; arr.forEach(x=>addC(x)); }
+function addC(x){
+  x=x||{};
+  const freqs=['חודשי','רבעוני','שנתי','לפי אירוע'];
+  const fOpts=freqs.map(f=>`<option value="${f}" ${(x.frequency||'')===(f)?'selected':''}>${f}</option>`).join('');
+  const row=mk('drow',`
+    <input class="finp" value="${es(x.name||'')}" placeholder="שם הבקרה" oninput="ed(this)" style="flex:1"/>
+    <select class="finp w110" onchange="ed(this)">${fOpts}</select>
+    <input class="finp" value="${es(x.documents||'')}" placeholder="מסמכים נדרשים לביצוע" oninput="ed(this)" style="flex:1.4"/>
+    <button class="btn-rm" onclick="rm(this)">✕</button>`);
+  document.getElementById('list-c').appendChild(row);
+  cnt('cnt-c','list-c');
+}
+
+// ── HELPERS ──
+function mk(cls,html){ const d=document.createElement('div'); d.className=cls; d.innerHTML=html; return d; }
+function rm(btn){ const row=btn.closest('.drow'); const list=row.parentElement; row.remove(); updateAllCounts(); }
+function updateAllCounts(){ cnt('cnt-t','list-t'); cnt('cnt-s','list-s'); cnt('cnt-r','list-r'); cnt('cnt-m','list-m'); cnt('cnt-l','list-l'); cnt('cnt-c','list-c'); }
+function cnt(cid,lid){ const el=document.getElementById(cid); if(el) el.textContent=document.getElementById(lid).children.length; }
+function es(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function gv(id){ return document.getElementById(id)?.value||''; }
+
+// ── COLLECT ──
+function collect(){
+  const thresholds=[...document.getElementById('list-t').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{category:i[0].value,description:i[1].value,stage:i[2].value};
+  });
+  const services=[...document.getElementById('list-s').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,unit:i[1].value,rate:i[2].value,quantity:i[3].value,maxQuantity:i[4].value};
+  });
+  const requirements=[...document.getElementById('list-r').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,description:i[1].value};
+  });
+  const documents=[...document.getElementById('list-m').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,notes:i[1].value};
+  });
+  const sla=[...document.getElementById('list-l').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{metric:i[0].value,target:i[1].value,penalty:i[2].value};
+  });
+  const controls=[...document.getElementById('list-c').querySelectorAll('.drow')].map(r=>{
+    const i=r.querySelectorAll('.finp'); return{name:i[0].value,frequency:i[1].value,documents:i[2].value};
+  });
+  return{
+    general:{name:gv('f-name'),number:gv('f-num'),publisher:gv('f-pub'),publishDate:gv('f-pubdate'),contractDuration:gv('f-dur'),tenderType:gv('f-type')},
+    thresholds,services,requirements,documents,sla,controls
+  };
+}
+
+// ── EXPORT ──
+function exportXls(){
+  const d=collect();
+  const wb=XLSX.utils.book_new();
+
+  // גיליון 1: פרטי מכרז
+  const s1=XLSX.utils.aoa_to_sheet([
+    ['פרטי מכרז — חולץ על ידי קנדל BI'],
+    [],
+    ['שדה','ערך'],
+    ['שם המכרז',d.general.name],
+    ['מספר מכרז',d.general.number],
+    ['גוף מפרסם',d.general.publisher],
+    ['תאריך פרסום',d.general.publishDate],
+    ['תקופת התקשרות',d.general.contractDuration],
+    ['סוג מכרז',d.general.tenderType],
+  ]);
+  s1['!cols']=[{wch:24},{wch:44}];
+  XLSX.utils.book_append_sheet(wb,s1,'פרטי מכרז');
+
+  // גיליון 2: תנאי סף
+  if(d.thresholds.length){
+    const rows=[['קטגוריה','תיאור התנאי','שלב']];
+    d.thresholds.forEach(t=>rows.push([t.category,t.description,t.stage||'ראשוני']));
+    const s2=XLSX.utils.aoa_to_sheet(rows);
+    s2['!cols']=[{wch:14},{wch:55},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,s2,'תנאי סף');
+  }
+
+  // גיליון 3: שירותים
+  if(d.services.length){
+    const rows=[['שם השירות','יחידת מידה','תעריף','כמות משוערת','כמות מקסימלית']];
+    d.services.forEach(s=>rows.push([s.name,s.unit,s.rate,s.quantity,s.maxQuantity]));
+    const s3=XLSX.utils.aoa_to_sheet(rows);
+    s3['!cols']=[{wch:32},{wch:14},{wch:14},{wch:16},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,s3,'שירותים ותעריפים');
+  }
+
+  // גיליון 3א: דרישות מהספק
+  if(d.requirements.length){
+    const rows=[['נושא / דרישה','תיאור מפורט']];
+    d.requirements.forEach(r=>rows.push([r.name,r.description]));
+    const s3a=XLSX.utils.aoa_to_sheet(rows);
+    s3a['!cols']=[{wch:28},{wch:60}];
+    XLSX.utils.book_append_sheet(wb,s3a,'דרישות מהספק');
+  }
+
+  // גיליון 4: מסמכים
+  if(d.documents.length){
+    const rows=[['שם המסמך','הערות']];
+    d.documents.forEach(m=>rows.push([m.name,m.notes]));
+    const s4=XLSX.utils.aoa_to_sheet(rows);
+    s4['!cols']=[{wch:40},{wch:32}];
+    XLSX.utils.book_append_sheet(wb,s4,'מסמכים נדרשים');
+  }
+
+  // גיליון 5: מדדי שירות
+  if(d.sla.length){
+    const rows=[['שם המדד','יעד חוזי','פיצוי / קנס']];
+    d.sla.forEach(l=>rows.push([l.metric,l.target,l.penalty]));
+    const s5=XLSX.utils.aoa_to_sheet(rows);
+    s5['!cols']=[{wch:32},{wch:18},{wch:28}];
+    XLSX.utils.book_append_sheet(wb,s5,'מדדי שירות');
+  }
+
+  // גיליון 6: בקרות חודשיות
+  if(d.controls.length){
+    const rows=[['שם הבקרה','תדירות','מסמכים נדרשים לביצוע']];
+    d.controls.forEach(c=>rows.push([c.name,c.frequency,c.documents]));
+    const s6=XLSX.utils.aoa_to_sheet(rows);
+    s6['!cols']=[{wch:36},{wch:14},{wch:50}];
+    XLSX.utils.book_append_sheet(wb,s6,'בקרות חודשיות');
+  }
+
+  const fname=(d.general.name||'מכרז').replace(/[\\/:*?"<>|]/g,'').substring(0,50);
+  XLSX.writeFile(wb,`${fname} — קנדל BI.xlsx`);
+  setStep(3);
+}
+</script>
+</body>
+</html>

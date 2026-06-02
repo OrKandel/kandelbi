@@ -447,7 +447,7 @@
       position: relative;
     }
     .process-step:not(:last-child)::after {
-      content: '→';
+      content: '←';
       position: absolute; left: 0; top: 50%;
       transform: translateY(-50%);
       font-size: 1.5rem; color: var(--border);
@@ -563,14 +563,11 @@
   <a href="/" class="logo">קנדל <span>BI</span></a>
 
   <ul id="nav-menu">
-    <li><a href="#about">אודות</a></li>
-    <li><a href="#services">שירותים</a></li>
-    <li><a href="#why">למה אני?</a></li>
-    <li><a href="#process">תהליך עבודה</a></li>
-    <li><a href="tel:050-691-4898" class="nav-phone"><span style="color:#25d366;">☎</span> 050-691-4898</a></li>
+    <li><a href="services.html">שירותים</a></li>
     <li><a href="tools.html">כלים להורדה</a></li>
     <li><a href="articles.html">מאמרים</a></li>
     <li><a href="about.html">אודות</a></li>
+    <li><a href="tel:050-691-4898" class="nav-phone"><span style="color:#25d366;">☎</span> 050-691-4898</a></li>
     <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
   </ul>
 
@@ -592,7 +589,7 @@
       </h1>
 
       <p class="hero-sub">
-        בדיקה חודשית אוטומטית לחשבונות ספקים — חריגות תעריף, חפיפות שעות, SLA, כפילויות ואי-התאמות — לפני אישור התשלום.
+        בדיקה חודשית אוטומטית לחשבונות ספקים — חריגות תעריף, חפיפות שעות, SLA, כפילויות ואי-התאמות — לפני אישור התשלום.<br>
         מכלים חינמיים לבדיקה עצמית ועד מערכת בקרה מותאמת להתקשרות הספציפית שלכם.
       </p>
 
@@ -687,7 +684,7 @@
         <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6">חשבון הספק + דוח שעות/ביצוע + רשימת עובדים/שירותים מאושרים</p>
       </div>
       <!-- Arrow -->
-      <div style="text-align:center;padding:0 0.8rem;color:var(--border);font-size:2rem;font-family:sans-serif">→</div>
+      <div style="text-align:center;padding:0 0.8rem;color:var(--border);font-size:2rem;font-family:sans-serif">←</div>
       <!-- Step 2 -->
       <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:1.8rem 1.5rem;text-align:center">
         <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#e67e22);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem">🔍</div>
@@ -696,7 +693,7 @@
         <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6">חפיפות שעות · תעריפים חריגים · SLA · עובדים לא מאושרים · כפילויות</p>
       </div>
       <!-- Arrow -->
-      <div style="text-align:center;padding:0 0.8rem;color:var(--border);font-size:2rem;font-family:sans-serif">→</div>
+      <div style="text-align:center;padding:0 0.8rem;color:var(--border);font-size:2rem;font-family:sans-serif">←</div>
       <!-- Step 3 -->
       <div style="background:linear-gradient(135deg,var(--navy),var(--navy-mid));border:1.5px solid var(--accent);border-radius:16px;padding:1.8rem 1.5rem;text-align:center">
         <div style="width:52px;height:52px;border-radius:50%;background:rgba(240,165,0,0.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem">📊</div>
@@ -775,13 +772,13 @@
 
       <p class="about-text">
         בוגר תואר ראשון בחשבונאות ומערכות מידע ותואר שני במנהל עסקים ומערכות מידע.
-        מעל 14 שנים של ניסיון מעשי בליווי גופים ציבוריים — ממשרדי ממשלה ועד רשויות מקומיות —
+        מעל 14 שנים של ניסיון מעשי בליווי גופים ציבוריים — ממשרדי ממשלה ועד רשויות מקומיות ועמותות —
         עם הבנה עמוקה של הדקויות, הרגולציה והאחריות שמגיעים עם עבודה במגזר הציבורי.
       </p>
 
       <p class="about-text">
         אני משלב הכשרה חשבונאית קפדנית עם כלים טכנולוגיים מתקדמים ב-Excel, Power BI ו-VBA,
-        כדי לספק לחשבים ומבקרי פנים כלים שפועלים בפועל — לא רק תיאוריה.
+        כדי לתת לחשבים ומבקרי הפנים בנוסף לדוח הביקורת גם כלים פרקטיים ליישום ההמלצות.
         הגישה שלי: פתרון מדויק, פשוט, יעיל — שהצוות יכול להמשיך להשתמש בו לבד.
       </p>
 
@@ -891,6 +888,20 @@
       </article>
 
       <article class="service-card fade-in">
+        <div class="service-icon">⚖️</div>
+        <h3>חוות דעת חשבונאיות לבית משפט</h3>
+        <p>עריכת חוות דעת מקצועיות ומנומקות לצורך הליכים משפטיים — תחשיבים כלכליים מורכבים, ניתוח מסמכים פיננסיים וחישובים מדויקים שיכולים לשמש ראיה בהליך.</p>
+        <ul class="service-list">
+          <li>תחשיבי הפרשי שכר וגמלאות</li>
+          <li>הפרשי ריבית, הצמדה ופיגורים</li>
+          <li>ניתוח נזקים כספיים ואובדן הכנסה</li>
+          <li>בחינת דוחות כספיים וחשבונאות לא תקינה</li>
+          <li>חישובי עושר בלתי מוסבר</li>
+          <li>ליווי עד לדיון חקירה נגדית</li>
+        </ul>
+      </article>
+
+      <article class="service-card fade-in">
         <div class="service-icon">🎓</div>
         <h3>הדרכות והעברת ידע</h3>
         <p>העברת ידע ובניית יכולות פנימיות — כך שהצוות ימשיך לעבוד עצמאית עם הכלים שנבנו.</p>
@@ -908,8 +919,7 @@
         <div class="service-icon">🎯</div>
         <h3>בקרה חודשית מנוהלת — אנחנו בודקים, אתם מקבלים דוח</h3>
         <p>
-          אנחנו מבצעים את הבקרות במקומכם: הרצת הבקרות האוטומטיות, וניתוח הממצאים, ביצוע דגימת אסמכתאות מבוססת סיכונים לאימות נתוני החשבון והכנת סיכום חודשי ומייל הערות לספק ודרישה להפקת חשבון מתוקן — אתם מקבלים כל חודש דוח חריגות מוכן לפעולה ודוח SLA. <strong style="color:var(--accent);">הכל במחיר חודשי קבוע ומוזל — בזכות האוטומציה.</strong>
-        </p>
+          אנחנו מבצעים את הבקרות במקומכם: הרצת הבקרות האוטומטיות, וניתוח הממצאים, ביצוע דגימת אסמכתאות מבוססת סיכונים לאימות נתוני החשבון והכנת סיכום חודשי ומייל הערות לספק ודרישה להפקת חשבון מתוקן — אתם מקבלים כל חודש דוח חריגות מוכן לפעולה ודוח SLA.        </p>
         <div class="featured-body">
           <ul class="service-list">
             <li>הפעלת בקרות אוטומטיות על נתוני הספק</li>
@@ -952,7 +962,6 @@
           <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> בדיקת חשבון ספק אחד</li>
           <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> דוח חריגות מפורט</li>
           <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> ממצאים ממוספרים לפעולה</li>
-          <li style="font-size:0.85rem;color:var(--text-mid);padding-right:18px;position:relative"><span style="position:absolute;right:0;color:var(--green);font-weight:700">✓</span> מסירה תוך 48 שעות</li>
         </ul>
         <a href="contact.html" style="display:block;text-align:center;background:var(--navy);color:#fff;padding:10px 18px;border-radius:9px;font-weight:700;font-size:0.88rem;text-decoration:none;transition:opacity 0.2s" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">לפרטים ←</a>
       </div>
@@ -998,7 +1007,7 @@
 <section id="why" aria-labelledby="why-title">
   <div class="section-inner">
     <div class="fade-in">
-      <span class="section-tag">למה אני?</span>
+      <span class="section-tag">למה אנחנו?</span>
       <h2 id="why-title">יתרונות <em>ייחודיים</em> שלא תמצאו במקום אחר</h2>
       <p class="section-intro" style="color:rgba(255,255,255,0.65);">השילוב של עולם החשבונאות עם עולם הטכנולוגיה — מה שהופך את הפתרון לשונה לגמרי.</p>
     </div>
@@ -1147,7 +1156,7 @@ function calcROI(){
         <ul>
           <li><a href="#about">אודות</a></li>
           <li><a href="#services">שירותים</a></li>
-          <li><a href="#why">למה אני?</a></li>
+          <li><a href="#why">למה אנחנו?</a></li>
           <li><a href="#process">תהליך עבודה</a></li>
           <li><a href="terms.html">תנאי שימוש</a></li>
           <li><a href="#cta">צרו קשר</a></li>
@@ -1157,7 +1166,7 @@ function calcROI(){
       <div class="footer-contact">
         <h4>יצירת קשר</h4>
         <div class="contact-item">
-          <span>📞</span>
+          <span style="color:#25d366;">☎</span>
           <a href="tel:050-691-4898">050-691-4898</a>
         </div>
         <div class="contact-item">

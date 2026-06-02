@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-FR9DZSW3M4');</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>כיצד לאתר חריגים בין גופים מתוקצבים — בלי לבדוק כל דוח בנפרד | קנדל BI</title>
+<meta name="description" content="משרדים שמקבלים דוחות תקופתיים מגופים רבים סוקרים כל דוח בנפרד — ומחמיצים את התמונה הכוללת. כך בונים בקרה שמאתרת את החריגים אוטומטית."/>
+<meta name="keywords" content="בקרה על גופים מתוקצבים, ניתוח חריגים, דוחות תקופתיים, פיקוח ממשלתי, ביקורת פנימית, ניתוח נתונים ציבורי"/>
+<meta name="robots" content="index,follow"/>
+<link rel="canonical" href="https://kandelbi.org/article-outlier-tool.html"/>
+<meta property="og:title" content="כיצד לאתר חריגים בין גופים מתוקצבים — בלי לבדוק כל דוח בנפרד"/>
+<meta property="og:description" content="משרדים שמקבלים דוחות תקופתיים מגופים רבים סוקרים כל דוח בנפרד — ומחמיצים את התמונה הכוללת. כך בונים בקרה שמאתרת את החריגים אוטומטית."/>
+<meta property="og:url" content="https://kandelbi.org/article-outlier-tool.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
+.article-meta{color:var(--muted);font-size:0.85rem;margin-bottom:2.5rem;display:flex;gap:1.5rem;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.5rem}
+h2{font-size:1.15rem;font-weight:800;color:var(--navy);margin:2rem 0 0.8rem}
+h3{font-size:1rem;font-weight:700;color:var(--navy2);margin:1.2rem 0 0.4rem}
+p{margin-bottom:1rem;font-size:0.97rem}
+ul,ol{padding-right:1.4rem;margin-bottom:1rem}
+li{margin-bottom:0.5rem;font-size:0.97rem}
+.highlight-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.check-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 1.6rem;margin:1.2rem 0;border-right:5px solid var(--blue)}
+.check-card h3{margin-top:0}
+.check-num{background:var(--blue);color:#fff;border-radius:50%;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:0.88rem;flex-shrink:0;margin-left:0.5rem}
+.cta-box{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:1.8rem 2rem;margin:2.5rem 0;color:#fff;text-align:center}
+.cta-box p{color:rgba(255,255,255,0.85);margin-bottom:0}
+.cta-title{font-weight:900;font-size:1.1rem;color:var(--accent);margin-bottom:0.8rem;display:block}
+.tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:0.8rem 0}
+@media(max-width:500px){.tools-grid{grid-template-columns:1fr}}
+.tool-link{display:block;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 12px;color:#fff;text-decoration:none;font-size:0.85rem;font-weight:600;text-align:center}
+.tool-link:hover{background:rgba(255,255,255,0.2)}
+.danger-box{background:#fef2f2;border-right:4px solid var(--red);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.green-box{background:#f0faf6;border-right:4px solid var(--green);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.info-box{background:#f0f7ff;border-right:4px solid var(--blue);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem;color:var(--navy2)}
+.divider{border:none;border-top:2px solid var(--border);margin:2.5rem 0}
+.usecase-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+@media(max-width:520px){.usecase-grid{grid-template-columns:1fr}}
+.usecase-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem}
+.usecase-card .uc-icon{font-size:1.4rem;margin-bottom:.4rem;display:block}
+.usecase-card strong{display:block;font-size:.93rem;color:var(--navy);margin-bottom:.3rem}
+.usecase-card p{font-size:.85rem;color:var(--muted);margin:0}
+.flow-steps{display:flex;flex-direction:column;gap:0;margin:1.2rem 0}
+.flow-step{display:flex;gap:1rem;align-items:flex-start;padding:.9rem 0;border-bottom:1px solid var(--border)}
+.flow-step:last-child{border-bottom:none}
+.flow-num{background:var(--navy);color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;flex-shrink:0;margin-top:.1rem}
+.flow-content strong{display:block;color:var(--navy);font-size:.95rem;margin-bottom:.2rem}
+.flow-content p{font-size:.88rem;color:var(--muted);margin:0}
+.ratio-example{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin:.6rem 0;display:flex;gap:1rem;align-items:center}
+.ratio-formula{font-family:monospace;font-size:.95rem;font-weight:700;color:var(--blue);white-space:nowrap;min-width:fit-content}
+.ratio-desc{font-size:.87rem;color:var(--muted)}
+.related-section{margin:2.5rem 0;padding:1.4rem 1.6rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px}
+.related-title{font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.related-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.related-grid{grid-template-columns:1fr}}
+.related-card{display:block;padding:0.8rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:all 0.2s}
+.related-card:hover{border-color:var(--blue);background:#eef3fb}
+.related-card-cat{font-size:0.72rem;color:var(--blue);font-weight:700;display:block;margin-bottom:0.3rem}
+.related-card-title{font-size:0.88rem;font-weight:700;color:var(--navy);line-height:1.35}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"כיצד לאתר חריגים בין גופים מתוקצבים — בלי לבדוק כל דוח בנפרד","description":"משרדים שמקבלים דוחות תקופתיים מגופים רבים סוקרים כל דוח בנפרד — ומחמיצים את התמונה הכוללת. כך בונים בקרה שמאתרת את החריגים אוטומטית.","datePublished":"2025-06-01","author":{"@type":"Person","name":"אור קנדל","jobTitle":"רו\"ח CISA","url":"https://kandelbi.org/about.html"},"publisher":{"@type":"Organization","name":"קנדל BI","url":"https://kandelbi.org"},"url":"https://kandelbi.org/article-outlier-tool.html","inLanguage":"he"}
+</script>
+</head>
+<body>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="services.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">שירותים</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<main>
+
+<h1>כיצד לאתר חריגים בין גופים מתוקצבים — בלי לבדוק כל דוח בנפרד</h1>
+<div class="article-meta">
+  <span>✍️ אור קנדל, רו"ח CISA | ביקורת ופיקוח ציבורי</span>
+  <span>⏱️ קריאה של 6 דקות</span>
+</div>
+
+<p>
+משרד שמפקח על עשרות גופים מתוקצבים מקבל מהם דוחות תקופתיים — כספיים, תפעוליים, ביצועיים. הצוות סוקר כל דוח בנפרד: האם הנתונים סבירים? האם יש חריגות? האם מה שמדווח תואם את הצפוי?
+</p>
+<p>
+הבעיה היא שסקירה שכזו מחמיצה את השאלה החשובה ביותר: <strong>מה אומרים 30 הדוחות יחד?</strong> מי חריג ביחס לשאר? מי מציג מבנה הוצאות שלא דומה לגופים המקבילים לו?
+</p>
+<p>
+כלי האיחוד ודשבורד החריגים נועדו בדיוק לכך — לאפשר מעבר ממסלול של "נסקור כל דוח בנפרד" למסלול של "נאתר את החריגים תחילה ונתמקד בהם".
+</p>
+
+<hr class="divider"/>
+
+<h2>למי הכלי מיועד?</h2>
+
+<div class="usecase-grid">
+  <div class="usecase-card">
+    <span class="uc-icon">🏛️</span>
+    <strong>משרדי ממשלה ורשויות מפקחות</strong>
+    <p>למשרדי ממשלה ולרשויות המפקחים על גופים מתוקצבים, עמותות, רשויות מקומיות או גופים ציבוריים שמגישים דוחות שנתיים.</p>
+  </div>
+  <div class="usecase-card">
+    <span class="uc-icon">📋</span>
+    <strong>מנהלי התקשרויות עם ספקים רבים</strong>
+    <p>ארגונים שמתקשרים עם עשרות נותני שירות במסגרת אחידה — ורוצים להשוות ביניהם על בסיס הדוחות שהם מגישים.</p>
+  </div>
+  <div class="usecase-card">
+    <span class="uc-icon">💼</span>
+    <strong>גופים שמקבלים תכניות עסקיות</strong>
+    <p>רשויות וארגונים שמקבלים בקשות סיוע, תכניות עסקיות או בקשות מימון ממגזר מסוים — ורוצים לסרוק את כולן בצורה שיטתית.</p>
+  </div>
+  <div class="usecase-card">
+    <span class="uc-icon">🔍</span>
+    <strong>יחידות ביקורת פנימית</strong>
+    <p>ביקורת שנתית שצריכה לדגום ישויות לבדיקה מעמיקה — ורוצה שהדגימה תתבסס על ממצאים ולא על אקראיות.</p>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<h2>התנאי המוקדם: תבנית דוח אחידה</h2>
+
+<p>
+הכלי עובד כאשר לכל הגופים יש <strong>אותו מבנה קובץ</strong> — אותן שורות, אותן עמודות, אותם שמות סעיפים. כל גוף ממלא את הערכים שלו בתוך התבנית, ומגיש.
+</p>
+
+<div class="highlight-box">
+  <strong>הצעד הקריטי לפני הכול: בנו תבנית Excel נעולה.</strong><br/>
+  כלומר — קובץ שבו הסעיפים (שורות) קבועים ומוגנים, ורק תאי הנתונים ניתנים לעריכה. כך מובטח שכולם מדווחים באותו פורמט ואפשר לאחד אוטומטית.
+</div>
+
+<p>
+בלי מבנה אחיד — אי אפשר לאחד את הדוחות בצורה אמינה. שני גופים שנתנו שמות שונים לאותו סעיף ("שכירות" ו"הוצאות שכ״ד") ייצרו שתי עמודות נפרדות. ההשקעה בתבנית אחת טובה מחזירה את עצמה מיד.
+</p>
+
+<hr class="divider"/>
+
+<h2>תהליך העבודה</h2>
+
+<div class="flow-steps">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-content">
+      <strong>בנו תבנית Excel אחידה</strong>
+      <p>הגדירו את הסעיפים שכל גוף נדרש לדווח — הכנסות, הוצאות לפי קטגוריה, כוח אדם, ביצועים. נעלו את מבנה הקובץ ושלחו אותו לכל הגופים.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-content">
+      <strong>אספו את הדוחות המוגשים</strong>
+      <p>כל גוף מגיש את התבנית הממולאת. שמרו את כל הקבצים בתיקייה אחת — קובץ אחד לכל גוף, כאשר שם הקובץ הוא שם הגוף המדווח.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-content">
+      <strong>הריצו את כלי האיחוד</strong>
+      <p>העלו את כל הקבצים בבת אחת — הכלי מאחד אותם לטבלה שבה כל שורה מייצגת גוף, וכל עמודה מייצגת סעיף בדוח. תוצאה: קובץ אחד עם כל הנתונים.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">4</div>
+    <div class="flow-content">
+      <strong>פתחו את דשבורד החריגים</strong>
+      <p>הדשבורד מקבל את הטבלה המאוחדת, מחשב חציון ותחום נורמה לכל מדד, ומסמן מיד מי חריג ולאיזה כיוון.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">5</div>
+    <div class="flow-content">
+      <strong>הגדירו יחסים מותאמים</strong>
+      <p>בדשבורד תוכלו להגדיר יחסים בין סעיפים — לא רק לראות את הערכים המוחלטים אלא גם את היחסים: שיעור השכירות מתוך ההוצאות, שיעור השכר מתוך ההכנסות וכדומה.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">6</div>
+    <div class="flow-content">
+      <strong>התמקדו בחריגים — בדקו לעומק</strong>
+      <p>הדשבורד מציג תקציר: אילו גופים מופיעים כחריגים בכמה מדדים. אלה הם מועמדים ראשוניים לבדיקה מעמיקה — לא כל הרשימה.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<h2>מה הדשבורד יכול לגלות?</h2>
+
+<p>
+הדשבורד לא מאשים — הוא מצביע. חריג גבוה או נמוך לא בהכרח מעיד על בעיה; הוא מעיד על שונות שמצדיקה שאלה. להלן דוגמאות ליחסים שכדאי לבדוק:
+</p>
+
+<div class="ratio-example">
+  <div class="ratio-formula">שכירות ÷ סך ההוצאות</div>
+  <div class="ratio-desc">גוף שמוציא 40% מתקציבו על שכירות בעוד הממוצע עומד על 15% — מצדיק בירור: האם הנכס מתאים? האם יש אופציה לצמצום?</div>
+</div>
+<div class="ratio-example">
+  <div class="ratio-formula">שכר עובדים ÷ סך ההכנסות</div>
+  <div class="ratio-desc">גוף עם עלות שכר של 80% מהכנסותיו מול ממוצע של 55% — עשוי להעיד על תת-ניצול הכנסות או עודף עובדים.</div>
+</div>
+<div class="ratio-example">
+  <div class="ratio-formula">עלות כוללת ÷ מספר מוטבים</div>
+  <div class="ratio-desc">עלות לכל מוטב גבוהה פי שלושה מהממוצע — שאלת יעילות אופרטיבית.</div>
+</div>
+<div class="ratio-example">
+  <div class="ratio-formula">הוצאות הנהלה וכלליות ÷ סך ההוצאות</div>
+  <div class="ratio-desc">גוף שמוציא 30% על הנהלה וכלליות מול ממוצע של 12% — ממצא שדורש הסבר.</div>
+</div>
+
+<hr class="divider"/>
+
+<h2>איך הכלי מגדיר "חריג"?</h2>
+
+<p>
+הכלי משתמש בשיטת IQR (טווח בין-רבעוני) — שיטה סטטיסטית סטנדרטית לגילוי חריגים שאינה מושפעת מערכים קיצוניים בודדים.
+</p>
+
+<div class="info-box">
+  <strong>בפשטות:</strong> הכלי מחשב לכל מדד את "אזור הנורמה" — 50% האמצעיים של הנתונים. ערך שחורג ביותר מ־1.5 פעמים מטווח זה (כלפי מעלה או מטה) מסומן כחריג. הסף ניתן לכוונון — ניתן להעלות את הסף (2–3×) לקבלת פחות חריגים, או להוריד אותו (0.5–1×) לאיתור רחב יותר של חריגים.
+</div>
+
+<p>
+יתרון השיטה: גוף אחד עם נתון קיצוני חריג לא "מזיז" את הסף לכולם. הנורמה נקבעת לפי רוב הגופים, לא לפי הקיצוניים.
+</p>
+
+<hr class="divider"/>
+
+<h2>מה עושים עם ממצאי הדשבורד?</h2>
+
+<p>
+החריגים שהדשבורד מציג הם <strong>נקודת התחלה לחקירה — לא ממצא סופי</strong>. כל חריגה מצדיקה שאלה, לא בהכרח פעולה מיידית. הדשבורד אינו קובע שמדובר בטעות או בליקוי; הוא רק מסמן נקודות שמצדיקות בדיקה אנושית.
+</p>
+
+<div class="check-card">
+  <h3>רצף עבודה מומלץ אחרי הדשבורד</h3>
+  <ol>
+    <li><strong>רשימת חריגים לתיעדוף</strong> — הדשבורד מציג מי מופיע כחריג במספר הרב ביותר של מדדים. התחילו מהם.</li>
+    <li><strong>בקשת הסבר</strong> — שלחו לגוף שאלות ממוקדות: "הוצאות השכירות שלכם עומדות על X% מהוצאותיכם, מול ממוצע Y% — מה מסביר את הפער?"</li>
+    <li><strong>בדיקת מסמכים גולמיים</strong> — אם ההסבר לא מספק, בקשו אסמכתאות: חשבוניות, חוזה שכירות, פירוט שכר.</li>
+    <li><strong>תיעוד ומסקנות</strong> — לכל גוף שנבדק: מה נמצא, מה ההחלטה, האם נדרשת פעולה.</li>
+  </ol>
+</div>
+
+<div class="green-box">
+  <strong>הערה חשובה:</strong> חריג נמוך עשוי להיות דגל אדום לא פחות מחריג גבוה. גוף שמדווח על הוצאות שכר נמוכות מאוד ביחס לנפח פעילותו — שווה בדיקה לא פחות מגוף עם הוצאות גבוהות.
+</div>
+
+<hr class="divider"/>
+
+<h2>פעם בשנה — לא בכל חודש</h2>
+
+<p>
+הכלי מתאים במיוחד לבקרה תקופתית — שנתית או חצי־שנתית — ופחות לניטור שוטף. הסיבה פשוטה: הוא נועד להשוואה בין גופים באותה נקודת זמן, ולא למעקב רציף אחרי גוף אחד לאורך זמן.
+</p>
+<p>
+הפעלה אחת בשנה על דוחות שנתיים של עשרות גופים — ותוצאה: רשימה ממוקדת של 3–5 גופים שמצדיקים מבט מעמיק. זה ההפך מ"נסקור הכול" — זה <strong>נסקור נכון</strong>.
+</p>
+
+<div class="cta-box">
+  <span class="cta-title">נסו את הכלים ישירות בדפדפן</span>
+  <p>שני הכלים עובדים בדפדפן — ללא התקנה, ללא שליחת נתונים לשרת. הנתונים נשארים אצלכם, בדפדפן בלבד.</p>
+  <div class="tools-grid" style="margin-top:1rem">
+    <a href="tool-multi-consolidate.html" class="tool-link">📂 כלי איחוד הקבצים</a>
+    <a href="tool-outlier-dashboard.html" class="tool-link">🔍 דשבורד איתור חריגים</a>
+  </div>
+</div>
+
+<div class="related-section">
+  <div class="related-title">📖 קראו גם</div>
+  <div class="related-grid">
+    <a href="article-invoice-approval.html" class="related-card">
+      <span class="related-card-cat">ניהול חוזים</span>
+      <span class="related-card-title">7 שאלות שכדאי לשאול לפני פרסום מכרז לרכש שירותים</span>
+    </a>
+    <a href="article-sla-contract.html" class="related-card">
+      <span class="related-card-cat">ניהול חוזים</span>
+      <span class="related-card-title">SLA בחוזה שירות: איך לדעת שהספק עומד בו</span>
+    </a>
+    <a href="article-audit-reality-gap.html" class="related-card">
+      <span class="related-card-cat">ביקורת פנימית</span>
+      <span class="related-card-title">הפער בין מה שאפשר לבדוק למה שנבדק בפועל</span>
+    </a>
+    <a href="article-professional-unit-trust.html" class="related-card">
+      <span class="related-card-cat">בקרה עצמאית</span>
+      <span class="related-card-title">האם תמיד אפשר לסמוך על היחידה המקצועית?</span>
+    </a>
+  </div>
+</div>
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצים <strong style="color:#1a1a2e;">כלי שתפור לצורכי הפיקוח הספציפיים שלכם</strong>? <a href="contact.html" style="color:#1e6abf;font-weight:700;">צרו קשר ←</a> &nbsp;·&nbsp; <a href="https://chat.whatsapp.com/CRa87SHUF0rDbfjsPDoAcQ" target="_blank" rel="noopener" style="color:#25d366;font-weight:700;">💬 קבוצת WhatsApp</a></span>
+  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות</span>
+</div>
+
+</main>
+</body>
+</html>
