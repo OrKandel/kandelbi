@@ -9,6 +9,7 @@
   gtag('js', new Date());
   gtag('config', 'G-FR9DZSW3M4');
 </script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>בדיקת תקינות דיווחי שעות — קנדל BI</title>
 <meta name="description" content="10 בדיקות תקינות אוטומטיות לדוחות נוכחות: חפיפות שעות, דיווח בשבת וחג, שעות עגולות, מכסה חודשית, תאריכים עתידיים ועוד. כלי חינמי למגזר הציבורי — הנתונים נשארים אצלך."/>
@@ -96,6 +97,8 @@ tr:hover td{background:var(--bg)}
 .no-findings{text-align:center;color:var(--green);padding:2rem;font-size:0.88rem}
 .export-btns{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1.2rem}
 .hidden{display:none}
+.day-btn{background:var(--bg);border:1.5px solid var(--border);padding:5px 11px;border-radius:7px;font-family:inherit;font-size:0.84rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;line-height:1.2}
+.day-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
 </style>
 </head>
 <body>
@@ -199,6 +202,33 @@ tr:hover td{background:var(--bg)}
       <div class="check-label">📋 שורות כפולות</div>
       <div class="check-desc">שתי שורות זהות לחלוטין — עובד, תאריך, שעות</div>
     </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-concurrent"/><div>
+      <div class="check-label">👥 ריבוי עובדים בו-זמנית</div>
+      <div class="check-desc">מספר עובדים שעבדו בו-זמנית מעל למותר (שמירה, ניקיון וכד')</div>
+      <div class="check-param"><label>מקסימום עובדים בו-זמנית:</label><input type="number" id="param-maxworkers" value="1" min="1" max="100"/></div>
+    </div></div>
+    <div class="check-item" style="grid-column:1/-1"><input type="checkbox" id="chk-servicehours"/><div style="flex:1">
+      <div class="check-label">🕰️ שעות/ימי שירות מותרים</div>
+      <div class="check-desc">דיווחים מחוץ לימים ושעות שהוגדרו בהסכם — מאפשר לזהות עבודה בלתי מורשית</div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:6px">ימי שירות מורשים (לחץ לבחירה/ביטול):</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button type="button" class="day-btn" data-day="0" onclick="toggleDay(0)">א'</button>
+            <button type="button" class="day-btn on" data-day="1" onclick="toggleDay(1)">ב'</button>
+            <button type="button" class="day-btn on" data-day="2" onclick="toggleDay(2)">ג'</button>
+            <button type="button" class="day-btn on" data-day="3" onclick="toggleDay(3)">ד'</button>
+            <button type="button" class="day-btn on" data-day="4" onclick="toggleDay(4)">ה'</button>
+            <button type="button" class="day-btn" data-day="5" onclick="toggleDay(5)">ו'</button>
+            <button type="button" class="day-btn" data-day="6" onclick="toggleDay(6)">ש'</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div class="check-param"><label>משעה:</label><input type="text" id="svc-from" value="08:00" placeholder="HH:MM" style="width:72px"/></div>
+          <div class="check-param"><label>עד שעה:</label><input type="text" id="svc-to" value="17:00" placeholder="HH:MM" style="width:72px"/></div>
+        </div>
+      </div>
+    </div></div>
   </div>
   <button class="btn-primary" onclick="runAnalysis()">🔍 הרץ בדיקות</button>
 </div>
@@ -223,9 +253,9 @@ tr:hover td{background:var(--bg)}
 
 <script>
 // ── State ──
-let filesData=[];   // [{name, headers, rawData}]
-let filesResults=[]; // [{name, headers, rawData, findings, rowFlags}]
-let firstHeaders=[]; // headers of first file (for column config)
+let filesData=[];    // [{name,wb,selectedSheets,headerRowIdx,allRows,headers,rawData}]
+let filesResults=[]; // [{name,headers,rawData,findings,rowFlags}]
+let firstHeaders=[];
 const PREFS_KEY='kandelbi_hours_prefs_v1';
 
 // ── חגים ובחירות ──
@@ -265,32 +295,76 @@ dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');loadFiles(e.dataTransfer.files)});
 
 // ── SHEET & HEADER ROW HELPERS ──
-function sheetSelectorHtml(wb, selId, onchangeFn){
+function sheetSelectorHtml(wb, fi){
   if(!wb||!wb.SheetNames||wb.SheetNames.length<=1) return '';
-  const opts = wb.SheetNames.map((name,i)=>{
+  const fd=filesData[fi];
+  const selected=fd?fd.selectedSheets:[wb.SheetNames[0]];
+  const items=wb.SheetNames.map(name=>{
     const ws=wb.Sheets[name];
-    const ref=ws['!ref']||'A1';
-    const range=XLSX.utils.decode_range(ref);
-    const rows=range.e.r-range.s.r+1;
-    return `<option value="${name}"${i===0?' selected':''}>${name} (${rows} שורות)</option>`;
+    let rows=0;
+    try{const rng=XLSX.utils.decode_range(ws['!ref']||'A1');rows=rng.e.r-rng.s.r+1;}catch{}
+    const chk=selected.includes(name)?'checked':'';
+    const esc=name.replace(/"/g,'&quot;');
+    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap">
+      <input type="checkbox" data-fi="${fi}" data-sheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
+      <span>${name} <span style="color:#9aa5bb">(${rows} שורות)</span></span>
+    </label>`;
   });
-  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
-  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem;font-size:0.82rem">
-    <div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div>
-    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.82rem">📋 בחר גיליונות לבדיקה:</div>
+    <div id="sheet-cbs-${fi}" style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="selectAllSheets(${fi})" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
+      <button onclick="clearAllSheets(${fi})" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
+    </div>
   </div>`;
 }
-function getRowsFromWb(wb, sheetName){
-  if(sheetName==='__ALL__'){
-    let all=[];
-    wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
-      if(i===0) all.push(...r);
-      else all.push(...r.slice(1));
-    });
-    return all;
+function wireSheetCbs(fi){
+  document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`).forEach(cb=>{
+    cb.onchange=()=>onSheetCheckChange(fi);
+  });
+}
+function onSheetCheckChange(fi){
+  const fd=filesData[fi]; if(!fd||!fd.wb)return;
+  const checked=Array.from(document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`))
+    .filter(cb=>cb.checked).map(cb=>cb.dataset.sheet);
+  fd.selectedSheets=checked.length?checked:[fd.wb.SheetNames[0]];
+  refreshFromSheets(fi);
+}
+function selectAllSheets(fi){
+  document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`).forEach(cb=>cb.checked=true);
+  onSheetCheckChange(fi);
+}
+function clearAllSheets(fi){
+  const cbs=Array.from(document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`));
+  cbs.forEach((cb,i)=>cb.checked=(i===0));
+  onSheetCheckChange(fi);
+}
+function refreshFromSheets(fi){
+  const fd=filesData[fi]; if(!fd)return;
+  const allRows=getRowsFromWb(fd.wb, fd.selectedSheets);
+  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+  fd.allRows=allRows; fd.headerRowIdx=0;
+  fd.headers=(allRows[0]||[]).map(c=>String(c||''));
+  fd.rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
+  renderFileChips();
+  rebuildColSelects();
+}
+function getRowsFromWb(wb, sheetNames){
+  if(!sheetNames) sheetNames=[wb.SheetNames[0]];
+  if(!Array.isArray(sheetNames)) sheetNames=[sheetNames];
+  if(sheetNames[0]==='__ALL__') sheetNames=wb.SheetNames;
+  if(sheetNames.length===1){
+    return XLSX.utils.sheet_to_json(wb.Sheets[sheetNames[0]]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+  let all=[];
+  sheetNames.forEach((n,i)=>{
+    const ws=wb.Sheets[n]; if(!ws)return;
+    const r=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+    if(i===0) all.push(...r);
+    else all.push(...r.slice(1));
+  });
+  return all;
 }
 function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
   if(!allRows||allRows.length<=1) return '';
@@ -316,11 +390,11 @@ function loadFiles(fileList){
     const reader=new FileReader();
     reader.onload=ev=>{
       const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
-      const allRows=getRowsFromWb(wb, wb.SheetNames[0]);
+      const allRows=getRowsFromWb(wb, [wb.SheetNames[0]]);
       while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
       const headers=(allRows[0]||[]).map(c=>String(c||''));
       const rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
-      filesData[fi]={name:file.name,wb,selectedSheet:wb.SheetNames[0],headerRowIdx:0,allRows,headers,rawData};
+      filesData[fi]={name:file.name,wb,selectedSheets:[wb.SheetNames[0]],headerRowIdx:0,allRows,headers,rawData};
       if(++done===arr.length)onFilesLoaded();
     };
     reader.readAsArrayBuffer(file);
@@ -328,15 +402,10 @@ function loadFiles(fileList){
 }
 
 function changeFileSheet(fi, sheetName){
-  const fd=filesData[fi]; if(!fd||!fd.wb) return;
-  fd.selectedSheet=sheetName;
-  const allRows=getRowsFromWb(fd.wb, sheetName);
-  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-  fd.allRows=allRows; fd.headerRowIdx=0;
-  fd.headers=(allRows[0]||[]).map(c=>String(c||''));
-  fd.rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
-  renderFileChips();
-  rebuildColSelects();
+  // legacy — delegate to checkbox approach
+  const fd=filesData[fi]; if(!fd||!fd.wb)return;
+  fd.selectedSheets=[sheetName];
+  refreshFromSheets(fi);
 }
 function changeFileHeaderRow(fi, idx){
   const fd=filesData[fi]; if(!fd||!fd.allRows) return;
@@ -352,9 +421,8 @@ function renderFileChips(){
   fl.classList.remove('hidden');
   fl.innerHTML=filesData.map((fd,fi)=>{
     const missing=!fd.rawData.length;
-    const sheetSel=sheetSelectorHtml(fd.wb,'overlap-sh-'+fi,`changeFileSheet.bind(null,${fi})`);
+    const sheetSel=sheetSelectorHtml(fd.wb,fi);
     const hdrSel=headerRowSelectorHtml(fd.allRows,'overlap-hdr-'+fi,`changeFileHeaderRow.bind(null,${fi})`,fd.headerRowIdx||0);
-    // use data attributes for event wiring since inline bind won't work — use IDs
     return `<div class="file-chip" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px">
       <div style="display:flex;align-items:center;gap:8px">
         <span>📄</span>
@@ -365,10 +433,8 @@ function renderFileChips(){
       <div id="overlap-selwrap-${fi}">${sheetSel}${hdrSel}</div>
     </div>`;
   }).join('');
-  // Re-wire onchange after innerHTML set (inline onchange with fi parameter)
   filesData.forEach((fd,fi)=>{
-    const shSel=document.getElementById('overlap-sh-'+fi);
-    if(shSel) shSel.onchange=function(){changeFileSheet(fi,this.value);};
+    wireSheetCbs(fi);
     const hSel=document.getElementById('overlap-hdr-'+fi);
     if(hSel) hSel.onchange=function(){changeFileHeaderRow(fi,this.value);};
   });
@@ -420,9 +486,15 @@ function savePrefs(){
       rounded:document.getElementById('chk-rounded').checked,offmonth:document.getElementById('chk-offmonth').checked,
       future:document.getElementById('chk-future').checked,nocturnal:document.getElementById('chk-nocturnal').checked,
       monthly:document.getElementById('chk-monthly').checked,shabbat:document.getElementById('chk-shabbat').checked,
-      holiday:document.getElementById('chk-holiday').checked,dupes:document.getElementById('chk-dupes').checked},
+      holiday:document.getElementById('chk-holiday').checked,dupes:document.getElementById('chk-dupes').checked,
+      concurrent:document.getElementById('chk-concurrent').checked,
+      servicehours:document.getElementById('chk-servicehours').checked},
+    serviceDays:Array.from(getServiceDays()),
+    svcFrom:document.getElementById('svc-from').value,
+    svcTo:document.getElementById('svc-to').value,
     params:{maxHours:parseFloat(document.getElementById('param-maxhours').value)||12,
-      monthlyCap:parseFloat(document.getElementById('param-monthlycap').value)||240},
+      monthlyCap:parseFloat(document.getElementById('param-monthlycap').value)||240,
+      maxWorkers:parseInt(document.getElementById('param-maxworkers').value)||1},
     savedAt:new Date().toLocaleDateString('he-IL')
   };
   localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
@@ -449,6 +521,12 @@ function applyPrefs(){
   // Params
   if(p.params.maxHours)document.getElementById('param-maxhours').value=p.params.maxHours;
   if(p.params.monthlyCap)document.getElementById('param-monthlycap').value=p.params.monthlyCap;
+  if(p.params.maxWorkers)document.getElementById('param-maxworkers').value=p.params.maxWorkers;
+  if(p.serviceDays){
+    document.querySelectorAll('.day-btn').forEach(b=>b.classList.toggle('on',p.serviceDays.includes(parseInt(b.dataset.day))));
+  }
+  if(p.svcFrom)document.getElementById('svc-from').value=p.svcFrom;
+  if(p.svcTo)document.getElementById('svc-to').value=p.svcTo;
 }
 
 function clearPrefs(){localStorage.removeItem(PREFS_KEY);document.getElementById('prefs-banner').classList.add('hidden');}
@@ -459,9 +537,12 @@ function parseData(rawData,ci,cd,cs,ce){
     const dateObj=excelToDate(row[cd]);
     const startMin=parseTime(row[cs]);
     const endMin=parseTime(row[ce]);
-    const dur=(startMin!==null&&endMin!==null&&endMin>startMin)?(endMin-startMin)/60:0;
+    // Cross-midnight: end < start (e.g. start=19:00, end=01:00 next day)
+    const crossMidnight=(startMin!==null&&endMin!==null&&endMin<startMin);
+    const endMinAdj=crossMidnight?endMin+1440:endMin;
+    const dur=(startMin!==null&&endMinAdj!==null&&endMinAdj>startMin)?(endMinAdj-startMin)/60:0;
     return{row,idx,emp:String(row[ci]||'').trim(),dateRaw:row[cd],dateObj,dateStr:fmtDate(row[cd]),
-      startMin,endMin,dur,startStr:fmtMin(startMin),endStr:fmtMin(endMin)};
+      startMin,endMin,endMinAdj,crossMidnight,dur,startStr:fmtMin(startMin),endStr:fmtMin(endMin)};
   }).filter(p=>p.emp);
 }
 
@@ -476,18 +557,25 @@ function getColIndices(headers){
 }
 
 // ── בדיקות ──
-function runChecks(parsed,maxH,monthlyCap,today){
+function runChecks(parsed,maxH,monthlyCap,today,maxWorkers){
   const findings={};
-  if(document.getElementById('chk-overlaps').checked)  findings.overlaps=checkOverlaps(parsed);
-  if(document.getElementById('chk-longday').checked)   findings.longday=checkLongDay(parsed,maxH);
-  if(document.getElementById('chk-rounded').checked)   findings.rounded=checkRounded(parsed);
-  if(document.getElementById('chk-offmonth').checked)  findings.offmonth=checkOffMonth(parsed);
-  if(document.getElementById('chk-future').checked)    findings.future=checkFuture(parsed,today);
-  if(document.getElementById('chk-nocturnal').checked) findings.nocturnal=checkNocturnal(parsed);
-  if(document.getElementById('chk-monthly').checked)   findings.monthly=checkMonthlyCap(parsed,monthlyCap);
-  if(document.getElementById('chk-shabbat').checked)   findings.shabbat=checkShabbat(parsed);
-  if(document.getElementById('chk-holiday').checked)   findings.holiday=checkHoliday(parsed);
-  if(document.getElementById('chk-dupes').checked)     findings.dupes=checkDupes(parsed);
+  if(document.getElementById('chk-overlaps').checked)    findings.overlaps=checkOverlaps(parsed);
+  if(document.getElementById('chk-longday').checked)     findings.longday=checkLongDay(parsed,maxH);
+  if(document.getElementById('chk-rounded').checked)     findings.rounded=checkRounded(parsed);
+  if(document.getElementById('chk-offmonth').checked)    findings.offmonth=checkOffMonth(parsed);
+  if(document.getElementById('chk-future').checked)      findings.future=checkFuture(parsed,today);
+  if(document.getElementById('chk-nocturnal').checked)   findings.nocturnal=checkNocturnal(parsed);
+  if(document.getElementById('chk-monthly').checked)     findings.monthly=checkMonthlyCap(parsed,monthlyCap);
+  if(document.getElementById('chk-shabbat').checked)     findings.shabbat=checkShabbat(parsed);
+  if(document.getElementById('chk-holiday').checked)     findings.holiday=checkHoliday(parsed);
+  if(document.getElementById('chk-dupes').checked)       findings.dupes=checkDupes(parsed);
+  if(document.getElementById('chk-concurrent').checked)  findings.concurrent=checkConcurrentWorkers(parsed,maxWorkers);
+  if(document.getElementById('chk-servicehours').checked){
+    const svcDays=getServiceDays();
+    const svcFrom=parseTime(document.getElementById('svc-from').value)||0;
+    const svcTo=parseTime(document.getElementById('svc-to').value)||1020;
+    findings.servicehours=checkServiceHours(parsed,svcDays,svcFrom,svcTo);
+  }
   return findings;
 }
 
@@ -499,16 +587,74 @@ function checkOverlaps(parsed){
     if(arr.length<2)return;
     for(let i=0;i<arr.length-1;i++)for(let j=i+1;j<arr.length;j++){
       const a=arr[i],b=arr[j];
-      if(a.startMin===null||a.endMin===null||b.startMin===null||b.endMin===null)continue;
-      const os=Math.max(a.startMin,b.startMin),oe=Math.min(a.endMin,b.endMin);
+      if(a.startMin===null||a.endMinAdj===null||b.startMin===null||b.endMinAdj===null)continue;
+      const os=Math.max(a.startMin,b.startMin),oe=Math.min(a.endMinAdj,b.endMinAdj);
       if(oe>os){
-        const full=(b.startMin>=a.startMin&&b.endMin<=a.endMin)||(a.startMin>=b.startMin&&a.endMin<=b.endMin);
+        const full=(b.startMin>=a.startMin&&b.endMinAdj<=a.endMinAdj)||(a.startMin>=b.startMin&&a.endMinAdj<=b.endMinAdj);
         res.push({emp:a.emp,date:a.dateStr,s1:a.startStr+'–'+a.endStr,s2:b.startStr+'–'+b.endStr,
           overlap:Math.round(oe-os),full,idxA:a.idx,idxB:b.idx});
       }
     }
   });
   return res;
+}
+
+function toggleDay(d){
+  const btn=document.querySelector('.day-btn[data-day="'+d+'"]');
+  if(btn) btn.classList.toggle('on');
+}
+function getServiceDays(){
+  return new Set(Array.from(document.querySelectorAll('.day-btn.on')).map(b=>parseInt(b.dataset.day)));
+}
+function checkServiceHours(parsed, serviceDays, svcFromMin, svcToMin){
+  if(!serviceDays.size)return[];
+  const svcToAdj=svcToMin<svcFromMin?svcToMin+1440:svcToMin; // cross-midnight service (e.g. 19:00–01:00)
+  const DAY_HE=['א','ב','ג','ד','ה','ו','ש'];
+  return parsed.filter(p=>{
+    if(isNaN(p.dateObj))return false;
+    const dow=p.dateObj.getUTCDay();
+    if(!serviceDays.has(dow))return true; // wrong day
+    if(p.startMin===null)return false;
+    const endCheck=(p.endMinAdj!==null&&p.endMinAdj>p.startMin)?p.endMinAdj:
+                   (p.endMin!==null&&p.endMin>p.startMin?p.endMin:p.startMin);
+    if(p.startMin<svcFromMin||endCheck>svcToAdj)return true; // outside time window
+    return false;
+  }).map(p=>{
+    const dow=p.dateObj.getUTCDay();
+    const reason=!serviceDays.has(dow)
+      ?'יום '+DAY_HE[dow]+'\' — לא מורשה (שירות: '+['א','ב','ג','ד','ה','ו','ש'].filter((_,i)=>serviceDays.has(i)).join('/')+'\''+')'
+      :'שעות חריגות '+p.startStr+'–'+p.endStr+' (שירות: '+fmtMin(svcFromMin)+'–'+fmtMin(svcToMin)+')';
+    return{emp:p.emp,date:p.dateStr,detail:reason,idx:p.idx};
+  });
+}
+
+function checkConcurrentWorkers(parsed, maxWorkers){
+  // Group rows by date
+  const byDate={};
+  parsed.forEach(p=>{
+    if(p.startMin===null||p.endMinAdj===null)return;
+    (byDate[p.dateStr]=byDate[p.dateStr]||[]).push(p);
+  });
+  const findings=[];
+  Object.entries(byDate).forEach(([date,rows])=>{
+    if(rows.length<=maxWorkers)return;
+    // At each shift-start, count how many workers are active
+    let peakCount=0,peakEmps=[],peakTime=null;
+    rows.forEach(pivot=>{
+      const t=pivot.startMin;
+      const active=rows.filter(q=>q.startMin<=t&&q.endMinAdj>t);
+      if(active.length>peakCount){peakCount=active.length;peakEmps=active;peakTime=t;}
+    });
+    if(peakCount>maxWorkers){
+      // deduplicate emps (same person may appear multiple times)
+      const empSet=[...new Set(peakEmps.map(q=>q.emp))];
+      findings.push({date,time:fmtMin(peakTime),count:peakCount,max:maxWorkers,
+        emps:empSet.join(', '),
+        detail:peakCount+' עובדים בו-זמנית ב-'+fmtMin(peakTime)+' (מותר: '+maxWorkers+')',
+        indices:peakEmps.map(q=>q.idx)});
+    }
+  });
+  return findings;
 }
 
 function checkLongDay(parsed,maxH){
@@ -593,6 +739,8 @@ function buildRowFlags(findings){
   ['offmonth','future','nocturnal','shabbat','holiday','dupes'].forEach(k=>{
     findings[k]?.forEach(f=>mark(f.idx,k,f.detail||'✗'));
   });
+  findings.concurrent?.forEach(f=>f.indices?.forEach(i=>mark(i,'concurrent',f.detail)));
+  findings.servicehours?.forEach(f=>mark(f.idx,'servicehours',f.detail));
   return flags;
 }
 
@@ -603,10 +751,12 @@ function runAnalysis(){
   const monthlyCap=parseFloat(document.getElementById('param-monthlycap').value)||240;
   const today=new Date();today.setHours(23,59,59,999);
 
+  const maxWorkers=parseInt(document.getElementById('param-maxworkers').value)||1;
+
   filesResults=filesData.map(fd=>{
     const{ci,cd,cs,ce}=getColIndices(fd.headers);
     const parsed=parseData(fd.rawData,ci,cd,cs,ce);
-    const findings=runChecks(parsed,maxH,monthlyCap,today);
+    const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers);
     const rowFlags=buildRowFlags(findings);
     return{name:fd.name,headers:fd.headers,rawData:fd.rawData,parsed,findings,rowFlags};
   });
@@ -654,7 +804,15 @@ const META={
   dupes:{label:'שורות כפולות',icon:'📋',
     cols:['קובץ','עובד','תאריך','פירוט'],
     row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]}
+    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+  servicehours:{label:'שעות/ימי שירות',icon:'🕰️',
+    cols:['קובץ','עובד','תאריך','פירוט'],
+    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+  concurrent:{label:'ריבוי עובדים בו-זמנית',icon:'👥',
+    cols:['קובץ','תאריך','שעה','עובדים','כמות','מותר'],
+    row:(f,fn)=>'<td>'+fn+'</td><td>'+f.date+'</td><td>'+f.time+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
+    exportRow:(f,fn)=>[fn,f.date,f.time,f.emps,f.count,f.max]}
 };
 
 // ── תצוגת תוצאות ──
@@ -784,7 +942,7 @@ function exportAnnotated(){
   const wb=XLSX.utils.book_new();
   const ALL_CHECKS=Object.keys(META);
   const FLAG_LABELS={overlaps:'חפיפות שעות',longday:'שעות ביממה',offmonth:'חודש חריג',future:'תאריך עתידי',
-    nocturnal:'שעות חריגות',shabbat:'שבת',holiday:'חג/בחירות',dupes:'שורה כפולה'};
+    nocturnal:'שעות חריגות',shabbat:'שבת',holiday:'חג/בחירות',dupes:'שורה כפולה',concurrent:'ריבוי עובדים',servicehours:'שעות שירות'};
 
   filesResults.forEach(fr=>{
     const activeFlags=ALL_CHECKS.filter(k=>FLAG_LABELS[k]&&fr.findings[k]!==undefined);

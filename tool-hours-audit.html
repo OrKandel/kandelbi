@@ -8,6 +8,7 @@
   gtag('js', new Date());
   gtag('config', 'G-FR9DZSW3M4');
 </script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>בדיקת חשבון קבלן — קנדל BI</title>
 <meta name="description" content="בדיקת חשבון קבלן: השוואת עובדים מאושרים, תעריפים, שעות מול דוח נוכחות. ייצוא אקסל מסומן עם ממצאים."/>
@@ -942,13 +943,15 @@ function runFullAudit() {
   });
   Object.values(grp).forEach(entries => {
     if (entries.length < 2) return;
+    // Adjust for cross-midnight shifts (end < start)
+    entries.forEach(x => { x.eAdj = (x.e>=0 && x.s>=0 && x.e < x.s) ? x.e + 1440 : x.e; });
     for (let i = 0; i < entries.length - 1; i++) {
       for (let j = i + 1; j < entries.length; j++) {
         const a = entries[i], b = entries[j];
-        if (a.s<0||a.e<=0||b.s<0||b.e<=0) continue;
-        const os = Math.max(a.s,b.s), oe = Math.min(a.e,b.e);
+        if (a.s<0||a.eAdj<=0||b.s<0||b.eAdj<=0) continue;
+        const os = Math.max(a.s,b.s), oe = Math.min(a.eAdj,b.eAdj);
         if (oe > os) {
-          const full = (b.s>=a.s&&b.e<=a.e)||(a.s>=b.s&&a.e<=b.e);
+          const full = (b.s>=a.s&&b.eAdj<=a.eAdj)||(a.s>=b.s&&a.eAdj<=b.eAdj);
           overlapResults.push({ emp:a.row[aEmp], date:dateKey(a.row[aDate]),
             s1:fmtMin(a.s)+'-'+fmtMin(a.e), s2:fmtMin(b.s)+'-'+fmtMin(b.e),
             overlap:Math.round(oe-os), type:full?'full':'partial',
