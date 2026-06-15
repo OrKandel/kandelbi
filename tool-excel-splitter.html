@@ -374,7 +374,7 @@ tr:hover td{background:var(--bg);}
 let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
 let uploadedFiles = []; // { file, wb, name, size }
 let selectedSheets = [];
-let _dateColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
+let _dateColCache = null, _timeColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
 let _pendingOutputPrefs = null;
 
 // ── הגדרות שמורות ──
@@ -535,6 +535,24 @@ function getRowsFromWb(wbObj, sheetNamesArg){
   });
   return all;
 }
+// קורא גיליון ישירות ומחזיר שורות + אינדקס שורה אמיתי (0-based) תוך דילוג על שורות ריקות
+function getRowsWithActualIndices(ws){
+  if(!ws||!ws['!ref']) return {rows:[],indices:[]};
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  const rows=[],indices=[];
+  for(let r=range.s.r;r<=range.e.r;r++){
+    const row=[];
+    let hasContent=false;
+    for(let c=range.s.c;c<=range.e.c;c++){
+      const cell=ws[XLSX.utils.encode_cell({r,c})];
+      const v=cell?(cell.v!==undefined?cell.v:''):'';
+      row.push(v);
+      if(v!==''&&v!==null&&v!==undefined) hasContent=true;
+    }
+    if(hasContent){rows.push(row);indices.push(r);}
+  }
+  return {rows,indices};
+}
 function splitterHdrSelectorHtml(allRows, currentIdx){
   if(!allRows||allRows.length<=1) return '';
   const n=Math.min(allRows.length,8);
@@ -556,7 +574,7 @@ function changeSplitterHdrRow(idx){
   document.getElementById('st-rows').textContent = dataRows.length.toLocaleString('he');
   document.getElementById('st-cols').textContent = headers.length;
   allData = [headers, ...dataRows];
-  selectedCols = null; _dateColCache = null; _valCountCache = null;
+  selectedCols = null; _dateColCache = null; _timeColCache = null; _valCountCache = null;
   _precomputeValCounts();
 }
 
@@ -579,6 +597,7 @@ function loadSheet() {
   allData = [headers, ...dataRows];
   selectedCols = null;
   _dateColCache = null;
+  _timeColCache = null;
   _valCountCache = null;
   _precomputeValCounts();
 
@@ -696,8 +715,36 @@ function buildColumnsUI() {
   showPrefsBanner();
 }
 
+// ── זיהוי עמודות שעות ──
+function isTimeVal(v) {
+  if (v instanceof Date) return v.getFullYear() <= 1900;
+  if (typeof v === 'number') return v > 0 && v < 1;
+  if (typeof v === 'string') return /^\d{1,2}:\d{2}(:\d{2})?$/.test(v.trim());
+  return false;
+}
+function isTimeCol(colIdx) {
+  if (_timeColCache && colIdx in _timeColCache) return _timeColCache[colIdx];
+  const vals = allData.slice(1,10).map(r=>r[colIdx]).filter(v=>v!==undefined&&v!==''&&v!==null);
+  const result = vals.length > 0 && vals.filter(v=>isTimeVal(v)).length >= Math.min(3, vals.length);
+  if (!_timeColCache) _timeColCache = {};
+  _timeColCache[colIdx] = result;
+  return result;
+}
+function getTimeMinutes(v) {
+  if (v instanceof Date) return v.getHours()*60 + v.getMinutes();
+  if (typeof v === 'number' && v >= 0 && v <= 1) return Math.round(v * 1440);
+  if (typeof v === 'string') { const m=v.trim().match(/^(\d{1,2}):(\d{2})/); if(m) return parseInt(m[1])*60+parseInt(m[2]); }
+  return null;
+}
+
 function isDateCol(colIdx) {
   if (_dateColCache && colIdx in _dateColCache) return _dateColCache[colIdx];
+  // עמודות שעות מתגלות בטעות כתאריכים — מוציאים אותן
+  if (isTimeCol(colIdx)) {
+    if (!_dateColCache) _dateColCache = {};
+    _dateColCache[colIdx] = false;
+    return false;
+  }
   const vals = allData.slice(1,10).map(r=>r[colIdx]).filter(Boolean);
   const result = vals.filter(v=>parseFlexDate(String(v))!==null).length >= Math.min(3,vals.length);
   if (!_dateColCache) _dateColCache = {};
@@ -706,15 +753,16 @@ function isDateCol(colIdx) {
 }
 
 function _precomputeValCounts() {
-  // שלב 1: dateCol לכל העמודות — מהיר (9 שורות בלבד)
-  _dateColCache = {};
-  headers.forEach((_,i) => isDateCol(i));
+  // שלב 1: dateCol ו-timeCol לכל העמודות — מהיר (9 שורות בלבד)
+  _dateColCache = {}; _timeColCache = {};
+  headers.forEach((_,i) => isDateCol(i)); // מאכלס גם _timeColCache דרך isTimeCol
   // שלב 2: ספירת ערכים לכל עמודה — בBackground אחרי שה-UI מתייצב
   setTimeout(() => {
     const cache = headers.map(() => ({}));
     allData.slice(1).forEach(r => {
       headers.forEach((_,i) => {
-        const v = r[i] !== undefined && r[i] !== '' ? String(r[i]) : '(ריק)';
+        const raw = r[i];
+        const v = (raw !== undefined && raw !== '' && raw !== null) ? fmtPreviewCell(raw) : '(ריק)';
         cache[i][v] = (cache[i][v]||0) + 1;
       });
     });
@@ -867,6 +915,12 @@ function addFilter() {
         <div class="form-group"><label>עד תאריך:</label><input type="date" id="fto-${id}"/></div>
       </div>
     </div>
+    <div id="ftimes-${id}" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label>משעה:</label><input type="time" id="ftime-from-${id}"/></div>
+        <div class="form-group"><label>עד שעה:</label><input type="time" id="ftime-to-${id}"/></div>
+      </div>
+    </div>
     <div id="fnums-${id}" style="display:none"></div>`;
   
   document.getElementById('filters-container').appendChild(div);
@@ -880,13 +934,16 @@ function removeFilter(id) {
 
 function onFilterColChange(id) {
   const colIdx = parseInt(document.getElementById('fcol-'+id).value);
-  ['fvals-','fdates-','fnums-'].forEach(p => { const el=document.getElementById(p+id); if(el) el.style.display='none'; });
+  ['fvals-','fdates-','ftimes-','fnums-'].forEach(p => { const el=document.getElementById(p+id); if(el) el.style.display='none'; });
   const isDate = isDateCol(colIdx);
-  const isNum  = !isDate && isNumCol(colIdx);
+  const isTime = !isDate && isTimeCol(colIdx);
+  const isNum  = !isDate && !isTime && isNumCol(colIdx);
   const ftype  = document.getElementById('ftype-'+id);
   let opts = '';
   if (isDate) {
     opts = `<option value="date">טווח תאריכים</option><option value="col">ערכים בודדים מהרשימה</option>`;
+  } else if (isTime) {
+    opts = `<option value="time">טווח שעות</option><option value="col">ערכים בודדים מהרשימה</option>`;
   } else if (isNum) {
     opts = `<option value="col">ערכים בודדים מהרשימה</option>
             <option value="num-lt">מספר — קטן מ-</option>
@@ -906,10 +963,12 @@ function updateFilterType(id) {
   const type = document.getElementById('ftype-'+id)?.value;
   if (!type) return;
   const isNum = type.startsWith('num-');
-  document.getElementById('fvals-'+id).style.display  = type==='col'  ? '' : 'none';
-  document.getElementById('fdates-'+id).style.display = type==='date' ? '' : 'none';
-  document.getElementById('fnums-'+id).style.display  = isNum         ? '' : 'none';
+  document.getElementById('fvals-'+id).style.display   = type==='col'  ? '' : 'none';
+  document.getElementById('fdates-'+id).style.display  = type==='date' ? '' : 'none';
+  document.getElementById('ftimes-'+id).style.display  = type==='time' ? '' : 'none';
+  document.getElementById('fnums-'+id).style.display   = isNum         ? '' : 'none';
   if (type==='date') updateFilterDateRange(id);
+  if (type==='time') updateFilterTimeRange(id);
   if (isNum) updateNumFilterUI(id);
   if (type==='col') buildFilterVals(id);
 }
@@ -946,6 +1005,21 @@ function updateFilterDateRange(id) {
   toEl.addEventListener('change', () => { fromEl.max = toEl.value; if(fromEl.value > toEl.value) fromEl.value = toEl.value; });
 }
 
+function updateFilterTimeRange(id) {
+  const colIdx = parseInt(document.getElementById('fcol-'+id).value);
+  if(isNaN(colIdx)) return;
+  const mins = allData.slice(1).map(r=>getTimeMinutes(r[colIdx])).filter(m=>m!==null);
+  if(!mins.length) return;
+  const minM = Math.min(...mins), maxM = Math.max(...mins);
+  const fmtT = m => String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  const fromEl = document.getElementById('ftime-from-'+id);
+  const toEl   = document.getElementById('ftime-to-'+id);
+  if(fromEl) fromEl.value = fmtT(minM);
+  if(toEl)   toEl.value   = fmtT(maxM);
+  fromEl?.addEventListener('change', () => { if(toEl.value < fromEl.value) toEl.value = fromEl.value; });
+  toEl?.addEventListener('change',   () => { if(fromEl.value > toEl.value) fromEl.value = toEl.value; });
+}
+
 // מחזיר את שורות הנתונים אחרי החלת כל הסינונים *חוץ* מהסינון excludeId
 function getFilteredDataExcluding(excludeId) {
   let result = allData.slice(1);
@@ -960,7 +1034,8 @@ function getFilteredDataExcluding(excludeId) {
       const sel = new Set([...document.querySelectorAll('.val-chk-'+bid+':checked')].map(c=>c.dataset.val));
       if (!sel.size) return;
       result = result.filter(r => {
-        const v = r[ci] !== undefined && r[ci] !== '' ? String(r[ci]) : '(ריק)';
+        const raw = r[ci];
+        const v = (raw !== undefined && raw !== '' && raw !== null) ? fmtPreviewCell(raw) : '(ריק)';
         return sel.has(v);
       });
     } else if (typeEl.value === 'date') {
@@ -972,6 +1047,15 @@ function getFilteredDataExcluding(excludeId) {
       const from = new Date(fromEl.value);
       const to   = new Date(toEl.value); to.setHours(23,59,59);
       result = result.filter(r => { const d=parseFlexDate(String(r[ci]||'')); return d&&d>=from&&d<=to; });
+    } else if (typeEl.value === 'time') {
+      const ci = parseInt(document.getElementById('fcol-'+bid)?.value);
+      if (isNaN(ci)) return;
+      const fromEl = document.getElementById('ftime-from-'+bid);
+      const toEl   = document.getElementById('ftime-to-'+bid);
+      if (!fromEl?.value || !toEl?.value) return;
+      const pT = s => { const [h,m] = s.split(':').map(Number); return h*60+(m||0); };
+      const fromM = pT(fromEl.value), toM = pT(toEl.value);
+      result = result.filter(r => { const m=getTimeMinutes(r[ci]); return m!==null&&m>=fromM&&m<=toM; });
     } else if (typeEl.value.startsWith('num-')) {
       const ci = parseInt(document.getElementById('fcol-'+bid)?.value);
       if (isNaN(ci)) return;
@@ -1008,7 +1092,8 @@ function buildFilterVals(id, keepChecked, keepUnchecked) {
     const filteredData = getFilteredDataExcluding(id);
     valCounts = {};
     filteredData.forEach(r => {
-      const v = r[colIdx] !== undefined && r[colIdx] !== '' ? String(r[colIdx]) : '(ריק)';
+      const raw = r[colIdx];
+      const v = (raw !== undefined && raw !== '' && raw !== null) ? fmtPreviewCell(raw) : '(ריק)';
       valCounts[v] = (valCounts[v]||0) + 1;
     });
   }
@@ -1139,6 +1224,14 @@ async function processFile() {
       const from = new Date(fromVal);
       const to   = new Date(toVal); to.setHours(23,59,59);
       filterDefs.push({type:'date', origColIdx, from, to});
+    } else if (type === 'time') {
+      const origColIdx = parseInt(document.getElementById('fcol-'+id)?.value);
+      if (isNaN(origColIdx)) return;
+      const fromVal = document.getElementById('ftime-from-'+id)?.value;
+      const toVal   = document.getElementById('ftime-to-'+id)?.value;
+      if (!fromVal || !toVal) return;
+      const pT = s => { const [h,m] = s.split(':').map(Number); return h*60+(m||0); };
+      filterDefs.push({type:'time', origColIdx, fromM: pT(fromVal), toM: pT(toVal)});
     } else if (type.startsWith('num-')) {
       const origColIdx = parseInt(document.getElementById('fcol-'+id)?.value);
       if (isNaN(origColIdx)) return;
@@ -1180,13 +1273,15 @@ async function processFile() {
       let totalR = 0;
       for (const sName of sheetsToProcess) {
         const shSrcWs = uf.wb.Sheets[sName];
-        let rd = getRowsFromWb(uf.wb, [sName]);
-        let emptyLead = 0;
-        while (rd.length && rd[0].every(c=>!c)) { rd.shift(); emptyLead++; }
+        const riS=getRowsWithActualIndices(shSrcWs);
+        let rd=riS.rows, rdIdx=riS.indices;
+        while(rd.length&&rd[0].every(c=>c===''||c===null||c===undefined)){rd.shift();rdIdx.shift();}
         const hIdx = _splitterHdrIdx || 0;
-        const wsHdrRow = emptyLead + hIdx;
+        const wsHdrRow = rdIdx[hIdx]??hIdx;
         const fh = rd[hIdx] || [];
-        const fdr = rd.slice(hIdx+1).filter(r=>r.some(c=>c!==''));
+        const rawAfterS=rd.slice(hIdx+1), idxAfterS=rdIdx.slice(hIdx+1);
+        const fdr=[],resIdx=[];
+        rawAfterS.forEach((r,i)=>{if(r.some(c=>c!==''&&c!==null&&c!==undefined)){fdr.push(r);resIdx.push(idxAfterS[i]);}});
         const cm = cols.map(origIdx => {
           const hName = String(headers[origIdx]||'');
           const found = fh.findIndex(h=>String(h||'')===hName);
@@ -1194,11 +1289,11 @@ async function processFile() {
         });
         function toLocalS(origIdx){ const p=cols.indexOf(origIdx); return p<0?-1:p; }
         let res = fdr.map(r => cm.map(i=>r[i]));
-        let resIdx = fdr.map((_, i) => wsHdrRow + 1 + i);
         function filtS(pred){ const nr=[],ni=[]; res.forEach((r,i)=>{ if(pred(r)){nr.push(r);ni.push(resIdx[i]);} }); res=nr; resIdx=ni; }
         filterDefs.forEach(fd => {
-          if (fd.type==='col') { const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const v=r[li]!==undefined&&r[li]!==''?String(r[li]):'(ריק)';return fd.selected.has(v);}); }
+          if (fd.type==='col') { const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const raw=r[li];const v=(raw!==undefined&&raw!==''&&raw!==null)?fmtPreviewCell(raw):'(ריק)';return fd.selected.has(v);}); }
           else if(fd.type==='date'){ const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const d=parseFlexDate(String(r[li]||''));return d&&d>=fd.from&&d<=fd.to;}); }
+          else if(fd.type==='time'){ const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const m=getTimeMinutes(r[li]);return m!==null&&m>=fd.fromM&&m<=fd.toM;}); }
           else if(fd.type==='num'){ const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const v=parseFloat(r[li]);if(isNaN(v))return false;if(fd.numType==='num-between')return v>=fd.numFrom&&v<=fd.numTo;if(fd.numType==='num-lt')return v<fd.numVal;if(fd.numType==='num-gt')return v>fd.numVal;if(fd.numType==='num-eq')return v===fd.numVal;if(fd.numType==='num-ne')return v!==fd.numVal;return true;}); }
         });
         const wsNew = buildStyledSheet(shSrcWs, wsHdrRow, resIdx, cm) || (() => { const w=XLSX.utils.aoa_to_sheet([filteredHeaders,...res],{cellDates:true}); fixTimeFormats(w); return w; })();
@@ -1213,13 +1308,32 @@ async function processFile() {
     // ─── מצב רגיל — מיזוג גיליונות ───
     // לשמירת עיצוב: נשמור את גיליון המקור רק כשיש גיליון יחיד
     const srcWs = sheetsToProcess.length === 1 ? uf.wb.Sheets[sheetsToProcess[0]] : null;
-    let rawData = getRowsFromWb(uf.wb, sheetsToProcess);
-    let emptyLeadRows = 0;
-    while (rawData.length && rawData[0].every(c=>!c)) { rawData.shift(); emptyLeadRows++; }
+    let rawData, actualRowIndices=null;
+    if(srcWs){
+      // קרא ישירות מגיליון המקור ועקוב אחרי אינדקסי שורה אמיתיים (דילוג על שורות ריקות)
+      const ri=getRowsWithActualIndices(srcWs);
+      rawData=ri.rows; actualRowIndices=ri.indices;
+    } else {
+      rawData=getRowsFromWb(uf.wb,sheetsToProcess);
+    }
+    // הסר שורות ריקות מוביל תוך שמירת אינדקסים מקבילים
+    while(rawData.length&&rawData[0].every(c=>c===''||c===null||c===undefined)){
+      rawData.shift(); if(actualRowIndices) actualRowIndices.shift();
+    }
     const hdrIdx = fi === 0 ? (_splitterHdrIdx || 0) : 0;
-    const wsHdrRowIdx = emptyLeadRows + hdrIdx; // שורת כותרת בגיליון המקור (אינדקס 0-based)
+    // שורת כותרת בגיליון המקור — אינדקס אמיתי (לא מחושב)
+    const wsHdrRowIdx = actualRowIndices ? (actualRowIndices[hdrIdx]??hdrIdx) : hdrIdx;
     const fileHeaders = rawData[hdrIdx] || [];
-    const fileDataRows = rawData.slice(hdrIdx+1).filter(r=>r.some(c=>c!==''));
+    // שורות נתונים + אינדקסי מקור מקבילים (מסננים שורות ריקות בלי לאבד עקבות)
+    const rawAfterHdr=rawData.slice(hdrIdx+1);
+    const idxAfterHdr=actualRowIndices?actualRowIndices.slice(hdrIdx+1):null;
+    const fileDataRows=[],fileDataActualIdx=[];
+    rawAfterHdr.forEach((r,i)=>{
+      if(r.some(c=>c!==''&&c!==null&&c!==undefined)){
+        fileDataRows.push(r);
+        if(idxAfterHdr) fileDataActualIdx.push(idxAfterHdr[i]);
+      }
+    });
 
     // מיפוי עמודות לפי שם (לגמישות במבנה)
     const colMap = cols.map(origIdx => {
@@ -1235,18 +1349,21 @@ async function processFile() {
 
     // בחר עמודות
     let result = fileDataRows.map(r => colMap.map(i=>r[i]));
-    // אינדקסי שורות מקור (לשמירת עיצוב) — רק כשיש גיליון יחיד
-    let srcIdx = srcWs ? fileDataRows.map((_, i) => wsHdrRowIdx + 1 + i) : null;
+    // אינדקסי שורות אמיתיים (לשמירת עיצוב) — רק כשיש גיליון יחיד
+    let srcIdx = srcWs ? [...fileDataActualIdx] : null;
     function filt(pred){ if(!srcIdx){result=result.filter(pred);return;} const nr=[],ni=[]; result.forEach((r,i)=>{if(pred(r)){nr.push(r);ni.push(srcIdx[i]);}}); result=nr; srcIdx=ni; }
 
     // החל סינונים
     filterDefs.forEach(fd => {
       if (fd.type === 'col') {
         const li = toLocal(fd.origColIdx); if (li<0) return;
-        filt(r => { const v=r[li]!==undefined&&r[li]!==''?String(r[li]):'(ריק)'; return fd.selected.has(v); });
+        filt(r => { const raw=r[li]; const v=(raw!==undefined&&raw!==''&&raw!==null)?fmtPreviewCell(raw):'(ריק)'; return fd.selected.has(v); });
       } else if (fd.type === 'date') {
         const li = toLocal(fd.origColIdx); if (li<0) return;
         filt(r => { const d=parseFlexDate(String(r[li]||'')); return d&&d>=fd.from&&d<=fd.to; });
+      } else if (fd.type === 'time') {
+        const li = toLocal(fd.origColIdx); if (li<0) return;
+        filt(r => { const m=getTimeMinutes(r[li]); return m!==null&&m>=fd.fromM&&m<=fd.toM; });
       } else if (fd.type === 'num') {
         const li = toLocal(fd.origColIdx); if (li<0) return;
         filt(r => {

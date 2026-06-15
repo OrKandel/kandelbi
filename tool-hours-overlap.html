@@ -44,6 +44,7 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .upload-box.loaded{border-color:var(--green);background:#edf7f3}
 .ub-icon{font-size:2rem;margin-bottom:6px}
 .ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .files-list{margin-top:1rem;display:flex;flex-direction:column;gap:6px}
 .file-chip{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:0.82rem}
 .file-chip .fc-name{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -99,6 +100,10 @@ tr:hover td{background:var(--bg)}
 .hidden{display:none}
 .day-btn{background:var(--bg);border:1.5px solid var(--border);padding:5px 11px;border-radius:7px;font-family:inherit;font-size:0.84rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;line-height:1.2}
 .day-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.sw-day-btn{background:var(--bg);border:1.5px solid var(--border);padding:4px 9px;border-radius:6px;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;line-height:1.2}
+.sw-day-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.svc-window{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;background:var(--bg-alt)}
+.chip-remove-btn{background:none!important;border:1px solid #e57373!important;cursor:pointer!important;color:#e57373!important;font-size:0.75rem!important;padding:2px 8px!important;border-radius:5px!important;white-space:nowrap;flex-shrink:0;margin-right:auto}
 </style>
 </head>
 <body>
@@ -137,7 +142,6 @@ tr:hover td{background:var(--bg)}
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
   <div class="files-list hidden" id="files-list"></div>
-  <div id="overlap-sheet-sel-wrap"></div>
 </div>
 
 <!-- Config -->
@@ -210,23 +214,9 @@ tr:hover td{background:var(--bg)}
     <div class="check-item" style="grid-column:1/-1"><input type="checkbox" id="chk-servicehours"/><div style="flex:1">
       <div class="check-label">🕰️ שעות/ימי שירות מותרים</div>
       <div class="check-desc">דיווחים מחוץ לימים ושעות שהוגדרו בהסכם — מאפשר לזהות עבודה בלתי מורשית</div>
-      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
-        <div>
-          <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:6px">ימי שירות מורשים (לחץ לבחירה/ביטול):</div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <button type="button" class="day-btn" data-day="0" onclick="toggleDay(0)">א'</button>
-            <button type="button" class="day-btn on" data-day="1" onclick="toggleDay(1)">ב'</button>
-            <button type="button" class="day-btn on" data-day="2" onclick="toggleDay(2)">ג'</button>
-            <button type="button" class="day-btn on" data-day="3" onclick="toggleDay(3)">ד'</button>
-            <button type="button" class="day-btn on" data-day="4" onclick="toggleDay(4)">ה'</button>
-            <button type="button" class="day-btn" data-day="5" onclick="toggleDay(5)">ו'</button>
-            <button type="button" class="day-btn" data-day="6" onclick="toggleDay(6)">ש'</button>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <div class="check-param"><label>משעה:</label><input type="text" id="svc-from" value="08:00" placeholder="HH:MM" style="width:72px"/></div>
-          <div class="check-param"><label>עד שעה:</label><input type="text" id="svc-to" value="17:00" placeholder="HH:MM" style="width:72px"/></div>
-        </div>
+      <div style="margin-top:10px">
+        <div id="svc-windows-list"></div>
+        <button type="button" onclick="addSvcWindow()" style="margin-top:4px;width:100%;font-size:0.8rem;background:none;border:1.5px dashed var(--border);border-radius:7px;padding:5px 14px;cursor:pointer;color:var(--blue)">+ הוסף טווח שעות לימים נוספים</button>
       </div>
     </div></div>
   </div>
@@ -256,8 +246,6 @@ tr:hover td{background:var(--bg)}
 let filesData=[];    // [{name,wb,selectedSheets,headerRowIdx,allRows,headers,rawData}]
 let filesResults=[]; // [{name,headers,rawData,findings,rowFlags}]
 let firstHeaders=[];
-let uniformSheets=null;           // מערך שמות גיליונות אם כל הקבצים זהים, אחרת null
-let globalSelectedOverlapSheets=[]; // בחירה גלובלית כשיש גיליונות אחידים
 const PREFS_KEY='kandelbi_hours_prefs_v1';
 
 // ── חגים ובחירות ──
@@ -312,6 +300,9 @@ function sheetSelectorHtml(wb, fi){
       <span>${name} <span style="color:#9aa5bb">(${rows} שורות)</span></span>
     </label>`;
   });
+  const hint=fi===0
+    ?'<div style="font-size:0.72rem;color:#6b7a99;margin-top:3px">שינוי ידני יוחל על שאר הקבצים לפי שם גיליון · "בחר הכל" יוחל על כל הגיליונות בכל הקבצים</div>'
+    :'<div style="font-size:0.72rem;color:#6b7a99;margin-top:3px">סונכרן מהקובץ הראשון — ניתן לשנות ידנית</div>';
   return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem">
     <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.82rem">📋 בחר גיליונות לבדיקה:</div>
     <div id="sheet-cbs-${fi}" style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
@@ -319,6 +310,7 @@ function sheetSelectorHtml(wb, fi){
       <button onclick="selectAllSheets(${fi})" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
       <button onclick="clearAllSheets(${fi})" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
     </div>
+    ${hint}
   </div>`;
 }
 function wireSheetCbs(fi){
@@ -326,79 +318,47 @@ function wireSheetCbs(fi){
     cb.onchange=()=>onSheetCheckChange(fi);
   });
 }
-function onSheetCheckChange(fi){
+function onSheetCheckChange(fi, fromSelectAll){
   const fd=filesData[fi]; if(!fd||!fd.wb)return;
   const checked=Array.from(document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`))
     .filter(cb=>cb.checked).map(cb=>cb.dataset.sheet);
   fd.selectedSheets=checked.length?checked:[fd.wb.SheetNames[0]];
-  refreshFromSheets(fi);
+  // טען מחדש את שורות הקובץ הזה
+  const rows0=getRowsFromWb(fd.wb,fd.selectedSheets);
+  while(rows0.length&&rows0[0].every(c=>!c)) rows0.shift();
+  fd.allRows=rows0; fd.headerRowIdx=fd.headerRowIdx||0;
+  fd.headers=(rows0[fd.headerRowIdx]||[]).map(c=>String(c||''));
+  fd.rawData=rows0.slice(fd.headerRowIdx+1).filter(r=>r.some(c=>c!==''));
+  if(fi===0){
+    filesData.forEach((other,i)=>{
+      if(i===0||!other.wb) return;
+      if(fromSelectAll){
+        // "בחר הכל" — בחר את כל הגיליונות בכל קובץ, בלי קשר לשם
+        other.selectedSheets=[...other.wb.SheetNames];
+        document.querySelectorAll(`input[data-fi="${i}"][data-sheet]`).forEach(cb=>cb.checked=true);
+      } else {
+        // שינוי רגיל — הפץ רק גיליונות בשם זהה
+        const matching=fd.selectedSheets.filter(s=>other.wb.SheetNames.includes(s));
+        other.selectedSheets=matching.length?matching:[other.wb.SheetNames[0]];
+      }
+      const otherRows=getRowsFromWb(other.wb,other.selectedSheets);
+      while(otherRows.length&&otherRows[0].every(c=>!c)) otherRows.shift();
+      other.allRows=otherRows;
+      applyHdrRow(other, autoDetectHdrRow(other, fd.headers));
+    });
+  }
+  renderFileChips();
+  rebuildColSelects();
 }
 function selectAllSheets(fi){
   document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`).forEach(cb=>cb.checked=true);
-  onSheetCheckChange(fi);
+  onSheetCheckChange(fi, fi===0); // fi===0 → הפץ "בחר הכל" לכל הקבצים
 }
 function clearAllSheets(fi){
   const cbs=Array.from(document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`));
   cbs.forEach((cb,i)=>cb.checked=(i===0));
   onSheetCheckChange(fi);
 }
-/* ── UNIFORM SHEET DETECTION ── */
-function detectUniformSheets(){
-  if(!filesData.length) return null;
-  if(!filesData.some(f=>f.wb&&f.wb.SheetNames.length>1)) return null;
-  const first=filesData[0].wb.SheetNames;
-  if(filesData.every(f=>{
-    if(!f.wb) return false;
-    const n=f.wb.SheetNames;
-    return n.length===first.length&&n.every((s,i)=>s===first[i]);
-  })) return [...first];
-  return null;
-}
-function renderGlobalOverlapSheets(){
-  const wrap=document.getElementById('overlap-sheet-sel-wrap'); if(!wrap) return;
-  if(!uniformSheets||uniformSheets.length<=1){wrap.innerHTML='';return;}
-  const items=uniformSheets.map(name=>{
-    const chk=globalSelectedOverlapSheets.includes(name)?'checked':'';
-    const esc=name.replace(/"/g,'&quot;');
-    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap">
-      <input type="checkbox" data-govlsheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
-      <span>${name}</span></label>`;
-  });
-  wrap.innerHTML=`<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:9px;padding:10px 14px;margin-top:.8rem">
-    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.85rem">📋 כל הקבצים זהים — בחר גיליונות (יוחל על כולם):</div>
-    <div style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
-    <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="selectAllGovlSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
-      <button onclick="clearGovlSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
-    </div></div>`;
-  wrap.querySelectorAll('input[data-govlsheet]').forEach(cb=>{ cb.onchange=onGlobalOverlapSheetChange; });
-}
-function onGlobalOverlapSheetChange(){
-  const checked=Array.from(document.querySelectorAll('input[data-govlsheet]'))
-    .filter(cb=>cb.checked).map(cb=>cb.dataset.govlsheet);
-  globalSelectedOverlapSheets=checked.length?checked:[uniformSheets[0]];
-  filesData.forEach((fd,fi)=>{
-    fd.selectedSheets=globalSelectedOverlapSheets.filter(s=>fd.wb.SheetNames.includes(s));
-    if(!fd.selectedSheets.length) fd.selectedSheets=[fd.wb.SheetNames[0]];
-    const allRows=getRowsFromWb(fd.wb,fd.selectedSheets);
-    while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-    fd.allRows=allRows; fd.headerRowIdx=0;
-    fd.headers=(allRows[0]||[]).map(c=>String(c||''));
-    fd.rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
-  });
-  renderFileChips();
-  rebuildColSelects();
-}
-function selectAllGovlSheets(){
-  document.querySelectorAll('input[data-govlsheet]').forEach(cb=>cb.checked=true);
-  onGlobalOverlapSheetChange();
-}
-function clearGovlSheets(){
-  const cbs=Array.from(document.querySelectorAll('input[data-govlsheet]'));
-  cbs.forEach((cb,i)=>cb.checked=(i===0));
-  onGlobalOverlapSheetChange();
-}
-
 function refreshFromSheets(fi){
   const fd=filesData[fi]; if(!fd)return;
   const allRows=getRowsFromWb(fd.wb, fd.selectedSheets);
@@ -441,19 +401,24 @@ function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
 
 function loadFiles(fileList){
   if(!fileList||!fileList.length)return;
-  filesData=[];
-  const arr=Array.from(fileList).filter(f=>/\.(xlsx|xls|csv)$/i.test(f.name));
+  // צרף קבצים חדשים (אל תאפס קיימים)
+  const arr=Array.from(fileList)
+    .filter(f=>/\.(xlsx|xls|csv)$/i.test(f.name))
+    .filter(f=>!filesData.some(d=>d.name===f.name)); // דלג על כפולים
   if(!arr.length)return;
+  dz.classList.remove('drag','loaded');
+  dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+  dz.querySelector('.ub-text').textContent=arr.length>1?'טוען '+arr.length+' קבצים...':'טוען קובץ...';
   let done=0;
-  arr.forEach((file,fi)=>{
+  arr.forEach(file=>{
     const reader=new FileReader();
     reader.onload=ev=>{
       const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
-      const allRows=getRowsFromWb(wb, [wb.SheetNames[0]]);
+      const allRows=getRowsFromWb(wb,[wb.SheetNames[0]]);
       while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
       const headers=(allRows[0]||[]).map(c=>String(c||''));
       const rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
-      filesData[fi]={name:file.name,wb,selectedSheets:[wb.SheetNames[0]],headerRowIdx:0,allRows,headers,rawData};
+      filesData.push({name:file.name,wb,selectedSheets:[wb.SheetNames[0]],headerRowIdx:0,allRows,headers,rawData});
       if(++done===arr.length)onFilesLoaded();
     };
     reader.readAsArrayBuffer(file);
@@ -466,11 +431,34 @@ function changeFileSheet(fi, sheetName){
   fd.selectedSheets=[sheetName];
   refreshFromSheets(fi);
 }
-function changeFileHeaderRow(fi, idx){
-  const fd=filesData[fi]; if(!fd||!fd.allRows) return;
+function autoDetectHdrRow(fd, refHeaders){
+  if(!fd.allRows||!refHeaders||!refHeaders.length) return 0;
+  const refSet=new Set(refHeaders.filter(Boolean).map(h=>String(h).trim().toLowerCase()));
+  if(!refSet.size) return 0;
+  let bestIdx=0, bestScore=-1;
+  const maxCheck=Math.min(fd.allRows.length,10);
+  for(let i=0;i<maxCheck;i++){
+    const row=(fd.allRows[i]||[]).map(c=>String(c||'').trim().toLowerCase());
+    const score=row.filter(v=>v&&refSet.has(v)).length;
+    if(score>bestScore){bestScore=score;bestIdx=i;}
+  }
+  return bestIdx;
+}
+function applyHdrRow(fd, idx){
   fd.headerRowIdx=+idx;
   fd.headers=(fd.allRows[+idx]||[]).map(c=>String(c||''));
   fd.rawData=fd.allRows.slice(+idx+1).filter(r=>r.some(c=>c!==''));
+}
+function changeFileHeaderRow(fi, idx){
+  const fd=filesData[fi]; if(!fd||!fd.allRows) return;
+  applyHdrRow(fd,idx);
+  // אם זה הקובץ הראשון — זהה מחדש לכל השאר
+  if(fi===0){
+    filesData.forEach((other,i)=>{
+      if(i===0) return;
+      applyHdrRow(other, autoDetectHdrRow(other,fd.headers));
+    });
+  }
   renderFileChips();
   rebuildColSelects();
 }
@@ -480,23 +468,37 @@ function renderFileChips(){
   fl.classList.remove('hidden');
   fl.innerHTML=filesData.map((fd,fi)=>{
     const missing=!fd.rawData.length;
-    const sheetSel=uniformSheets?'':sheetSelectorHtml(fd.wb,fi);
-    const hdrSel=headerRowSelectorHtml(fd.allRows,'overlap-hdr-'+fi,`changeFileHeaderRow.bind(null,${fi})`,fd.headerRowIdx||0);
+    // בחירת גיליון — מוצגת לכל קובץ (גיליון קובץ 0 מופץ אוטומטית לשאר)
+    const sheetSel=sheetSelectorHtml(fd.wb,fi);
+    // שורת כותרת — מוצגת לכל קובץ; קובץ 0 מגדיר ברירת מחדל לאחרים
+    const hdrHint=fi===0
+      ?'<div style="font-size:0.72rem;color:#6b7a99;margin-top:-4px;margin-bottom:6px">הבחירה תוחל כברירת מחדל על שאר הקבצים (עם זיהוי אוטומטי)</div>'
+      :'<div style="font-size:0.72rem;color:#6b7a99;margin-top:-4px;margin-bottom:6px">זוהה אוטומטית לפי הקובץ הראשון — ניתן לשנות ידנית</div>';
+    const hdrSel=(fd.allRows&&fd.allRows.length>1)?hdrHint+headerRowSelectorHtml(fd.allRows,`overlap-hdr-${fi}`,null,fd.headerRowIdx||0):'';
     return `<div class="file-chip" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px">
       <div style="display:flex;align-items:center;gap:8px">
         <span>📄</span>
         <span class="fc-name">${fd.name}</span>
         <span class="fc-rows">${missing?'':fd.rawData.length+' שורות'}</span>
         ${missing?'<span class="fc-warn">⚠️ ריק</span>':''}
-        <button onclick="removeOverlapFile(${fi})" style="margin-right:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:0 4px;line-height:1" title="הסר קובץ">✕</button>
+        <button class="chip-remove-btn" data-fi="${fi}" title="הסר קובץ">✕ הסר</button>
       </div>
       <div id="overlap-selwrap-${fi}">${sheetSel}${hdrSel}</div>
     </div>`;
   }).join('');
+  // חיבור אירועים אחרי הרינדור
   filesData.forEach((fd,fi)=>{
     wireSheetCbs(fi);
-    const hSel=document.getElementById('overlap-hdr-'+fi);
-    if(hSel) hSel.onchange=function(){changeFileHeaderRow(fi,this.value);};
+    // חיבור בחירת שורת כותרת לכל קובץ
+    const hSel=document.getElementById(`overlap-hdr-${fi}`);
+    if(hSel){ const idx=fi; hSel.onchange=function(){changeFileHeaderRow(idx,+this.value);}; }
+  });
+  // כפתורי הסרה — addEventListener במקום onclick מוטבע
+  fl.querySelectorAll('.chip-remove-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      removeOverlapFile(parseInt(btn.dataset.fi));
+    });
   });
 }
 
@@ -507,8 +509,8 @@ function removeOverlapFile(idx){
     document.getElementById('config-card').classList.add('hidden');
     document.getElementById('checks-card').classList.add('hidden');
     dz.classList.remove('loaded');
-    dz.querySelector('.ub-icon').textContent='📁';
-    dz.querySelector('.ub-text').textContent='לחץ לבחירת קבצים, או גרור לכאן';
+    dz.querySelector('.ub-icon').textContent='📋';
+    dz.querySelector('.ub-text').textContent='לחץ לבחירת קובץ / קבצים, או גרור לכאן';
     return;
   }
   onFilesLoaded();
@@ -525,16 +527,29 @@ function onFilesLoaded(){
   filesData=filesData.filter(Boolean);
   firstHeaders=filesData[0]?.headers||[];
 
-  // זיהוי גיליונות אחידים
-  uniformSheets=detectUniformSheets();
-  if(uniformSheets){
-    globalSelectedOverlapSheets=[uniformSheets[0]];
-    filesData.forEach(fd=>{ fd.selectedSheets=[uniformSheets[0]]; });
-  } else {
-    uniformSheets=null;
-    globalSelectedOverlapSheets=[];
+  // זיהוי שורת כותרת אוטומטי לקבצים 2+
+  if(filesData.length>1){
+    const refHeaders=filesData[0].headers;
+    filesData.forEach((fd,i)=>{
+      if(i===0) return;
+      applyHdrRow(fd, autoDetectHdrRow(fd,refHeaders));
+    });
   }
-  renderGlobalOverlapSheets();
+
+  // הפץ בחירת גיליון מקובץ 0 לשאר הקבצים שיש להם גיליון בשם זהה
+  if(filesData.length>1 && filesData[0]?.selectedSheets?.length){
+    const sheet0=filesData[0].selectedSheets[0];
+    filesData.forEach((fd,i)=>{
+      if(i===0||!fd.wb) return;
+      if(fd.wb.SheetNames.includes(sheet0)){
+        fd.selectedSheets=[sheet0];
+        const allRows=getRowsFromWb(fd.wb,[sheet0]);
+        while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+        fd.allRows=allRows;
+        applyHdrRow(fd, autoDetectHdrRow(fd, filesData[0].headers));
+      }
+    });
+  }
   renderFileChips();
 
   dz.classList.add('loaded');
@@ -573,9 +588,7 @@ function savePrefs(){
       holiday:document.getElementById('chk-holiday').checked,dupes:document.getElementById('chk-dupes').checked,
       concurrent:document.getElementById('chk-concurrent').checked,
       servicehours:document.getElementById('chk-servicehours').checked},
-    serviceDays:Array.from(getServiceDays()),
-    svcFrom:document.getElementById('svc-from').value,
-    svcTo:document.getElementById('svc-to').value,
+    serviceWindows:getSvcWindowsFromDOM().map(w=>({days:[...w.days],from:w.from,to:w.to})),
     params:{maxHours:parseFloat(document.getElementById('param-maxhours').value)||12,
       monthlyCap:parseFloat(document.getElementById('param-monthlycap').value)||240,
       maxWorkers:parseInt(document.getElementById('param-maxworkers').value)||1},
@@ -606,11 +619,12 @@ function applyPrefs(){
   if(p.params.maxHours)document.getElementById('param-maxhours').value=p.params.maxHours;
   if(p.params.monthlyCap)document.getElementById('param-monthlycap').value=p.params.monthlyCap;
   if(p.params.maxWorkers)document.getElementById('param-maxworkers').value=p.params.maxWorkers;
-  if(p.serviceDays){
-    document.querySelectorAll('.day-btn').forEach(b=>b.classList.toggle('on',p.serviceDays.includes(parseInt(b.dataset.day))));
+  if(p.serviceWindows&&p.serviceWindows.length){
+    renderSvcWindows(p.serviceWindows);
+  } else if(p.serviceDays){
+    // תאימות לאחור — פורמט ישן עם חלון אחד
+    renderSvcWindows([{days:p.serviceDays,from:p.svcFrom||'08:00',to:p.svcTo||'17:00'}]);
   }
-  if(p.svcFrom)document.getElementById('svc-from').value=p.svcFrom;
-  if(p.svcTo)document.getElementById('svc-to').value=p.svcTo;
 }
 
 function clearPrefs(){localStorage.removeItem(PREFS_KEY);document.getElementById('prefs-banner').classList.add('hidden');}
@@ -655,10 +669,7 @@ function runChecks(parsed,maxH,monthlyCap,today,maxWorkers){
   if(document.getElementById('chk-dupes').checked)       findings.dupes=checkDupes(parsed);
   if(document.getElementById('chk-concurrent').checked)  findings.concurrent=checkConcurrentWorkers(parsed,maxWorkers);
   if(document.getElementById('chk-servicehours').checked){
-    const svcDays=getServiceDays();
-    const svcFrom=parseTime(document.getElementById('svc-from').value)||0;
-    const svcTo=parseTime(document.getElementById('svc-to').value)||1020;
-    findings.servicehours=checkServiceHours(parsed,svcDays,svcFrom,svcTo);
+    findings.servicehours=checkServiceHours(parsed,getSvcWindowsFromDOM());
   }
   return findings;
 }
@@ -683,32 +694,89 @@ function checkOverlaps(parsed){
   return res;
 }
 
-function toggleDay(d){
-  const btn=document.querySelector('.day-btn[data-day="'+d+'"]');
-  if(btn) btn.classList.toggle('on');
+// ── חלונות שעות שירות ──
+const SVC_DAY_LABELS=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
+function svcWindowHtml(w){
+  const days=w.days||[];
+  const dayBtns=SVC_DAY_LABELS.map((lbl,d)=>`<button type="button" class="sw-day-btn${days.includes(d)?' on':''}" data-day="${d}" onclick="toggleSvcDay(this)">${lbl}</button>`).join('');
+  return `<div class="svc-window">
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <div style="font-size:0.77rem;font-weight:700;color:var(--muted);margin-bottom:5px">ימי שירות (לחץ לבחירה):</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">${dayBtns}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="check-param"><label>משעה:</label><input type="text" class="svc-win-from" value="${w.from||'08:00'}" placeholder="HH:MM" style="width:72px"/></div>
+        <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'17:00'}" placeholder="HH:MM" style="width:72px"/></div>
+      </div>
+      <button type="button" class="svc-win-remove" onclick="removeSvcWindow(this)" title="הסר טווח" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;padding:2px 6px;align-self:center;visibility:hidden">✕</button>
+    </div>
+  </div>`;
 }
-function getServiceDays(){
-  return new Set(Array.from(document.querySelectorAll('.day-btn.on')).map(b=>parseInt(b.dataset.day)));
+function renderSvcWindows(windows){
+  const c=document.getElementById('svc-windows-list');
+  if(!c)return;
+  c.innerHTML=windows.map(w=>svcWindowHtml(w)).join('');
+  updateSvcRemoveBtns();
 }
-function checkServiceHours(parsed, serviceDays, svcFromMin, svcToMin){
-  if(!serviceDays.size)return[];
-  const svcToAdj=svcToMin<svcFromMin?svcToMin+1440:svcToMin; // cross-midnight service (e.g. 19:00–01:00)
+function toggleSvcDay(btn){btn.classList.toggle('on');}
+function addSvcWindow(){
+  const c=document.getElementById('svc-windows-list');
+  const tmp=document.createElement('div');
+  tmp.innerHTML=svcWindowHtml({days:[],from:'08:00',to:'17:00'});
+  c.appendChild(tmp.firstElementChild);
+  updateSvcRemoveBtns();
+}
+function removeSvcWindow(btn){
+  const c=document.getElementById('svc-windows-list');
+  if(c.children.length<=1)return;
+  btn.closest('.svc-window').remove();
+  updateSvcRemoveBtns();
+}
+function updateSvcRemoveBtns(){
+  const c=document.getElementById('svc-windows-list');
+  if(!c)return;
+  const btns=c.querySelectorAll('.svc-win-remove');
+  btns.forEach(b=>b.style.visibility=btns.length>1?'visible':'hidden');
+}
+function getSvcWindowsFromDOM(){
+  const c=document.getElementById('svc-windows-list');
+  if(!c)return[];
+  return Array.from(c.querySelectorAll('.svc-window')).map(el=>{
+    const days=new Set(Array.from(el.querySelectorAll('.sw-day-btn.on')).map(b=>parseInt(b.dataset.day)));
+    const from=el.querySelector('.svc-win-from').value.trim();
+    const to=el.querySelector('.svc-win-to').value.trim();
+    const fromMin=parseTime(from)??0;
+    const toMin=parseTime(to)??1020;
+    return{days,from,to,fromMin,toMin};
+  });
+}
+function checkServiceHours(parsed,svcWindows){
+  if(!svcWindows||!svcWindows.length)return[];
+  const allDays=new Set(svcWindows.flatMap(w=>[...w.days]));
   const DAY_HE=['א','ב','ג','ד','ה','ו','ש'];
   return parsed.filter(p=>{
     if(isNaN(p.dateObj))return false;
     const dow=p.dateObj.getUTCDay();
-    if(!serviceDays.has(dow))return true; // wrong day
+    if(!allDays.has(dow))return true; // day not in any window
     if(p.startMin===null)return false;
     const endCheck=(p.endMinAdj!==null&&p.endMinAdj>p.startMin)?p.endMinAdj:
                    (p.endMin!==null&&p.endMin>p.startMin?p.endMin:p.startMin);
-    if(p.startMin<svcFromMin||endCheck>svcToAdj)return true; // outside time window
-    return false;
+    for(const w of svcWindows){
+      if(!w.days.has(dow))continue;
+      const toAdj=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
+      if(p.startMin>=w.fromMin&&endCheck<=toAdj)return false; // valid — within this window
+    }
+    return true; // outside all applicable windows
   }).map(p=>{
     const dow=p.dateObj.getUTCDay();
-    const reason=!serviceDays.has(dow)
-      ?'יום '+DAY_HE[dow]+'\' — לא מורשה (שירות: '+['א','ב','ג','ד','ה','ו','ש'].filter((_,i)=>serviceDays.has(i)).join('/')+'\''+')'
-      :'שעות חריגות '+p.startStr+'–'+p.endStr+' (שירות: '+fmtMin(svcFromMin)+'–'+fmtMin(svcToMin)+')';
-    return{emp:p.emp,date:p.dateStr,detail:reason,idx:p.idx};
+    if(!allDays.has(dow)){
+      const allowed=DAY_HE.filter((_,i)=>allDays.has(i)).join('/');
+      return{emp:p.emp,date:p.dateStr,detail:`יום ${DAY_HE[dow]}' — לא מורשה (שירות: ${allowed}')`,idx:p.idx};
+    }
+    const matchWin=svcWindows.find(w=>w.days.has(dow));
+    const timeStr=matchWin?`${fmtMin(matchWin.fromMin)}–${fmtMin(matchWin.toMin)}`:'';
+    return{emp:p.emp,date:p.dateStr,detail:`שעות חריגות ${p.startStr}–${p.endStr} (שירות ביום ${DAY_HE[dow]}': ${timeStr})`,idx:p.idx};
   });
 }
 
@@ -987,35 +1055,107 @@ function switchTab(k,btn){
   document.getElementById('panel-'+k).classList.add('active');
 }
 
+// ── עזר: שם גיליון תקין (ללא תווים אסורים ב-Excel) ──
+function safeSheetName(name){return name.replace(/[\\\/\*\?\[\]\:]/g,'_').slice(0,31);}
+
+// ── עזרי עיצוב Excel ──
+function _xlsBrd(){
+  const c={rgb:'DDDDDD'};
+  return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};
+}
+// בונה גיליון מעוצב: headers=מערך כותרות, dataRows=מערך שורות, opts={hFill,hText,colWidths,getStyle(val,ri,ci)->{bg,tc,b}}
+function _xlsSheet(headers,dataRows,opts={}){
+  const ws={};
+  const nC=headers.length, nR=dataRows.length;
+  const brd=_xlsBrd();
+  const hSt={
+    fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},
+    font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},
+    alignment:{horizontal:'right',vertical:'center'},border:brd
+  };
+  headers.forEach((h,ci)=>{
+    ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};
+  });
+  dataRows.forEach((row,ri)=>{
+    row.forEach((val,ci)=>{
+      const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;
+      const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');
+      const s={
+        fill:{fgColor:{rgb:bg},patternType:'solid'},
+        font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},
+        alignment:{horizontal:'right',vertical:'center'},border:brd
+      };
+      const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});
+      if(val==null||val==='') ws[addr]={v:'',t:'z',s};
+      else if(typeof val==='number') ws[addr]={v:val,t:'n',s};
+      else ws[addr]={v:String(val),t:'s',s};
+    });
+  });
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});
+  if(opts.colWidths) ws['!cols']=opts.colWidths.map(w=>({wch:w}));
+  ws['!rows']=[{hpx:26}];
+  ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];
+  return ws;
+}
+// רוחב עמודות אוטומטי לפי תוכן
+function _xlsAutoW(headers,rows){
+  return headers.map((h,ci)=>{
+    const max=rows.reduce((mx,r)=>Math.max(mx,String(r[ci]??'').length),0);
+    return Math.min(Math.max(String(h||'').length+3,max+3,9),48);
+  });
+}
+
 // ── ייצוא ממצאים ──
 function exportFindings(){
+  if(!filesResults.length){alert('יש להריץ קודם את הבדיקות');return;}
   const wb=XLSX.utils.book_new();
   const ALL_CHECKS=Object.keys(META);
 
-  // Summary sheet
-  const sumCols=['שם קובץ','שורות',...ALL_CHECKS.filter(k=>filesResults.some(fr=>fr.findings[k]!==undefined)).map(k=>META[k].label)];
+  // ─── גיליון סיכום קבצים ───
+  const ranChecks=ALL_CHECKS.filter(k=>filesResults.some(fr=>fr.findings[k]!==undefined));
+  const sumCols=['שם קובץ','שורות',...ranChecks.map(k=>META[k].label)];
   const sumRows=filesResults.map(fr=>
-    [fr.name,fr.rawData.length,...ALL_CHECKS.filter(k=>fr.findings[k]!==undefined).map(k=>{
+    [fr.name,fr.rawData.length,...ranChecks.map(k=>{
       const m=META[k];const v=fr.findings[k];
+      if(v===undefined)return'—';
       return m.info?(v.length>0?v[0].pct+'%':'תקין'):(v.length>0?v.length:0);
     })]
   );
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([sumCols,...sumRows]),'סיכום קבצים');
+  const sumWs=_xlsSheet(sumCols,sumRows,{
+    hFill:'1F3864',
+    colWidths:[30,9,...ranChecks.map(k=>Math.max(META[k].label.length+3,11))],
+    getStyle:(val,ri,ci)=>{
+      if(ci===0) return{bg:'EFF3FF',tc:'1F3864'};          // שם קובץ
+      if(ci===1) return{bg:'F5F7FA',tc:'444444'};          // שורות
+      if(val===0||val==='תקין') return{bg:'D9EFD2',tc:'2E7D32'};  // תקין — ירוק
+      if(val==='—')             return{bg:'F0F0F0',tc:'AAAAAA'};  // לא בודק — אפור
+      return{bg:'FFE4E4',tc:'C62828',b:true};              // ממצא — אדום + מודגש
+    }
+  });
+  XLSX.utils.book_append_sheet(wb,sumWs,'סיכום קבצים');
 
-  // Per check sheets (all files combined)
+  // ─── גיליון לכל בדיקה ───
   ALL_CHECKS.forEach(k=>{
     const m=META[k];
     if(m.info){
-      const allRounded=filesResults.filter(fr=>fr.findings.rounded?.length).map(fr=>({name:fr.name,r:fr.findings.rounded[0]}));
-      if(allRounded.length){
-        const rows=[['קובץ','% עגולות','עגולות','סה"כ'],...allRounded.map(({name,r})=>[name,r.pct+'%',r.rounded,r.total])];
-        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'שעות עגולות');
-      }
+      const allR=filesResults.filter(fr=>fr.findings.rounded?.length).map(fr=>({name:fr.name,r:fr.findings.rounded[0]}));
+      if(!allR.length)return;
+      const rows=allR.map(({name,r})=>[name,r.pct+'%',r.rounded,r.total]);
+      XLSX.utils.book_append_sheet(wb,_xlsSheet(
+        ['קובץ','% עגולות','חתמות עגולות','סה"כ חתמות'],rows,
+        {hFill:'B45309',colWidths:[30,12,18,14],
+         getStyle:(_,ri)=>ri%2===0?{bg:'FFFBF0'}:{bg:'FFF3D6'}}
+      ),safeSheetName('שעות עגולות'));
       return;
     }
     const combined=[];
     filesResults.forEach(fr=>{(fr.findings[k]||[]).forEach(f=>combined.push(m.exportRow(f,fr.name)));});
-    if(combined.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([m.cols,...combined]),m.label.slice(0,31));
+    if(!combined.length)return;
+    XLSX.utils.book_append_sheet(wb,_xlsSheet(
+      m.cols,combined,
+      {hFill:'7B1010',colWidths:_xlsAutoW(m.cols,combined),
+       getStyle:(_,ri)=>ri%2===0?{bg:'FFF5F5'}:{bg:'FFEAEA'}}
+    ),safeSheetName(m.label));
   });
 
   XLSX.writeFile(wb,'ממצאי_בדיקת_שעות.xlsx');
@@ -1023,44 +1163,99 @@ function exportFindings(){
 
 // ── ייצוא דוחות מוערכים ──
 function exportAnnotated(){
+  if(!filesResults.length){alert('יש להריץ קודם את הבדיקות');return;}
   const wb=XLSX.utils.book_new();
   const ALL_CHECKS=Object.keys(META);
   const FLAG_LABELS={overlaps:'חפיפות שעות',longday:'שעות ביממה',offmonth:'חודש חריג',future:'תאריך עתידי',
-    nocturnal:'שעות חריגות',shabbat:'שבת',holiday:'חג/בחירות',dupes:'שורה כפולה',concurrent:'ריבוי עובדים',servicehours:'שעות שירות'};
+    nocturnal:'שעות חריגות',shabbat:'שבת',holiday:'חג-בחירות',dupes:'שורה כפולה',concurrent:'ריבוי עובדים',servicehours:'שעות שירות'};
 
   filesResults.forEach(fr=>{
+    // בנה מפת דגלים מחדש ישירות מהממצאים (ביחס לאינדקס שורה ב-rawData)
+    const flags={};
+    const mark=(idx,key,val)=>{if(idx==null||idx===undefined)return;if(!flags[idx])flags[idx]={};flags[idx][key]=val;};
+    fr.findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps',f.full?'חפיפה מלאה':'חפיפה חלקית'));});
+    fr.findings.longday?.forEach(f=>f.indices?.forEach(i=>mark(i,'longday',f.detail)));
+    ['offmonth','future','nocturnal','shabbat','holiday','dupes','servicehours'].forEach(k=>{
+      fr.findings[k]?.forEach(f=>mark(f.idx,k,f.detail||'✗'));
+    });
+    fr.findings.concurrent?.forEach(f=>f.indices?.forEach(i=>mark(i,'concurrent',f.detail)));
+
     const activeFlags=ALL_CHECKS.filter(k=>FLAG_LABELS[k]&&fr.findings[k]!==undefined);
     const flagHeaders=activeFlags.map(k=>FLAG_LABELS[k]);
-    const headerRow=[...fr.headers,...flagHeaders];
 
-    const dataRows=fr.rawData.map((row,idx)=>[
-      ...row,
-      ...activeFlags.map(k=>(fr.rowFlags[idx]&&fr.rowFlags[idx][k])||'')
-    ]);
+    // חשב רוחב אמיתי — עד עמודת הכותרת האחרונה שאינה ריקה
+    const ncols=fr.headers.reduce((mx,h,i)=>String(h||'').trim()?i+1:mx,0)||fr.headers.length;
+    const trimHdrs=fr.headers.slice(0,ncols);
 
-    const rows=[headerRow,...dataRows];
+    // בנה גיליון מעוצב
+    const allHeaders=[...trimHdrs,'ממצאים (מרוכז)',...flagHeaders];
+    const dataRows=fr.rawData.map((row,idx)=>{
+      const rf=flags[idx]||{};
+      const allMatching=activeFlags.filter(k=>rf[k]);
+      const consolidated=allMatching.map(k=>FLAG_LABELS[k]+': '+rf[k]).join(' | ');
+      return[...row.slice(0,ncols), consolidated, ...activeFlags.map(k=>rf[k]||'')];
+    });
 
-    // Notes at bottom for pattern checks
+    const ws=_xlsSheet(allHeaders,dataRows,{
+      hFill:'1F3864',
+      colWidths:[..._xlsAutoW(trimHdrs,fr.rawData.map(r=>r.slice(0,ncols))),
+                 Math.min(Math.max(...dataRows.map(r=>String(r[ncols]||'').length),20)+2,60),
+                 ...activeFlags.map(k=>Math.max(FLAG_LABELS[k].length+2,10))],
+      getStyle:(val,ri,ci)=>{
+        const isDataCol=ci<ncols;
+        const isConsolidated=ci===ncols;
+        const isFlagCol=ci>ncols;
+        const hasFlag=flags[ri];
+        if(isDataCol){
+          if(hasFlag) return{bg:ri%2===0?'FFF5F5':'FFECEC'};  // שורה עם ממצא — אדמדם
+          return ri%2===0?null:{bg:'F7F9FC'};                  // שורה תקינה — לבן/אפרפר
+        }
+        if(isConsolidated){
+          return val?{bg:'FFE4E4',tc:'8B0000',b:true}:{bg:'D9EFD2',tc:'2E7D32'}; // ממצא/תקין
+        }
+        if(isFlagCol){
+          return val?{bg:'FFE4E4',tc:'C62828'}:{bg:'F5FBF0',tc:'888888'};
+        }
+        return null;
+      }
+    });
+    ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];
+
+    // הערות בתחתית — מוסיפים שורות ריקות אחרי הנתונים
     const rounded=fr.findings.rounded;
     const monthly=fr.findings.monthly;
     if(rounded&&rounded.length){
       const r=rounded[0];
-      rows.push([]);
-      rows.push(['הערה: '+r.pct+'% מהחתמות עגולות לרבע שעה ('+r.rounded+' מתוך '+r.total+')']);
+      const nextR=dataRows.length+1;
+      ws[XLSX.utils.encode_cell({r:nextR,c:0})]={v:'',t:'z'};
+      ws[XLSX.utils.encode_cell({r:nextR+1,c:0})]={v:'הערה: '+r.pct+'% מהחתמות עגולות לרבע שעה ('+r.rounded+' מתוך '+r.total+')',t:'s',s:{font:{italic:true,color:{rgb:'888888'},sz:10}}};
+      ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:nextR+1,c:allHeaders.length-1}});
     }
     if(monthly&&monthly.length){
-      rows.push([]);
-      rows.push(['חריגות מכסה חודשית:']);
-      rows.push(['עובד','חודש','פירוט']);
-      monthly.forEach(e=>rows.push([e.emp,e.month,e.detail]));
+      let base=parseInt((ws['!ref']||'').split(':')[1]?.replace(/[^0-9]/g,'')||dataRows.length+1);
+      base++;
+      monthly.forEach((e,i)=>{
+        if(i===0){
+          ws[XLSX.utils.encode_cell({r:base,c:0})]={v:'חריגות מכסה חודשית:',t:'s',s:{font:{bold:true,sz:10}}};
+          base++;
+        }
+        ws[XLSX.utils.encode_cell({r:base,c:0})]={v:e.emp,t:'s'};
+        ws[XLSX.utils.encode_cell({r:base,c:1})]={v:e.month,t:'s'};
+        ws[XLSX.utils.encode_cell({r:base,c:2})]={v:e.detail,t:'s'};
+        base++;
+      });
     }
 
-    const sheetName=fr.name.replace(/\.[^.]+$/,'').slice(0,31);
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),sheetName);
+    const sheetName=safeSheetName(fr.name.replace(/\.[^.]+$/,''));
+    XLSX.utils.book_append_sheet(wb,ws,sheetName);
   });
 
   XLSX.writeFile(wb,'דוחות_מוערכים.xlsx');
 }
+
+// ── אתחול ──
+renderSvcWindows([{days:[1,2,3,4],from:'08:00',to:'17:00'}]);
+showPrefsBanner();
 </script>
 </body>
 </html>

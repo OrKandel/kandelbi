@@ -25,6 +25,7 @@ main{max-width:960px;margin:0 auto;padding:2rem 5vw 5rem}
 .upload-zone.loaded{border-color:var(--green);background:#edf7f3;border-style:solid}
 .uz-icon{font-size:2.2rem;margin-bottom:.5rem}
 .uz-text{font-weight:700;font-size:.93rem}
+@keyframes spin{to{transform:rotate(360deg)}}
 .uz-sub{font-size:.78rem;color:var(--muted);margin-top:.3rem}
 .file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
 .chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
@@ -115,7 +116,7 @@ tr:hover td{background:var(--bg)}
     <div class="form-row" style="margin-top:1rem">
       <div class="fg">
         <label>שורת הכותרת (1 = שורה ראשונה)</label>
-        <input type="number" id="hdr-row" value="1" min="1" max="20" onchange="populateConfig()"/>
+        <input type="number" id="hdr-row" value="1" min="1" max="20" onchange="populateConfig()" oninput="if(+this.value>=1&&+this.value<=20)populateConfig()"/>
       </div>
       <div class="fg">
         <label>עמודת שם הסעיף (טקסט)</label>
@@ -269,6 +270,12 @@ function removeFile(i) {
 }
 
 function readAllFiles() {
+  const pending = filesData.filter(d => !d.rows);
+  if (pending.length) {
+    dz.classList.remove('drag','loaded');
+    dz.querySelector('.uz-icon').innerHTML = '<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+    dz.querySelector('.uz-text').textContent = pending.length > 1 ? 'טוען ' + pending.length + ' קבצים...' : 'טוען קובץ...';
+  }
   const promises = filesData
     .filter(d => !d.rows)
     .map(d => new Promise(resolve => {
@@ -286,6 +293,9 @@ function readAllFiles() {
     }));
   Promise.all(promises).then(() => {
     if (filesData.every(d => d.rows)) {
+      dz.querySelector('.uz-icon').textContent = '✅';
+      dz.querySelector('.uz-text').textContent = filesData.length + ' קבצים נטענו — לחצו להוספת עוד';
+      dz.classList.add('loaded');
       document.getElementById('btn-next1').disabled = false;
       // זיהוי גיליונות אחידים
       uniformSheets = detectUniformSheetsCons();
@@ -303,9 +313,23 @@ function goStep1() {
   show('step1'); hide('step2'); hide('step3');
   setStepBar(1);
 }
+function autoDetectHdrRow(rows) {
+  // מצא את השורה הראשונה שמכילה לפחות 2 ערכי טקסט לא-מספריים — סביר שהן כותרות
+  for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    const row = rows[i] || [];
+    const textCells = row.filter(c => c !== '' && c != null && typeof c === 'string' && isNaN(parseFloat(String(c).replace(/,/g,''))));
+    if (textCells.length >= 2) return i + 1; // החזר 1-based
+  }
+  return 1;
+}
+
 function goStep2() {
   show('step2'); hide('step1'); hide('step3');
   setStepBar(2);
+  const first = filesData[0];
+  if (first && first.rows && first.rows.length) {
+    document.getElementById('hdr-row').value = autoDetectHdrRow(first.rows);
+  }
   populateConfig();
 }
 function setStepBar(n) {

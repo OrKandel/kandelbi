@@ -36,6 +36,7 @@ main{max-width:1100px;margin:0 auto;padding:2rem 5vw 5rem}
 .upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.6rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
 .upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:var(--green-bg)}.upload-box.error{border-color:var(--red);background:#fef2f2}
 .ub-icon{font-size:1.8rem;margin-bottom:4px}.ub-text{font-weight:700;font-size:0.88rem}.ub-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:650px){.grid2{grid-template-columns:1fr}}
 .form-group{margin-bottom:0.8rem}
@@ -393,6 +394,7 @@ function goToStep3(){ markStep(2,'done'); document.getElementById('step3-card').
 // ── SERVICES FILE ──
 document.getElementById('fi-svc').addEventListener('change',e=>{
   const file=e.target.files[0]; if(!file)return;
+  setDZLoading('dz-svc');
   loadExcel(file,svcFileData,()=>{ setDZLoaded('dz-svc','✅',`${file.name} (${svcFileData.rows.length} שורות)`); buildSvcColMap(); });
 });
 
@@ -436,7 +438,9 @@ function saveSvcList(){
 
 // ── ACTIVITY FILES ──
 document.getElementById('fi-act').addEventListener('change',async e=>{
-  for(const file of Array.from(e.target.files)){const data={headers:[],rows:[]};await loadExcelAsync(file,data);actFilesList.push({name:file.name,data});}
+  const files=Array.from(e.target.files);
+  if(files.length) setDZLoading('dz-act');
+  for(const file of files){const data={headers:[],rows:[]};await loadExcelAsync(file,data);actFilesList.push({name:file.name,data});}
   renderActList(); checkStep3();
 });
 function renderActList(){
@@ -450,6 +454,7 @@ function removeAct(idx){actFilesList.splice(idx,1);renderActList();checkStep3();
 // ── INVOICE FILE ──
 document.getElementById('fi-inv').addEventListener('change',async e=>{
   const file=e.target.files[0]; if(!file)return;
+  setDZLoading('dz-inv');
   const info=document.getElementById('inv-info');
   if(file.name.toLowerCase().endsWith('.pdf')){
     info.textContent='⏳ מעבד PDF...';
@@ -906,6 +911,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 function markStep(n,state){const el=document.getElementById('sn'+n);if(!el)return;el.className='step-num '+state;if(state==='done')el.textContent='✓';}
 function setDZLoaded(dzId,icon,text){const dz=document.getElementById(dzId);dz.classList.add('loaded');dz.querySelector('.ub-icon').textContent=icon;dz.querySelector('.ub-text').textContent=text;}
 function resetDZ(dzId,icon,text){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').textContent=icon;dz.querySelector('.ub-text').textContent=text;}
+function setDZLoading(dzId){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:24px;height:24px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';dz.querySelector('.ub-text').textContent='טוען קובץ...';}
 
 [['dz-svc','fi-svc'],['dz-act','fi-act'],['dz-inv','fi-inv']].forEach(([dzId,fiId])=>{
   const el=document.getElementById(dzId);

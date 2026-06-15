@@ -42,6 +42,7 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
 .upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
 .ub-icon{font-size:2rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:600px){.grid2{grid-template-columns:1fr}}
 .form-group{margin-bottom:0.9rem}
@@ -231,6 +232,10 @@ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')})
 dz.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])});
 
 function loadFile(file){
+  if(!file) return;
+  dz.classList.remove('drag','loaded');
+  dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+  dz.querySelector('.ub-text').textContent='טוען קובץ...';
   const reader=new FileReader();
   reader.onload=ev=>{
     const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});

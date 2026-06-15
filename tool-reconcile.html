@@ -48,6 +48,7 @@ main{max-width:1100px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .upload-box{border:2px dashed var(--border);border-radius:10px;padding:1.8rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
 .upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
 .ub-icon{font-size:1.8rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .form-group{margin-bottom:0.9rem}
 .form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
 .form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none;background:var(--white)}
@@ -329,6 +330,10 @@ function changeSummaryHdr(idx){
 function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange, callback){
   document.getElementById(inputId).addEventListener('change', e=>{
     const file=e.target.files[0]; if(!file) return;
+    const dz=document.getElementById(dzId);
+    dz.classList.remove('drag','loaded');
+    dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+    dz.querySelector('.ub-text').textContent='טוען קובץ...';
     const reader=new FileReader();
     reader.onload=ev=>{
       const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
@@ -340,7 +345,6 @@ function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId,
       dataObj.rows=allRows.slice(1).filter(r=>r.some(c=>c!==''));
       const wrap=document.getElementById(wrapId);
       if(wrap) wrap.innerHTML=sheetSelectorHtml(wb,shSelId,shOnchange)+headerRowSelectorHtml(allRows,hdrSelId,hdrOnchange,0);
-      const dz=document.getElementById(dzId);
       dz.classList.add('loaded');
       dz.querySelector('.ub-icon').textContent='✅';
       dz.querySelector('.ub-text').textContent=file.name+' ('+dataObj.rows.length.toLocaleString('he')+' שורות)';

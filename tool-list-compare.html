@@ -51,6 +51,7 @@ main{max-width:1000px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .upload-box.loaded{border-color:var(--green);background:#edf7f3}
 .ub-icon{font-size:1.8rem;margin-bottom:6px}
 .ub-text{font-weight:700;font-size:0.88rem}
+@keyframes spin{to{transform:rotate(360deg)}}
 .ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
 
 .form-group{margin-bottom:1rem}
@@ -356,6 +357,10 @@ function loadFile(inputId, dzId, colSelId, dataObj, wrapId, shSelId, shOnchange,
   input.addEventListener('change', e=>{
     const file = e.target.files[0];
     if (!file) return;
+    const dz = document.getElementById(dzId);
+    dz.classList.remove('drag','loaded');
+    dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+    dz.querySelector('.ub-text').textContent='טוען קובץ...';
     const reader = new FileReader();
     reader.onload = ev=>{
       const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
@@ -366,7 +371,6 @@ function loadFile(inputId, dzId, colSelId, dataObj, wrapId, shSelId, shOnchange,
 
       refreshColSel(colSelId, dataObj.headers);
 
-      const dz = document.getElementById(dzId);
       dz.classList.add('loaded');
       dz.querySelector('.ub-icon').textContent='✅';
       dz.querySelector('.ub-text').textContent=file.name;

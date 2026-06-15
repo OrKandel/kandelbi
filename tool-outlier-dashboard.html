@@ -25,6 +25,7 @@ main{max-width:1100px;margin:0 auto;padding:2rem 5vw 5rem}
 .upload-zone.loaded{border-color:var(--green);background:#edf7f3;border-style:solid}
 .uz-icon{font-size:2rem;margin-bottom:.4rem}
 .uz-text{font-weight:700;font-size:.9rem}
+@keyframes spin{to{transform:rotate(360deg)}}
 .uz-sub{font-size:.76rem;color:var(--muted);margin-top:.3rem}
 .info-box{background:#f0f7ff;border-right:4px solid var(--blue);border-radius:8px;padding:.9rem 1.1rem;font-size:.87rem;margin-bottom:1rem;color:var(--navy2)}
 .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1rem}
@@ -213,6 +214,9 @@ document.getElementById('fi').addEventListener('change', e => loadFile(e.target.
 
 function loadFile(file) {
   if (!file) return;
+  dz.classList.remove('drag','loaded');
+  dz.querySelector('.uz-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+  document.getElementById('uz-txt').textContent='טוען קובץ...';
   const r = new FileReader();
   r.onload = ev => {
     const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
@@ -222,7 +226,8 @@ function loadFile(file) {
     const dataRows = rows.slice(1).filter(r => r.some(c => c !== ''));
     ingestRaw(headers, dataRows);
     dz.classList.add('loaded');
-    document.getElementById('uz-txt').textContent = '✅ ' + file.name;
+    dz.querySelector('.uz-icon').textContent='✅';
+    document.getElementById('uz-txt').textContent = file.name;
   };
   r.readAsArrayBuffer(file);
 }
