@@ -177,15 +177,20 @@ let globalSelectedSheets = []; // active selection in uniform mode
 
 // ── Data helpers ──
 
-function getRowsFromWb(wb, sheets) {
+function getRowsAndSheetsFromWb(wb, sheets) {
   const names = Array.isArray(sheets) ? (sheets.length ? sheets : [wb.SheetNames[0]]) : [sheets || wb.SheetNames[0]];
-  let all = [];
+  const allRows = [], allRowsSheets = [];
   names.forEach((name, i) => {
     const ws = wb.Sheets[name] || wb.Sheets[wb.SheetNames[0]];
     const r = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true}).filter(row => row.some(c => c !== ''));
-    if (i === 0) all.push(...r); else all.push(...r.slice(1));
+    const rows = i === 0 ? r : r.slice(1);
+    allRows.push(...rows);
+    allRowsSheets.push(...rows.map(() => name));
   });
-  return all;
+  return {allRows, allRowsSheets};
+}
+function getRowsFromWb(wb, sheets) {
+  return getRowsAndSheetsFromWb(wb, sheets).allRows;
 }
 
 function detectUniformSheets() {
@@ -216,18 +221,24 @@ function applyHdr(fd, idx) {
   fd.headerRowIdx = idx;
   fd.headers = (fd.allRows[idx] || []).map(h => String(h || '').trim());
   const emptyLead = fd.emptyLeadRows || 0;
-  // שמור אינדקס שורה מקורי בגיליון לכל שורת נתונים (לשמירת עיצוב)
-  const withIdx = fd.allRows.slice(idx + 1).map((r, i) => ({r, wsRow: emptyLead + idx + 1 + i})).filter(x => x.r.some(c => c !== ''));
+  // שמור אינדקס שורה ושם גיליון מקורי לכל שורת נתונים (לשמירת עיצוב + עמודת גיליון מקור)
+  const withIdx = fd.allRows.slice(idx + 1).map((r, i) => ({
+    r,
+    wsRow: emptyLead + idx + 1 + i,
+    sheet: fd.allRowsSheets ? (fd.allRowsSheets[idx + 1 + i] || '') : ((fd.selectedSheets && fd.selectedSheets[0]) || '')
+  })).filter(x => x.r.some(c => c !== ''));
   fd.rawData = withIdx.map(x => x.r);
   fd.rawDataWsRowIdx = withIdx.map(x => x.wsRow);
+  fd.rawDataSheets = withIdx.map(x => x.sheet);
 }
 
 function reloadFileRows(fd, idx) {
   const sheets = fd.selectedSheets && fd.selectedSheets.length ? fd.selectedSheets : [fd.wb.SheetNames[0]];
-  const allRows = getRowsFromWb(fd.wb, sheets);
+  const { allRows, allRowsSheets } = getRowsAndSheetsFromWb(fd.wb, sheets);
   let emptyLead = 0;
-  while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); emptyLead++; }
+  while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); allRowsSheets.shift(); emptyLead++; }
   fd.allRows = allRows;
+  fd.allRowsSheets = allRowsSheets;
   fd.emptyLeadRows = emptyLead;
   if (idx === 0) {
     applyHdr(fd, fd.headerRowIdx || 0);
@@ -257,10 +268,10 @@ function loadFiles(fileList) {
     reader.onload = ev => {
       const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', cellDates:true, cellStyles:true});
       const selectedSheets = [wb.SheetNames[0]];
-      const allRows = getRowsFromWb(wb, selectedSheets);
+      const { allRows, allRowsSheets } = getRowsAndSheetsFromWb(wb, selectedSheets);
       let emptyLead = 0;
-      while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); emptyLead++; }
-      const fd = { name: file.name, wb, selectedSheets, headerRowIdx: 0, allRows, emptyLeadRows: emptyLead, headers: [], rawData: [], rawDataWsRowIdx: [] };
+      while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); allRowsSheets.shift(); emptyLead++; }
+      const fd = { name: file.name, wb, selectedSheets, headerRowIdx: 0, allRows, allRowsSheets, emptyLeadRows: emptyLead, headers: [], rawData: [], rawDataWsRowIdx: [], rawDataSheets: [] };
       applyHdr(fd, 0);
       filesData[startIdx + i] = fd;
       if (filesData.every(Boolean)) onFilesLoaded();
@@ -449,27 +460,26 @@ function checkHeaders() {
 
 // ── Merge logic ──
 function buildMerge() {
-  const sourceColName = 'מקור';
-  const sourcePos = 'first';
+  const fileColName = 'קובץ מקור';
+  const sheetColName = 'גיליון מקור';
   const sourceValType = 'noext';
   const allHeaders = []; const headerSet = new Set();
   filesData.forEach(fd => { fd.headers.forEach(h => { if (!headerSet.has(h)) { headerSet.add(h); allHeaders.push(h); } }); });
-  const finalHeaders = sourcePos === 'first' ? [sourceColName, ...allHeaders] : [...allHeaders, sourceColName];
+  const finalHeaders = [fileColName, sheetColName, ...allHeaders];
   const rows = [];
-  const rowInfos = []; // {fdIdx, wsRowIdx, colMapping} — לשמירת עיצוב
+  const rowInfos = []; // {fdIdx, wsRowIdx, sheetName, colMapping} — לשמירת עיצוב
   filesData.forEach((fd, fdIdx) => {
     const srcVal = sourceValType === 'noext' ? fd.name.replace(/\.[^.]+$/, '') : fd.name;
     const colMapping = allHeaders.map(h => fd.headers.indexOf(h));
     fd.rawData.forEach((row, ri) => {
-      const newRow = [];
-      if (sourcePos === 'first') newRow.push(srcVal);
+      const sheetName = fd.rawDataSheets ? (fd.rawDataSheets[ri] || '') : ((fd.selectedSheets && fd.selectedSheets[0]) || '');
+      const newRow = [srcVal, sheetName];
       allHeaders.forEach((h, hi) => { const idx = colMapping[hi]; newRow.push(idx >= 0 ? row[idx] : ''); });
-      if (sourcePos === 'last') newRow.push(srcVal);
       rows.push(newRow);
-      rowInfos.push({fdIdx, wsRowIdx: fd.rawDataWsRowIdx ? fd.rawDataWsRowIdx[ri] : null, colMapping});
+      rowInfos.push({fdIdx, wsRowIdx: fd.rawDataWsRowIdx ? fd.rawDataWsRowIdx[ri] : null, sheetName, colMapping});
     });
   });
-  mergedResult = { headers: finalHeaders, rows, rowInfos, sourceColName, sourcePos };
+  mergedResult = { headers: finalHeaders, rows, rowInfos };
   renderResults();
   document.getElementById('results-card').classList.remove('hidden');
   setTimeout(() => document.getElementById('results-card').scrollIntoView({behavior:'smooth'}), 100);
@@ -494,31 +504,29 @@ function fmtCell(val) {
 }
 
 function renderResults() {
-  const { headers, rows, sourceColName, sourcePos } = mergedResult;
-  const sourceIdx = sourcePos === 'first' ? 0 : headers.length - 1;
+  const { headers, rows } = mergedResult;
   document.getElementById('summary-bar').innerHTML =
     `<div class="sum-item"><span class="sum-val">${filesData.length}</span><span class="sum-lbl">קבצים אוחדו</span></div>` +
     `<div class="sum-item"><span class="sum-val">${rows.length.toLocaleString('he')}</span><span class="sum-lbl">שורות סה"כ</span></div>` +
     `<div class="sum-item"><span class="sum-val">${headers.length}</span><span class="sum-lbl">עמודות</span></div>`;
   const previewRows = rows.slice(0, 100);
-  const thead = '<thead><tr>' + headers.map((h, i) => `<th${i===sourceIdx?' class="source-col"':''}>${h}</th>`).join('') + '</tr></thead>';
-  const tbody = '<tbody>' + previewRows.map(row => '<tr>' + row.map((cell, i) => `<td${i===sourceIdx?' class="source-cell"':''}>${fmtCell(cell)}</td>`).join('') + '</tr>').join('') + '</tbody>';
+  const thead = '<thead><tr>' + headers.map((h, i) => `<th${i<2?' class="source-col"':''}>${h}</th>`).join('') + '</tr></thead>';
+  const tbody = '<tbody>' + previewRows.map(row => '<tr>' + row.map((cell, i) => `<td${i<2?' class="source-cell"':''}>${fmtCell(cell)}</td>`).join('') + '</tr>').join('') + '</tbody>';
   document.getElementById('preview-table').innerHTML = '<table>' + thead + tbody + '</table>';
   document.getElementById('preview-note').textContent = rows.length > 100 ? `מוצגות 100 שורות ראשונות מתוך ${rows.length.toLocaleString('he')}` : '';
 }
 
 // ── Export ──
 function exportMerged() {
-  const { headers, rows, rowInfos, sourcePos } = mergedResult;
+  const { headers, rows, rowInfos } = mergedResult;
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, buildMergedSheet(headers, rows, rowInfos, sourcePos), 'מאוחד');
+  XLSX.utils.book_append_sheet(wb, buildMergedSheet(headers, rows, rowInfos), 'מאוחד');
   XLSX.writeFile(wb, 'קבצים_מאוחדים.xlsx', {cellStyles:true});
 }
 
 // בניית גיליון מאוחד עם שמירת עיצוב ותיקון שעות
-function buildMergedSheet(headers, rows, rowInfos, sourcePos) {
+function buildMergedSheet(headers, rows, rowInfos) {
   const numCols = headers.length;
-  const sourceIdx = sourcePos === 'first' ? 0 : numCols - 1;
   const outWs = {};
   // שורת כותרת
   headers.forEach((h, c) => { outWs[XLSX.utils.encode_cell({r:0,c})] = {t:'s', v:String(h||'')}; });
@@ -526,15 +534,15 @@ function buildMergedSheet(headers, rows, rowInfos, sourcePos) {
   rows.forEach((row, outRowIdx) => {
     const info = rowInfos ? rowInfos[outRowIdx] : null;
     const fd = info != null ? filesData[info.fdIdx] : null;
-    // עיצוב רק כשגיליון יחיד נבחר (אחרת אי אפשר לעקוב אחר שורות)
-    const srcWs = (fd && fd.selectedSheets && fd.selectedSheets.length === 1)
-      ? fd.wb.Sheets[fd.selectedSheets[0]] : null;
+    // עיצוב — מחפשים את הגיליון לפי שם השורה (תומך בריבוי גיליונות)
+    const srcWs = (fd && info && info.sheetName && fd.wb.Sheets[info.sheetName])
+      ? fd.wb.Sheets[info.sheetName] : null;
     row.forEach((val, outC) => {
       const outAddr = XLSX.utils.encode_cell({r: outRowIdx + 1, c: outC});
-      if (outC === sourceIdx || !srcWs || !info || info.wsRowIdx == null) {
+      if (outC < 2 || !srcWs || !info || info.wsRowIdx == null) {
         outWs[outAddr] = mkCell(val);
       } else {
-        const allHIdx = sourcePos === 'first' ? outC - 1 : outC;
+        const allHIdx = outC - 2; // קיזוז שתי עמודות מקור
         const srcC = info.colMapping[allHIdx];
         if (srcC < 0) { outWs[outAddr] = {t:'s', v:''}; }
         else {

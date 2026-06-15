@@ -113,11 +113,14 @@ tr:hover td{background:var(--bg)}
     <div class="card-title">⚙️ הגדרת מבנה הקובץ</div>
     <div class="warn-box">📋 להלן תצוגה מקדימה של הקובץ הראשון. בחרו איזו עמודה מכילה את <strong>שם הסעיף</strong> ואיזו את <strong>הערך המספרי</strong>.</div>
     <div class="preview-wrap" id="preview-table-wrap"></div>
-    <div class="form-row" style="margin-top:1rem">
-      <div class="fg">
-        <label>שורת הכותרת (1 = שורה ראשונה)</label>
-        <input type="number" id="hdr-row" value="1" min="1" max="20" onchange="populateConfig()" oninput="if(+this.value>=1&&+this.value<=20)populateConfig()"/>
+    <div style="margin-top:1rem;margin-bottom:1rem">
+      <div style="background:#fff8ed;border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;font-size:0.82rem">
+        <div style="font-weight:700;color:#b87400;margin-bottom:5px">📌 שורת הכותרות:</div>
+        <select id="hdr-row" onchange="populateConfig()" style="width:100%;padding:5px 8px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff"></select>
+        <div style="font-size:0.74rem;color:#6b7a99;margin-top:3px">הבחירה תחול על כל הקבצים</div>
       </div>
+    </div>
+    <div class="form-row">
       <div class="fg">
         <label>עמודת שם הסעיף (טקסט)</label>
         <select id="col-cat" onchange="refreshPreview()"></select>
@@ -323,13 +326,22 @@ function autoDetectHdrRow(rows) {
   return 1;
 }
 
+function buildHdrRowSel() {
+  const first = filesData[0];
+  if (!first || !first.rows) return;
+  const rows = first.rows;
+  const n = Math.min(rows.length, 8);
+  const autoIdx = autoDetectHdrRow(rows); // 1-based
+  const sel = document.getElementById('hdr-row');
+  sel.innerHTML = Array.from({length: n}, (_, i) => {
+    const preview = (rows[i] || []).slice(0, 5).map(c => String(c || '').slice(0, 18)).filter(Boolean).join(' | ');
+    return `<option value="${i+1}"${(i+1)===autoIdx?' selected':''}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${preview.replace(/</g,'&lt;')}</option>`;
+  }).join('');
+}
 function goStep2() {
   show('step2'); hide('step1'); hide('step3');
   setStepBar(2);
-  const first = filesData[0];
-  if (first && first.rows && first.rows.length) {
-    document.getElementById('hdr-row').value = autoDetectHdrRow(first.rows);
-  }
+  buildHdrRowSel();
   populateConfig();
 }
 function setStepBar(n) {
