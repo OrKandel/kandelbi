@@ -145,35 +145,8 @@ td.source-cell{font-weight:700;color:var(--blue);font-size:0.78rem;white-space:n
 <div class="card hidden" id="config-card">
   <div class="card-title">⚙️ הגדרות איחוד</div>
 
-  <div class="prefs-banner hidden" id="prefs-banner">
-    <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
-    <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
-    <button class="pb-clear" onclick="clearPrefs()">מחק</button>
-  </div>
-
+  <div id="global-sheet-wrap"></div>
   <div id="header-status"></div>
-
-  <div class="grid2">
-    <div class="form-group">
-      <label>שם עמודת המקור:</label>
-      <input type="text" id="source-col-name" value="מקור" placeholder="לדוגמה: חודש, קובץ, מקור"/>
-    </div>
-    <div class="form-group">
-      <label>מיקום עמודת המקור:</label>
-      <select id="source-col-pos">
-        <option value="first">עמודה ראשונה</option>
-        <option value="last">עמודה אחרונה</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label>ערך בעמודת המקור:</label>
-    <select id="source-val-type">
-      <option value="noext">שם קובץ ללא סיומת (מומלץ)</option>
-      <option value="full">שם קובץ מלא</option>
-    </select>
-  </div>
 
   <button class="btn-primary" onclick="buildMerge()">🗂️ אחד קבצים</button>
 </div>
@@ -196,68 +169,70 @@ td.source-cell{font-weight:700;color:var(--blue);font-size:0.78rem;white-space:n
 </div>
 </main>
 <script>
-let filesData = []; // [{name, headers, rawData}]
-let mergedResult = null; // {headers, rows}
-const MERGE_PREFS_KEY = 'kandelbi_merge_prefs_v1';
+let filesData   = [];       // [{name, wb, selectedSheets, headerRowIdx, allRows, headers, rawData}]
+let mergedResult = null;
+let uniformSheets = null;   // array of sheet names if all files share identical sheet list, else null
+let globalSelectedSheets = []; // active selection in uniform mode
 
-// ── SHEET & HEADER ROW HELPERS ──
-function sheetSelectorHtml(wb, selId, onchangeFn){
-  if(!wb||!wb.SheetNames||wb.SheetNames.length<=1) return '';
-  const opts = wb.SheetNames.map((name,i)=>{
-    const ws=wb.Sheets[name];
-    const ref=ws['!ref']||'A1';
-    const range=XLSX.utils.decode_range(ref);
-    const rows=range.e.r-range.s.r+1;
-    return `<option value="${name}"${i===0?' selected':''}>${name} (${rows} שורות)</option>`;
+// ── Data helpers ──
+
+function getRowsFromWb(wb, sheets) {
+  const names = Array.isArray(sheets) ? (sheets.length ? sheets : [wb.SheetNames[0]]) : [sheets || wb.SheetNames[0]];
+  let all = [];
+  names.forEach((name, i) => {
+    const ws = wb.Sheets[name] || wb.Sheets[wb.SheetNames[0]];
+    const r = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true}).filter(row => row.some(c => c !== ''));
+    if (i === 0) all.push(...r); else all.push(...r.slice(1));
   });
-  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
-  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.5rem;font-size:0.82rem">
-    <div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div>
-    <select id="${selId}" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
-  </div>`;
+  return all;
 }
-function getRowsFromWb(wb, sheetName){
-  if(sheetName==='__ALL__'){
-    let all=[];
-    wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''));
-      if(i===0) all.push(...r);
-      else all.push(...r.slice(1));
-    });
-    return all;
+
+function detectUniformSheets() {
+  if (!filesData.length || filesData.some(f => !f)) return null;
+  if (!filesData.some(f => f.wb.SheetNames.length > 1)) return null; // all single-sheet — no need
+  const first = filesData[0].wb.SheetNames;
+  const allSame = filesData.every(f => {
+    const n = f.wb.SheetNames;
+    return n.length === first.length && n.every((s, i) => s === first[i]);
+  });
+  return allSame ? first : null;
+}
+
+// Find header row in fd that best matches referenceHeaders
+function autoDetectHdr(fd, referenceHeaders) {
+  if (!fd.allRows || !referenceHeaders || !referenceHeaders.length) return;
+  const refSet = new Set(referenceHeaders.filter(Boolean));
+  if (!refSet.size) { applyHdr(fd, 0); return; }
+  let bestRow = 0, bestScore = -1;
+  for (let i = 0; i < Math.min(fd.allRows.length, 10); i++) {
+    const cells = (fd.allRows[i] || []).map(h => String(h || '').trim());
+    const score = cells.filter(h => h && refSet.has(h)).length / refSet.size;
+    if (score > bestScore) { bestScore = score; bestRow = i; }
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:true}).filter(r=>r.some(c=>c!==''));
+  applyHdr(fd, bestRow);
 }
-function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
-  if(!allRows||allRows.length<=1) return '';
-  const n=Math.min(allRows.length,8);
-  const opts=Array.from({length:n},(_,i)=>{
-    const preview=(allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,18)).filter(Boolean).join(' | ');
-    return `<option value="${i}"${(currentIdx||0)===i?' selected':''}>${'שורה '+(i+1)+(i===0?' (ברירת מחדל)':'')}: ${preview.replace(/</g,'&lt;')}</option>`;
-  });
-  return `<div style="background:#fff8ed;border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.5rem;font-size:0.82rem">
-    <div style="font-weight:700;color:#b87400;margin-bottom:5px">⚠️ שורת הכותרות:</div>
-    <select id="${selId}" style="width:100%;padding:5px 8px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
-    <div style="font-size:0.74rem;color:#6b7a99;margin-top:3px">בחר שורה עם שמות עמודות אם הכותרות אינן בשורה הראשונה</div>
-  </div>`;
+function applyHdr(fd, idx) {
+  fd.headerRowIdx = idx;
+  fd.headers = (fd.allRows[idx] || []).map(h => String(h || '').trim());
+  const emptyLead = fd.emptyLeadRows || 0;
+  // שמור אינדקס שורה מקורי בגיליון לכל שורת נתונים (לשמירת עיצוב)
+  const withIdx = fd.allRows.slice(idx + 1).map((r, i) => ({r, wsRow: emptyLead + idx + 1 + i})).filter(x => x.r.some(c => c !== ''));
+  fd.rawData = withIdx.map(x => x.r);
+  fd.rawDataWsRowIdx = withIdx.map(x => x.wsRow);
 }
 
-function applyMergeFileSheet(idx, sheetName){
-  const fd=filesData[idx]; if(!fd||!fd.wb) return;
-  fd.selectedSheet=sheetName;
-  const allRows=getRowsFromWb(fd.wb,sheetName);
-  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-  fd.allRows=allRows; fd.headerRowIdx=0;
-  fd.headers=(allRows[0]||[]).map(h=>String(h||'').trim());
-  fd.rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
-  renderFilesList(); checkHeaders();
-}
-function applyMergeFileHdr(idx, hdrIdx){
-  const fd=filesData[idx]; if(!fd||!fd.allRows) return;
-  fd.headerRowIdx=+hdrIdx;
-  fd.headers=(fd.allRows[+hdrIdx]||[]).map(h=>String(h||'').trim());
-  fd.rawData=fd.allRows.slice(+hdrIdx+1).filter(r=>r.some(c=>c!==''));
-  renderFilesList(); checkHeaders();
+function reloadFileRows(fd, idx) {
+  const sheets = fd.selectedSheets && fd.selectedSheets.length ? fd.selectedSheets : [fd.wb.SheetNames[0]];
+  const allRows = getRowsFromWb(fd.wb, sheets);
+  let emptyLead = 0;
+  while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); emptyLead++; }
+  fd.allRows = allRows;
+  fd.emptyLeadRows = emptyLead;
+  if (idx === 0) {
+    applyHdr(fd, fd.headerRowIdx || 0);
+  } else {
+    autoDetectHdr(fd, filesData[0] ? filesData[0].headers : []);
+  }
 }
 
 // ── Upload ──
@@ -271,18 +246,19 @@ function loadFiles(fileList) {
   if (!fileList || !fileList.length) return;
   const arr = Array.from(fileList).filter(f => /\.(xlsx|xls|csv)$/i.test(f.name));
   if (!arr.length) return;
-  // Append to existing list
   const startIdx = filesData.length;
   arr.forEach((file, i) => {
-    filesData.push(null); // placeholder
+    filesData.push(null);
     const reader = new FileReader();
     reader.onload = ev => {
-      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', cellDates: true });
-      const allRows = getRowsFromWb(wb, wb.SheetNames[0]);
-      while(allRows.length && allRows[0].every(c=>!c)) allRows.shift();
-      const headers = (allRows[0] || []).map(h => String(h || '').trim());
-      const rawData = allRows.slice(1).filter(r => r.some(c => c !== ''));
-      filesData[startIdx + i] = { name: file.name, wb, selectedSheet: wb.SheetNames[0], headerRowIdx: 0, allRows, headers, rawData };
+      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', cellDates:true, cellStyles:true});
+      const selectedSheets = [wb.SheetNames[0]];
+      const allRows = getRowsFromWb(wb, selectedSheets);
+      let emptyLead = 0;
+      while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); emptyLead++; }
+      const fd = { name: file.name, wb, selectedSheets, headerRowIdx: 0, allRows, emptyLeadRows: emptyLead, headers: [], rawData: [], rawDataWsRowIdx: [] };
+      applyHdr(fd, 0);
+      filesData[startIdx + i] = fd;
       if (filesData.every(Boolean)) onFilesLoaded();
     };
     reader.readAsArrayBuffer(file);
@@ -295,6 +271,7 @@ function removeFile(idx) {
     document.getElementById('files-list').classList.add('hidden');
     document.getElementById('config-card').classList.add('hidden');
     document.getElementById('results-card').classList.add('hidden');
+    document.getElementById('global-sheet-wrap').innerHTML = '';
     dz.classList.remove('loaded');
     dz.querySelector('.ub-icon').textContent = '📁';
     dz.querySelector('.ub-text').textContent = 'לחץ לבחירת קבצים, או גרור לכאן';
@@ -305,23 +282,128 @@ function removeFile(idx) {
 
 function onFilesLoaded() {
   filesData = filesData.filter(Boolean);
+  // Auto-detect header rows for files 2+
+  filesData.forEach((fd, i) => { if (i > 0) autoDetectHdr(fd, filesData[0].headers); });
+  // Detect uniform sheets
+  const newUniform = detectUniformSheets();
+  if (JSON.stringify(newUniform) !== JSON.stringify(uniformSheets)) {
+    uniformSheets = newUniform;
+    globalSelectedSheets = uniformSheets ? [uniformSheets[0]] : [];
+  } else if (uniformSheets && !globalSelectedSheets.length) {
+    globalSelectedSheets = [uniformSheets[0]];
+  }
+  renderGlobalSheetSelector();
   renderFilesList();
   checkHeaders();
-  showPrefsBanner();
   dz.classList.add('loaded');
   dz.querySelector('.ub-icon').textContent = '✅';
   dz.querySelector('.ub-text').textContent = filesData.length + ' קבצים נטענו — לחץ להוספת עוד';
   document.getElementById('config-card').classList.remove('hidden');
 }
 
+// ── Global sheet selector (when all files share identical sheet names) ──
+function renderGlobalSheetSelector() {
+  const wrap = document.getElementById('global-sheet-wrap');
+  if (!uniformSheets || uniformSheets.length <= 1) { wrap.innerHTML = ''; return; }
+  if (!globalSelectedSheets.length) globalSelectedSheets = [uniformSheets[0]];
+  const cbs = uniformSheets.map(name => {
+    const ws = filesData[0].wb.Sheets[name];
+    const rows = ws && ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r + 1 : '?';
+    const on = globalSelectedSheets.includes(name);
+    return `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:${on?'#deeeff':'#f5f8ff'};border:1.5px solid ${on?'#1e6abf':'#c8d9f2'};border-radius:8px;font-size:0.84rem;user-select:none;transition:all 0.15s">
+      <input type="checkbox" value="${encodeURIComponent(name)}" ${on?'checked':''} onchange="onGlobalSheetChange()" style="accent-color:var(--blue)">
+      <span><strong>${name}</strong> <span style="color:var(--muted);font-size:0.76rem">(${rows} שורות)</span></span>
+    </label>`;
+  }).join('');
+  wrap.innerHTML = `<div style="background:#eef3fb;border:1.5px solid #c8d9f2;border-radius:10px;padding:14px 16px;margin-bottom:1rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:10px;font-size:0.9rem">📋 בחר גיליונות — יחול על כל ${filesData.length} הקבצים:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">${cbs}</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:8px">✅ כל הקבצים עם שמות גיליונות זהים — בחירה אחת חלה על כולם</div>
+  </div>`;
+}
+
+function onGlobalSheetChange() {
+  const cbs = document.querySelectorAll('#global-sheet-wrap input[type=checkbox]');
+  globalSelectedSheets = [...cbs].filter(c => c.checked).map(c => decodeURIComponent(c.value));
+  if (!globalSelectedSheets.length) { globalSelectedSheets = [uniformSheets[0]]; cbs[0].checked = true; }
+  filesData.forEach((fd, i) => {
+    fd.selectedSheets = globalSelectedSheets.filter(s => fd.wb.SheetNames.includes(s));
+    if (!fd.selectedSheets.length) fd.selectedSheets = [fd.wb.SheetNames[0]];
+    reloadFileRows(fd, i);
+  });
+  renderGlobalSheetSelector();
+  renderFilesList();
+  checkHeaders();
+}
+
+// ── Per-file sheet checkboxes (when sheet names differ across files) ──
+function perFileSheetHtml(wb, fileIdx) {
+  if (!wb || !wb.SheetNames || wb.SheetNames.length <= 1) return '';
+  const fd = filesData[fileIdx];
+  const selected = fd.selectedSheets || [wb.SheetNames[0]];
+  const cbs = wb.SheetNames.map(name => {
+    const ws = wb.Sheets[name];
+    const rows = ws && ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r + 1 : '?';
+    const on = selected.includes(name);
+    return `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82rem">
+      <input type="checkbox" class="sh-cb-${fileIdx}" value="${encodeURIComponent(name)}" ${on?'checked':''} onchange="onFileSheetChange(${fileIdx})" style="accent-color:var(--blue)">
+      ${name} <span style="color:var(--muted);font-size:0.74rem">(${rows})</span>
+    </label>`;
+  }).join('');
+  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.5rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.82rem">📋 גיליונות:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">${cbs}</div>
+  </div>`;
+}
+function onFileSheetChange(idx) {
+  const cbs = document.querySelectorAll(`.sh-cb-${idx}`);
+  const sel = [...cbs].filter(c => c.checked).map(c => decodeURIComponent(c.value));
+  if (!sel.length) { cbs[0].checked = true; return; }
+  filesData[idx].selectedSheets = sel;
+  reloadFileRows(filesData[idx], idx);
+  if (idx === 0) filesData.forEach((fd, i) => { if (i > 0) autoDetectHdr(fd, filesData[0].headers); });
+  renderFilesList();
+  checkHeaders();
+}
+
+// ── Header row selector (first file only) ──
+function headerRowSelectorHtml(allRows, currentIdx) {
+  if (!allRows || allRows.length <= 1) return '';
+  const n = Math.min(allRows.length, 8);
+  const opts = Array.from({length: n}, (_, i) => {
+    const preview = (allRows[i] || []).slice(0, 5).map(c => String(c || '').slice(0, 18)).filter(Boolean).join(' | ');
+    return `<option value="${i}"${(currentIdx || 0) === i ? ' selected' : ''}>${'שורה ' + (i+1) + (i === 0 ? ' (ברירת מחדל)' : '')}: ${preview.replace(/</g,'&lt;')}</option>`;
+  });
+  return `<div style="background:#fff8ed;border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.5rem;font-size:0.82rem">
+    <div style="font-weight:700;color:#b87400;margin-bottom:5px">📌 שורת הכותרות (קובץ ראשון):</div>
+    <select onchange="applyMergeFileHdr(0, this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+    <div style="font-size:0.74rem;color:#6b7a99;margin-top:3px">הכותרת תאותר אוטומטית בשאר הקבצים</div>
+  </div>`;
+}
+function applyMergeFileHdr(idx, hdrIdx) {
+  const fd = filesData[idx]; if (!fd || !fd.allRows) return;
+  applyHdr(fd, +hdrIdx);
+  // Re-detect for all other files when first file changes
+  if (idx === 0) filesData.forEach((f, i) => { if (i > 0) autoDetectHdr(f, fd.headers); });
+  renderFilesList(); checkHeaders();
+}
+
+// ── Files list ──
 function renderFilesList() {
   const fl = document.getElementById('files-list');
   fl.classList.remove('hidden');
   const baseHeaders = JSON.stringify(filesData[0]?.headers || []);
   fl.innerHTML = filesData.map((fd, i) => {
     const mismatch = JSON.stringify(fd.headers) !== baseHeaders;
-    const shHtml = sheetSelectorHtml(fd.wb, `merge-sh-${i}`, `applyMergeFileSheet.bind(null,${i})`);
-    const hdrHtml = headerRowSelectorHtml(fd.allRows, `merge-hdr-${i}`, `applyMergeFileHdr.bind(null,${i})`, fd.headerRowIdx||0);
+    // Sheet selector: only per-file when NOT in uniform mode
+    const shHtml = uniformSheets ? '' : perFileSheetHtml(fd.wb, i);
+    // Header selector: first file only; others show auto-detect status
+    let hdrHtml = '';
+    if (i === 0) {
+      hdrHtml = headerRowSelectorHtml(fd.allRows, fd.headerRowIdx || 0);
+    } else if (fd.headerRowIdx > 0) {
+      hdrHtml = `<div style="font-size:0.74rem;color:#0a7c5e;background:#edf7f3;border:1px solid #b2ddd0;border-radius:5px;padding:4px 8px;margin-bottom:0.4rem">✅ כותרות אותרו אוטומטית בשורה ${fd.headerRowIdx + 1}</div>`;
+    }
     return `<div class="file-chip ${mismatch ? 'warn' : ''}" style="flex-direction:column;align-items:stretch;gap:4px;padding:10px 12px">
       <div style="display:flex;align-items:center;gap:8px">
         <span class="fc-icon">📄</span>
@@ -330,18 +412,12 @@ function renderFilesList() {
         ${mismatch ? '<span class="fc-warn">⚠️ מבנה שונה</span>' : ''}
         <button class="fc-remove" onclick="removeFile(${i})" title="הסר קובץ">✕</button>
       </div>
-      <div id="merge-selwrap-${i}">${shHtml}${hdrHtml}</div>
+      <div>${shHtml}${hdrHtml}</div>
     </div>`;
   }).join('');
-  // Re-wire onchange
-  filesData.forEach((fd,i)=>{
-    const shSel=document.getElementById(`merge-sh-${i}`);
-    if(shSel) shSel.onchange=function(){applyMergeFileSheet(i,this.value);};
-    const hSel=document.getElementById(`merge-hdr-${i}`);
-    if(hSel) hSel.onchange=function(){applyMergeFileHdr(i,this.value);};
-  });
 }
 
+// ── Check headers ──
 function checkHeaders() {
   const statusEl = document.getElementById('header-status');
   if (filesData.length < 2) { statusEl.innerHTML = ''; return; }
@@ -357,111 +433,139 @@ function checkHeaders() {
 
 // ── Merge logic ──
 function buildMerge() {
-  savePrefs();
-  const sourceColName = document.getElementById('source-col-name').value.trim() || 'מקור';
-  const sourcePos = document.getElementById('source-col-pos').value;
-  const sourceValType = document.getElementById('source-val-type').value;
-
-  // Collect all unique headers (preserving first-file order, then appending extras)
-  const allHeaders = [];
-  const headerSet = new Set();
-  filesData.forEach(fd => {
-    fd.headers.forEach(h => {
-      if (!headerSet.has(h)) { headerSet.add(h); allHeaders.push(h); }
-    });
-  });
-
-  const finalHeaders = sourcePos === 'first'
-    ? [sourceColName, ...allHeaders]
-    : [...allHeaders, sourceColName];
-
+  const sourceColName = 'מקור';
+  const sourcePos = 'first';
+  const sourceValType = 'noext';
+  const allHeaders = []; const headerSet = new Set();
+  filesData.forEach(fd => { fd.headers.forEach(h => { if (!headerSet.has(h)) { headerSet.add(h); allHeaders.push(h); } }); });
+  const finalHeaders = sourcePos === 'first' ? [sourceColName, ...allHeaders] : [...allHeaders, sourceColName];
   const rows = [];
-  filesData.forEach(fd => {
+  const rowInfos = []; // {fdIdx, wsRowIdx, colMapping} — לשמירת עיצוב
+  filesData.forEach((fd, fdIdx) => {
     const srcVal = sourceValType === 'noext' ? fd.name.replace(/\.[^.]+$/, '') : fd.name;
-    fd.rawData.forEach(row => {
+    const colMapping = allHeaders.map(h => fd.headers.indexOf(h));
+    fd.rawData.forEach((row, ri) => {
       const newRow = [];
       if (sourcePos === 'first') newRow.push(srcVal);
-      allHeaders.forEach(h => {
-        const idx = fd.headers.indexOf(h);
-        newRow.push(idx >= 0 ? row[idx] : '');
-      });
+      allHeaders.forEach((h, hi) => { const idx = colMapping[hi]; newRow.push(idx >= 0 ? row[idx] : ''); });
       if (sourcePos === 'last') newRow.push(srcVal);
       rows.push(newRow);
+      rowInfos.push({fdIdx, wsRowIdx: fd.rawDataWsRowIdx ? fd.rawDataWsRowIdx[ri] : null, colMapping});
     });
   });
-
-  mergedResult = { headers: finalHeaders, rows, sourceColName, sourcePos };
+  mergedResult = { headers: finalHeaders, rows, rowInfos, sourceColName, sourcePos };
   renderResults();
   document.getElementById('results-card').classList.remove('hidden');
-  setTimeout(() => document.getElementById('results-card').scrollIntoView({ behavior: 'smooth' }), 100);
+  setTimeout(() => document.getElementById('results-card').scrollIntoView({behavior:'smooth'}), 100);
+}
+
+function fmtCell(val) {
+  if (val == null || val === '') return '';
+  if (val instanceof Date) {
+    if (val.getFullYear() <= 1900) {
+      // שעה — הצג כ-HH:MM
+      return String(val.getHours()).padStart(2,'0') + ':' + String(val.getMinutes()).padStart(2,'0');
+    }
+    // תאריך — הצג כ-DD/MM/YYYY
+    return String(val.getDate()).padStart(2,'0') + '/' + String(val.getMonth()+1).padStart(2,'0') + '/' + val.getFullYear();
+  }
+  if (typeof val === 'number' && val > 0 && val < 1) {
+    // שבר שעה (0.75 = 18:00)
+    const m = Math.round(val * 1440);
+    return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+  }
+  return String(val);
 }
 
 function renderResults() {
   const { headers, rows, sourceColName, sourcePos } = mergedResult;
   const sourceIdx = sourcePos === 'first' ? 0 : headers.length - 1;
-
-  // Summary
-  const totalRows = rows.length;
-  const filesCount = filesData.length;
   document.getElementById('summary-bar').innerHTML =
-    `<div class="sum-item"><span class="sum-val">${filesCount}</span><span class="sum-lbl">קבצים אוחדו</span></div>` +
-    `<div class="sum-item"><span class="sum-val">${totalRows.toLocaleString('he')}</span><span class="sum-lbl">שורות סה"כ</span></div>` +
+    `<div class="sum-item"><span class="sum-val">${filesData.length}</span><span class="sum-lbl">קבצים אוחדו</span></div>` +
+    `<div class="sum-item"><span class="sum-val">${rows.length.toLocaleString('he')}</span><span class="sum-lbl">שורות סה"כ</span></div>` +
     `<div class="sum-item"><span class="sum-val">${headers.length}</span><span class="sum-lbl">עמודות</span></div>`;
-
-  // Preview table (first 100 rows)
   const previewRows = rows.slice(0, 100);
-  const thead = '<thead><tr>' + headers.map((h, i) =>
-    `<th${i === sourceIdx ? ' class="source-col"' : ''}>${h}</th>`
-  ).join('') + '</tr></thead>';
-  const tbody = '<tbody>' + previewRows.map(row =>
-    '<tr>' + row.map((cell, i) =>
-      `<td${i === sourceIdx ? ' class="source-cell"' : ''}>${cell ?? ''}</td>`
-    ).join('') + '</tr>'
-  ).join('') + '</tbody>';
+  const thead = '<thead><tr>' + headers.map((h, i) => `<th${i===sourceIdx?' class="source-col"':''}>${h}</th>`).join('') + '</tr></thead>';
+  const tbody = '<tbody>' + previewRows.map(row => '<tr>' + row.map((cell, i) => `<td${i===sourceIdx?' class="source-cell"':''}>${fmtCell(cell)}</td>`).join('') + '</tr>').join('') + '</tbody>';
   document.getElementById('preview-table').innerHTML = '<table>' + thead + tbody + '</table>';
-  document.getElementById('preview-note').textContent =
-    rows.length > 100 ? `מוצגות 100 שורות ראשונות מתוך ${rows.length.toLocaleString('he')}` : '';
+  document.getElementById('preview-note').textContent = rows.length > 100 ? `מוצגות 100 שורות ראשונות מתוך ${rows.length.toLocaleString('he')}` : '';
 }
 
 // ── Export ──
 function exportMerged() {
-  const { headers, rows } = mergedResult;
+  const { headers, rows, rowInfos, sourcePos } = mergedResult;
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...rows], {cellDates:true}), 'מאוחד');
-  XLSX.writeFile(wb, 'קבצים_מאוחדים.xlsx');
+  XLSX.utils.book_append_sheet(wb, buildMergedSheet(headers, rows, rowInfos, sourcePos), 'מאוחד');
+  XLSX.writeFile(wb, 'קבצים_מאוחדים.xlsx', {cellStyles:true});
 }
 
-// ── Saved prefs ──
-function savePrefs() {
-  const prefs = {
-    sourceColName: document.getElementById('source-col-name').value.trim() || 'מקור',
-    sourcePos: document.getElementById('source-col-pos').value,
-    sourceValType: document.getElementById('source-val-type').value,
-    savedAt: new Date().toLocaleDateString('he-IL')
-  };
-  localStorage.setItem(MERGE_PREFS_KEY, JSON.stringify(prefs));
+// בניית גיליון מאוחד עם שמירת עיצוב ותיקון שעות
+function buildMergedSheet(headers, rows, rowInfos, sourcePos) {
+  const numCols = headers.length;
+  const sourceIdx = sourcePos === 'first' ? 0 : numCols - 1;
+  const outWs = {};
+  // שורת כותרת
+  headers.forEach((h, c) => { outWs[XLSX.utils.encode_cell({r:0,c})] = {t:'s', v:String(h||'')}; });
+  // שורות נתונים
+  rows.forEach((row, outRowIdx) => {
+    const info = rowInfos ? rowInfos[outRowIdx] : null;
+    const fd = info != null ? filesData[info.fdIdx] : null;
+    // עיצוב רק כשגיליון יחיד נבחר (אחרת אי אפשר לעקוב אחר שורות)
+    const srcWs = (fd && fd.selectedSheets && fd.selectedSheets.length === 1)
+      ? fd.wb.Sheets[fd.selectedSheets[0]] : null;
+    row.forEach((val, outC) => {
+      const outAddr = XLSX.utils.encode_cell({r: outRowIdx + 1, c: outC});
+      if (outC === sourceIdx || !srcWs || !info || info.wsRowIdx == null) {
+        outWs[outAddr] = mkCell(val);
+      } else {
+        const allHIdx = sourcePos === 'first' ? outC - 1 : outC;
+        const srcC = info.colMapping[allHIdx];
+        if (srcC < 0) { outWs[outAddr] = {t:'s', v:''}; }
+        else {
+          const srcCell = srcWs[XLSX.utils.encode_cell({r: info.wsRowIdx, c: srcC})];
+          if (srcCell) {
+            const n = {t: srcCell.t, v: srcCell.v};
+            if (srcCell.z !== undefined) n.z = srcCell.z;
+            if (srcCell.s !== undefined) { try { n.s = JSON.parse(JSON.stringify(srcCell.s)); } catch(e){} }
+            outWs[outAddr] = n;
+          } else { outWs[outAddr] = mkCell(val); }
+        }
+      }
+    });
+  });
+  outWs['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:rows.length, c:numCols-1}});
+  fixMergeTimeFormats(outWs);
+  return outWs;
+}
+function mkCell(val) {
+  if (val === '' || val == null) return {t:'s', v:''};
+  if (typeof val === 'number') return {t:'n', v:val};
+  if (val instanceof Date) return {t:'d', v:val};
+  return {t:'s', v:String(val)};
+}
+function fixMergeTimeFormats(ws) {
+  if (!ws || !ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    let timeVals = 0, total = 0;
+    const sample = Math.min(range.s.r + 10, range.e.r);
+    for (let R = range.s.r + 1; R <= sample; R++) {
+      const cell = ws[XLSX.utils.encode_cell({r:R, c:C})];
+      if (!cell) continue;
+      const isTimeFrac = cell.t === 'n' && cell.v >= 0 && cell.v < 1;
+      const isTimeDate = cell.t === 'd' && cell.v instanceof Date && cell.v.getFullYear() <= 1900;
+      if (isTimeFrac || isTimeDate) { timeVals++; total++; }
+      else if (cell.t === 'n' || cell.t === 'd') { total++; }
+    }
+    if (total > 0 && timeVals / total >= 0.6) {
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({r:R, c:C})];
+        if (cell && (cell.t === 'n' || cell.t === 'd')) cell.z = 'h:mm';
+      }
+    }
+  }
 }
 
-function loadPrefs() { try { return JSON.parse(localStorage.getItem(MERGE_PREFS_KEY)); } catch { return null; } }
-
-function showPrefsBanner() {
-  const p = loadPrefs();
-  const banner = document.getElementById('prefs-banner');
-  if (p) { document.getElementById('prefs-date').textContent = '(' + p.savedAt + ')'; banner.classList.remove('hidden'); }
-  else banner.classList.add('hidden');
-}
-
-function applyPrefs() {
-  const p = loadPrefs(); if (!p) return;
-  document.getElementById('source-col-name').value = p.sourceColName || 'מקור';
-  document.getElementById('source-col-pos').value = p.sourcePos || 'first';
-  document.getElementById('source-val-type').value = p.sourceValType || 'noext';
-}
-
-function clearPrefs() {
-  localStorage.removeItem(MERGE_PREFS_KEY);
-  document.getElementById('prefs-banner').classList.add('hidden');
-}
 </script>
 </body>
 </html>

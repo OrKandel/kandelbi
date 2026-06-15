@@ -94,7 +94,7 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem;}
 .col-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s;font-size:0.85rem;}
 .col-item:hover{border-color:var(--blue);}
 .col-item.checked{background:#eef3fb;border-color:var(--blue);}
-.col-item.date-col{background:#fff8ed;border-color:var(--accent);}
+.col-item.num-col{background:#fff8ed;border-color:var(--accent);}
 .col-check{width:16px;height:16px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
 .col-item.checked .col-check{background:var(--blue);border-color:var(--blue);color:#fff;}
 .col-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -225,9 +225,15 @@ tr:hover td{background:var(--bg);}
         <div class="stat-item"><span class="stat-val" id="st-size">—</span><span class="stat-lbl">גודל קובץ</span></div>
         <div class="stat-item"><span class="stat-val" id="st-sheets">—</span><span class="stat-lbl">גיליונות</span></div>
       </div>
-      <div class="form-group" id="sheet-select-wrap" style="display:none;margin-bottom:0;">
-        <label>בחר גיליון לעיבוד:</label>
-        <select id="sheet-select" onchange="loadSheet()"></select>
+      <div id="sheet-select-wrap" style="display:none;margin-bottom:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+          <span style="font-size:0.82rem;font-weight:600;color:var(--muted)">בחר גיליונות לעיבוד:</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm" onclick="selectAllSheets()">בחר הכל</button>
+            <button class="btn-sm del" onclick="clearAllSheets()">נקה הכל</button>
+          </div>
+        </div>
+        <div id="sheet-cbs-wrap" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
       <div id="splitter-hdr-sel-wrap"></div>
     </div>
@@ -254,6 +260,9 @@ tr:hover td{background:var(--bg);}
           <button class="btn-sm" onclick="selectAll(true)">בחר הכל</button>
           <button class="btn-sm del" onclick="selectAll(false)">נקה הכל</button>
         </div>
+      </div>
+      <div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem">
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:12px;background:#fff8ed;border:1.5px solid var(--accent);border-radius:3px"></span> 🔢 עמודה מספרית (מזוהה אוטומטית)</span>
       </div>
       <div class="cols-grid" id="cols-grid"></div>
     </div>
@@ -282,6 +291,19 @@ tr:hover td{background:var(--bg);}
       <!-- פלט -->
       <div style="background:var(--bg);border-radius:10px;padding:1rem;border:1px solid var(--border)">
         <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.8rem">📤 הגדרת פלט</div>
+        <div id="sheets-out-wrap" style="display:none;margin-bottom:0.8rem;padding:10px 14px;background:#fff8ed;border:1px solid #f5d48a;border-radius:8px;">
+          <div style="font-size:0.82rem;font-weight:700;color:#b87400;margin-bottom:6px">📑 נבחרו מספר גיליונות — בחר פורמט פלט:</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="radio" name="sheets-out" value="merge" checked/>
+              <span>גיליון אחד — כל הגיליונות הנבחרים מאוחדים לאחר הסינון</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="radio" name="sheets-out" value="keep"/>
+              <span>גיליון נפרד לכל גיליון מקור — הסינון מופעל על כל אחד בנפרד, הפלט שומר את ההפרדה</span>
+            </label>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>אופן הפלט:</label>
@@ -351,6 +373,7 @@ tr:hover td{background:var(--bg);}
 <script>
 let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
 let uploadedFiles = []; // { file, wb, name, size }
+let selectedSheets = [];
 let _dateColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
 let _pendingOutputPrefs = null;
 
@@ -407,7 +430,7 @@ function loadOneFile(file) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+        const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true, cellStyles:true});
         resolve({file, wb: workbook, name: file.name, size: file.size});
       } catch(err) { reject(err); }
     };
@@ -447,20 +470,13 @@ async function handleFiles(fileList) {
   document.getElementById('st-size').textContent =
     formatSize(uploadedFiles.reduce((s,u)=>s+u.size, 0)) + (uploadedFiles.length > 1 ? ` (${uploadedFiles.length} קבצים)` : '');
 
-  // הצג בחירת גיליון רק כשיש קובץ אחד ויש כמה גיליונות
+  // הצג בחירת גיליונות רק כשיש קובץ אחד ויש כמה גיליונות
   if (sheets.length > 1 && uploadedFiles.length === 1) {
     document.getElementById('sheet-select-wrap').style.display = '';
-    const sel = document.getElementById('sheet-select');
-    const shOpts = sheets.map((s,i)=>{
-      const ws2=wb.Sheets[s]; const ref=ws2['!ref']||'A1';
-      const range=XLSX.utils.decode_range(ref);
-      const rc=range.e.r-range.s.r+1;
-      return `<option value="${s}">${s} (${rc} שורות)</option>`;
-    });
-    shOpts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${sheets.length} — מבנה חייב להיות זהה)</option>`);
-    sel.innerHTML = shOpts.join('');
+    renderSheetCbs(sheets);
   } else {
     document.getElementById('sheet-select-wrap').style.display = 'none';
+    selectedSheets = [sheets[0]];
   }
 
   loadSheet();
@@ -508,17 +524,16 @@ function removeFile(idx) {
 
 // ── SHEET & HEADER ROW HELPERS ──
 let _splitterAllRows = null, _splitterHdrIdx = 0;
-function getRowsFromWb(wbObj, sheetName){
-  if(sheetName==='__ALL__'){
-    let all=[];
-    wbObj.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wbObj.Sheets[n],{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''));
-      if(i===0) all.push(...r);
-      else all.push(...r.slice(1));
-    });
-    return all;
-  }
-  return XLSX.utils.sheet_to_json(wbObj.Sheets[sheetName]||wbObj.Sheets[wbObj.SheetNames[0]],{header:1,defval:'',raw:true}).filter(r=>r.some(c=>c!==''));
+function getRowsFromWb(wbObj, sheetNamesArg){
+  const names = Array.isArray(sheetNamesArg) ? sheetNamesArg : [sheetNamesArg];
+  let all=[];
+  names.forEach((n,i)=>{
+    const ws2=wbObj.Sheets[n]||wbObj.Sheets[wbObj.SheetNames[0]];
+    const r=XLSX.utils.sheet_to_json(ws2,{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''));
+    if(i===0) all.push(...r);
+    else all.push(...r.slice(1));
+  });
+  return all;
 }
 function splitterHdrSelectorHtml(allRows, currentIdx){
   if(!allRows||allRows.length<=1) return '';
@@ -547,8 +562,8 @@ function changeSplitterHdrRow(idx){
 
 function loadSheet() {
   // wb תמיד מצביע על הקובץ הראשון (מבנה הבסיס)
-  const sheetName = (document.getElementById('sheet-select').value || wb.SheetNames[0]);
-  const rawRows = getRowsFromWb(wb, sheetName);
+  const sheetNamesArr = selectedSheets.length ? selectedSheets : [wb.SheetNames[0]];
+  const rawRows = getRowsFromWb(wb, sheetNamesArr);
 
   // נקה שורות ריקות בתחילה
   while (rawRows.length && rawRows[0].every(c=>!c)) rawRows.shift();
@@ -572,6 +587,45 @@ function loadSheet() {
   if(wrap) wrap.innerHTML = splitterHdrSelectorHtml(rawRows, 0);
 }
 
+// ── בחירת גיליונות ──
+function renderSheetCbs(sheets) {
+  const wrap = document.getElementById('sheet-cbs-wrap');
+  wrap.innerHTML = sheets.map((s, i) => {
+    const ws2 = wb.Sheets[s];
+    const ref = ws2['!ref'] || 'A1';
+    const range = XLSX.utils.decode_range(ref);
+    const rc = range.e.r - range.s.r;
+    return `<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);font-size:0.84rem;font-weight:600;transition:all 0.2s">
+      <input type="checkbox" data-sheet="${s.replace(/"/g,'&quot;')}" ${i===0?'checked':''} onchange="onSheetCbChange()" style="cursor:pointer"/>
+      ${s} <span style="color:var(--muted);font-weight:400;font-size:0.75rem">(${rc.toLocaleString('he')} שורות)</span>
+    </label>`;
+  }).join('');
+  selectedSheets = [sheets[0]];
+}
+
+function onSheetCbChange() {
+  selectedSheets = [...document.querySelectorAll('#sheet-cbs-wrap input[type=checkbox]:checked')]
+    .map(cb => cb.dataset.sheet);
+  if (!selectedSheets.length) {
+    const first = document.querySelector('#sheet-cbs-wrap input[type=checkbox]');
+    if (first) { first.checked = true; selectedSheets = [first.dataset.sheet]; }
+  }
+  loadSheet();
+}
+
+function selectAllSheets() {
+  document.querySelectorAll('#sheet-cbs-wrap input[type=checkbox]').forEach(cb => cb.checked = true);
+  selectedSheets = [...document.querySelectorAll('#sheet-cbs-wrap input[type=checkbox]')].map(cb => cb.dataset.sheet);
+  loadSheet();
+}
+
+function clearAllSheets() {
+  const cbs = [...document.querySelectorAll('#sheet-cbs-wrap input[type=checkbox]')];
+  cbs.forEach((cb, i) => cb.checked = i === 0);
+  selectedSheets = cbs.length ? [cbs[0].dataset.sheet] : [];
+  loadSheet();
+}
+
 // ══ STEP NAVIGATION ══
 function goStep(n) {
   ['sec1','sec2','sec3','sec4'].forEach((id,i)=>{
@@ -593,18 +647,48 @@ function stepNav(n) {
 }
 
 // ══ COLUMNS UI ══
+function isNumCol(colIdx) {
+  const vals = allData.slice(1, 15).map(r => r[colIdx]).filter(v => v !== undefined && v !== '' && v !== null);
+  if (!vals.length) return false;
+  const numCount = vals.filter(v => !isNaN(parseFloat(String(v))) && String(v).trim() !== '').length;
+  return numCount >= Math.ceil(vals.length * 0.7);
+}
+
+function excelColLetter(idx) {
+  let s='', n=idx+1;
+  while(n>0){s=String.fromCharCode(65+(n-1)%26)+s; n=Math.floor((n-1)/26);}
+  return s;
+}
+
 function buildColumnsUI() {
-  if (!selectedCols) selectedCols = new Set(headers.map((_,i)=>i));
-  document.getElementById('col-count').textContent = headers.length;
+  // קבע אילו עמודות יש בהן תוכן כלשהו (כותרת או נתונים)
+  const hasContent = headers.map((h, i) => {
+    if (h && String(h).trim()) return true;
+    return allData.slice(1).some(r => r[i] !== undefined && r[i] !== '' && r[i] !== null);
+  });
+
+  if (!selectedCols) {
+    selectedCols = new Set(headers.map((_,i) => hasContent[i] ? i : -1).filter(i=>i>=0));
+  } else {
+    // הסר עמודות ריקות לחלוטין מהבחירה
+    headers.forEach((_,i) => { if (!hasContent[i]) selectedCols.delete(i); });
+  }
+
+  const visibleCols = headers.map((_,i)=>i).filter(i=>hasContent[i]);
+  document.getElementById('col-count').textContent = visibleCols.length;
 
   const grid = document.getElementById('cols-grid');
-  grid.innerHTML = headers.map((h,i)=>{
+  grid.innerHTML = visibleCols.map(i=>{
+    const h = headers[i];
     const isDate = isDateCol(i);
+    const isNum = !isDate && isNumCol(i);
     const checked = selectedCols.has(i);
-    return `<div class="col-item ${checked?'checked':''} ${isDate?'date-col':''}" id="ci-${i}" onclick="toggleCol(${i})">
+    const hasHeader = h && String(h).trim();
+    const displayName = hasHeader ? h : `עמודה ${excelColLetter(i)} (ללא כותרת)`;
+    return `<div class="col-item ${checked?'checked':''} ${isNum?'num-col':''}" id="ci-${i}" onclick="toggleCol(${i})">
       <div class="col-check">${checked?'✓':''}</div>
-      <span class="col-name" title="${h}">${h||'(ריק)'}</span>
-      <span class="col-type">${isDate?'📅':''}</span>
+      <span class="col-name" title="${displayName}" style="${!hasHeader?'color:var(--muted);font-style:italic':''}">${displayName}</span>
+      <span class="col-type">${isDate?'📅':isNum?'🔢':''}</span>
     </div>`;
   }).join('');
 
@@ -675,13 +759,27 @@ function selectAll(v) {
   buildPreview();
 }
 
+function fmtPreviewCell(val) {
+  if (val == null || val === '') return '';
+  if (val instanceof Date) {
+    if (val.getFullYear() <= 1900)
+      return String(val.getHours()).padStart(2,'0') + ':' + String(val.getMinutes()).padStart(2,'0');
+    return String(val.getDate()).padStart(2,'0') + '/' + String(val.getMonth()+1).padStart(2,'0') + '/' + val.getFullYear();
+  }
+  if (typeof val === 'number' && val > 0 && val < 1) {
+    const m = Math.round(val * 1440);
+    return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+  }
+  return String(val);
+}
+
 function buildPreview() {
   clearTimeout(_previewTimer);
   _previewTimer = setTimeout(() => {
     const cols = [...selectedCols].sort((a,b)=>a-b);
     const preview = allData.slice(0,6);
     let html = '<table><thead><tr>'+cols.map(i=>`<th>${headers[i]||''}</th>`).join('')+'</tr></thead><tbody>';
-    html += preview.slice(1).map(r=>'<tr>'+cols.map(i=>`<td>${r[i]??''}</td>`).join('')+'</tr>').join('');
+    html += preview.slice(1).map(r=>'<tr>'+cols.map(i=>`<td>${fmtPreviewCell(r[i])}</td>`).join('')+'</tr>').join('');
     html += '</tbody></table>';
     document.getElementById('preview-wrap').innerHTML = html;
   }, 150);
@@ -725,6 +823,10 @@ function buildSplitUI() {
     _pendingOutputPrefs = null;
   }
 
+  // הצג/הסתר שאלת פורמט גיליונות
+  const sheetsOutWrap = document.getElementById('sheets-out-wrap');
+  if (sheetsOutWrap) sheetsOutWrap.style.display = selectedSheets.length > 1 ? '' : 'none';
+
   // הצג placeholder קל — הפילטר הכבד נבנה אחרי שהמסך מתרענן
   document.getElementById('filters-container').innerHTML =
     '<div style="padding:0.6rem 0;color:var(--muted);font-size:0.88rem">⏳ טוען תנאי סינון...</div>';
@@ -750,31 +852,25 @@ function addFilter() {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>סוג תנאי:</label>
-        <select id="ftype-${id}" onchange="updateFilterType(${id})">
-          <option value="col">לפי ערך בעמודה</option>
-          <option value="date">לפי טווח תאריכים</option>
-        </select>
-      </div>
-      <div class="form-group" id="fcol-wrap-${id}">
         <label>עמודה:</label>
-        <select id="fcol-${id}" onchange="buildFilterVals(${id})">${colOpts}</select>
+        <select id="fcol-${id}" onchange="onFilterColChange(${id})">${colOpts}</select>
       </div>
-      <div class="form-group" id="fdatecol-wrap-${id}" style="display:none">
-        <label>עמודת תאריך:</label>
-        <select id="fdatecol-${id}" onchange="updateFilterDateRange(${id})">${dateOnlyOpts||colOpts}</select>
+      <div class="form-group" id="ftype-wrap-${id}" style="display:none">
+        <label>ערך בודד / טווח:</label>
+        <select id="ftype-${id}" onchange="updateFilterType(${id})"></select>
       </div>
     </div>
-    <div id="fvals-${id}"></div>
+    <div id="fvals-${id}" style="display:none"></div>
     <div id="fdates-${id}" style="display:none">
       <div class="form-row">
         <div class="form-group"><label>מתאריך:</label><input type="date" id="ffrom-${id}"/></div>
         <div class="form-group"><label>עד תאריך:</label><input type="date" id="fto-${id}"/></div>
       </div>
-    </div>`;
+    </div>
+    <div id="fnums-${id}" style="display:none"></div>`;
   
   document.getElementById('filters-container').appendChild(div);
-  buildFilterVals(id);
+  onFilterColChange(id); // אתחל לפי העמודה הראשונה
 }
 
 function removeFilter(id) {
@@ -782,17 +878,60 @@ function removeFilter(id) {
   if(el) el.remove();
 }
 
+function onFilterColChange(id) {
+  const colIdx = parseInt(document.getElementById('fcol-'+id).value);
+  ['fvals-','fdates-','fnums-'].forEach(p => { const el=document.getElementById(p+id); if(el) el.style.display='none'; });
+  const isDate = isDateCol(colIdx);
+  const isNum  = !isDate && isNumCol(colIdx);
+  const ftype  = document.getElementById('ftype-'+id);
+  let opts = '';
+  if (isDate) {
+    opts = `<option value="date">טווח תאריכים</option><option value="col">ערכים בודדים מהרשימה</option>`;
+  } else if (isNum) {
+    opts = `<option value="col">ערכים בודדים מהרשימה</option>
+            <option value="num-lt">מספר — קטן מ-</option>
+            <option value="num-gt">מספר — גדול מ-</option>
+            <option value="num-between">מספר — בין X ל-Y</option>
+            <option value="num-eq">מספר — שווה בדיוק ל-</option>
+            <option value="num-ne">מספר — שונה מ-</option>`;
+  } else {
+    opts = `<option value="col">ערכים בודדים מהרשימה</option>`;
+  }
+  ftype.innerHTML = opts;
+  document.getElementById('ftype-wrap-'+id).style.display = '';
+  updateFilterType(id);
+}
+
 function updateFilterType(id) {
-  const type = document.getElementById('ftype-'+id).value;
-  document.getElementById('fcol-wrap-'+id).style.display = type==='col' ? '' : 'none';
-  document.getElementById('fdatecol-wrap-'+id).style.display = type==='date' ? '' : 'none';
-  document.getElementById('fvals-'+id).style.display = type==='col' ? '' : 'none';
+  const type = document.getElementById('ftype-'+id)?.value;
+  if (!type) return;
+  const isNum = type.startsWith('num-');
+  document.getElementById('fvals-'+id).style.display  = type==='col'  ? '' : 'none';
   document.getElementById('fdates-'+id).style.display = type==='date' ? '' : 'none';
-  if(type==='date') updateFilterDateRange(id);
+  document.getElementById('fnums-'+id).style.display  = isNum         ? '' : 'none';
+  if (type==='date') updateFilterDateRange(id);
+  if (isNum) updateNumFilterUI(id);
+  if (type==='col') buildFilterVals(id);
+}
+
+function updateNumFilterUI(id) {
+  const type = document.getElementById('ftype-'+id).value;
+  const wrap = document.getElementById('fnums-'+id);
+  if (type === 'num-between') {
+    wrap.innerHTML = `<div class="form-row">
+      <div class="form-group"><label>מ-:</label><input type="number" id="fnum-from-${id}" step="any" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none"/></div>
+      <div class="form-group"><label>עד:</label><input type="number" id="fnum-to-${id}" step="any" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none"/></div>
+    </div>`;
+  } else {
+    const labels = {'num-lt':'קטן מ-','num-gt':'גדול מ-','num-eq':'שווה בדיוק ל-','num-ne':'שונה מ-'};
+    wrap.innerHTML = `<div class="form-row">
+      <div class="form-group"><label>${labels[type]||'ערך'}:</label><input type="number" id="fnum-val-${id}" step="any" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none"/></div>
+    </div>`;
+  }
 }
 
 function updateFilterDateRange(id) {
-  const colIdx = parseInt(document.getElementById('fdatecol-'+id).value);
+  const colIdx = parseInt(document.getElementById('fcol-'+id).value);
   if(isNaN(colIdx)) return;
   const dates = allData.slice(1).map(r=>parseFlexDate(String(r[colIdx]||''))).filter(Boolean);
   if(!dates.length) return;
@@ -825,7 +964,7 @@ function getFilteredDataExcluding(excludeId) {
         return sel.has(v);
       });
     } else if (typeEl.value === 'date') {
-      const ci = parseInt(document.getElementById('fdatecol-'+bid)?.value);
+      const ci = parseInt(document.getElementById('fcol-'+bid)?.value);
       if (isNaN(ci)) return;
       const fromEl = document.getElementById('ffrom-'+bid);
       const toEl   = document.getElementById('fto-'+bid);
@@ -833,6 +972,25 @@ function getFilteredDataExcluding(excludeId) {
       const from = new Date(fromEl.value);
       const to   = new Date(toEl.value); to.setHours(23,59,59);
       result = result.filter(r => { const d=parseFlexDate(String(r[ci]||'')); return d&&d>=from&&d<=to; });
+    } else if (typeEl.value.startsWith('num-')) {
+      const ci = parseInt(document.getElementById('fcol-'+bid)?.value);
+      if (isNaN(ci)) return;
+      const numType = typeEl.value;
+      if (numType === 'num-between') {
+        const nf = parseFloat(document.getElementById('fnum-from-'+bid)?.value);
+        const nt = parseFloat(document.getElementById('fnum-to-'+bid)?.value);
+        if (isNaN(nf)||isNaN(nt)) return;
+        result = result.filter(r => { const v=parseFloat(r[ci]); return !isNaN(v)&&v>=nf&&v<=nt; });
+      } else {
+        const nv = parseFloat(document.getElementById('fnum-val-'+bid)?.value);
+        if (isNaN(nv)) return;
+        result = result.filter(r => {
+          const v=parseFloat(r[ci]); if(isNaN(v)) return false;
+          if(numType==='num-lt') return v<nv; if(numType==='num-gt') return v>nv;
+          if(numType==='num-eq') return v===nv; if(numType==='num-ne') return v!==nv;
+          return true;
+        });
+      }
     }
   });
   return result;
@@ -959,6 +1117,7 @@ async function processFile() {
   const cols = [...selectedCols].sort((a,b)=>a-b);
   const filteredHeaders = cols.map(i=>headers[i]);
   const outputMode = document.getElementById('output-mode').value;
+  const sheetsOut = document.querySelector('input[name="sheets-out"]:checked')?.value || 'merge';
   const totalFiles = uploadedFiles.length;
 
   // ── קריאת הגדרות סינון פעם אחת ──
@@ -973,13 +1132,26 @@ async function processFile() {
       const selected = new Set([...document.querySelectorAll('.val-chk-'+id+':checked')].map(c=>c.dataset.val||c.value));
       filterDefs.push({type:'col', origColIdx, selected});
     } else if (type === 'date') {
-      const origColIdx = parseInt(document.getElementById('fdatecol-'+id)?.value);
+      const origColIdx = parseInt(document.getElementById('fcol-'+id)?.value);
       const fromVal = document.getElementById('ffrom-'+id)?.value;
       const toVal   = document.getElementById('fto-'+id)?.value;
       if (!fromVal || !toVal) return;
       const from = new Date(fromVal);
       const to   = new Date(toVal); to.setHours(23,59,59);
       filterDefs.push({type:'date', origColIdx, from, to});
+    } else if (type.startsWith('num-')) {
+      const origColIdx = parseInt(document.getElementById('fcol-'+id)?.value);
+      if (isNaN(origColIdx)) return;
+      if (type === 'num-between') {
+        const numFrom = parseFloat(document.getElementById('fnum-from-'+id)?.value);
+        const numTo   = parseFloat(document.getElementById('fnum-to-'+id)?.value);
+        if (isNaN(numFrom)||isNaN(numTo)) return;
+        filterDefs.push({type:'num', numType:type, origColIdx, numFrom, numTo});
+      } else {
+        const numVal = parseFloat(document.getElementById('fnum-val-'+id)?.value);
+        if (isNaN(numVal)) return;
+        filterDefs.push({type:'num', numType:type, origColIdx, numVal});
+      }
     }
   });
 
@@ -997,12 +1169,55 @@ async function processFile() {
     await new Promise(r=>setTimeout(r,30));
 
     // טען נתוני הקובץ הנוכחי
-    const sheetName = fi === 0
-      ? (document.getElementById('sheet-select').value || uf.wb.SheetNames[0])
-      : uf.wb.SheetNames[0];
-    let rawData = getRowsFromWb(uf.wb, sheetName);
-    while (rawData.length && rawData[0].every(c=>!c)) rawData.shift();
+    const sheetsToProcess = fi === 0 ? (selectedSheets.length ? selectedSheets : [uf.wb.SheetNames[0]]) : [uf.wb.SheetNames[0]];
+    const prefix = totalFiles > 1 ? sanitize(uf.name.replace(/\.[^.]+$/,'')) + '_' : '';
+    const src = uf.name;
+
+    // ─── מצב "גיליון נפרד לכל גיליון מקור" ───
+    if (sheetsOut === 'keep' && outputMode === 'one' && sheetsToProcess.length > 1 && fi === 0) {
+      setProgress(pctBase + 5, `מעבד גיליונות בנפרד...`);
+      const newWb2 = XLSX.utils.book_new();
+      let totalR = 0;
+      for (const sName of sheetsToProcess) {
+        const shSrcWs = uf.wb.Sheets[sName];
+        let rd = getRowsFromWb(uf.wb, [sName]);
+        let emptyLead = 0;
+        while (rd.length && rd[0].every(c=>!c)) { rd.shift(); emptyLead++; }
+        const hIdx = _splitterHdrIdx || 0;
+        const wsHdrRow = emptyLead + hIdx;
+        const fh = rd[hIdx] || [];
+        const fdr = rd.slice(hIdx+1).filter(r=>r.some(c=>c!==''));
+        const cm = cols.map(origIdx => {
+          const hName = String(headers[origIdx]||'');
+          const found = fh.findIndex(h=>String(h||'')===hName);
+          return found >= 0 ? found : origIdx;
+        });
+        function toLocalS(origIdx){ const p=cols.indexOf(origIdx); return p<0?-1:p; }
+        let res = fdr.map(r => cm.map(i=>r[i]));
+        let resIdx = fdr.map((_, i) => wsHdrRow + 1 + i);
+        function filtS(pred){ const nr=[],ni=[]; res.forEach((r,i)=>{ if(pred(r)){nr.push(r);ni.push(resIdx[i]);} }); res=nr; resIdx=ni; }
+        filterDefs.forEach(fd => {
+          if (fd.type==='col') { const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const v=r[li]!==undefined&&r[li]!==''?String(r[li]):'(ריק)';return fd.selected.has(v);}); }
+          else if(fd.type==='date'){ const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const d=parseFlexDate(String(r[li]||''));return d&&d>=fd.from&&d<=fd.to;}); }
+          else if(fd.type==='num'){ const li=toLocalS(fd.origColIdx); if(li<0)return; filtS(r=>{const v=parseFloat(r[li]);if(isNaN(v))return false;if(fd.numType==='num-between')return v>=fd.numFrom&&v<=fd.numTo;if(fd.numType==='num-lt')return v<fd.numVal;if(fd.numType==='num-gt')return v>fd.numVal;if(fd.numType==='num-eq')return v===fd.numVal;if(fd.numType==='num-ne')return v!==fd.numVal;return true;}); }
+        });
+        const wsNew = buildStyledSheet(shSrcWs, wsHdrRow, resIdx, cm) || (() => { const w=XLSX.utils.aoa_to_sheet([filteredHeaders,...res],{cellDates:true}); fixTimeFormats(w); return w; })();
+        XLSX.utils.book_append_sheet(newWb2, wsNew, sName.substring(0,31));
+        totalR += res.length;
+      }
+      const blob2 = XLSX.write(newWb2, {bookType:'xlsx', type:'array', cellStyles:true});
+      outputFiles.push({name: prefix+'מסונן', blob:blob2, rows:totalR, sizeMB:(blob2.byteLength/1024/1024).toFixed(1), sourceFile:src, multiSheet:true, sheetCount:sheetsToProcess.length});
+      continue;
+    }
+
+    // ─── מצב רגיל — מיזוג גיליונות ───
+    // לשמירת עיצוב: נשמור את גיליון המקור רק כשיש גיליון יחיד
+    const srcWs = sheetsToProcess.length === 1 ? uf.wb.Sheets[sheetsToProcess[0]] : null;
+    let rawData = getRowsFromWb(uf.wb, sheetsToProcess);
+    let emptyLeadRows = 0;
+    while (rawData.length && rawData[0].every(c=>!c)) { rawData.shift(); emptyLeadRows++; }
     const hdrIdx = fi === 0 ? (_splitterHdrIdx || 0) : 0;
+    const wsHdrRowIdx = emptyLeadRows + hdrIdx; // שורת כותרת בגיליון המקור (אינדקס 0-based)
     const fileHeaders = rawData[hdrIdx] || [];
     const fileDataRows = rawData.slice(hdrIdx+1).filter(r=>r.some(c=>c!==''));
 
@@ -1010,79 +1225,70 @@ async function processFile() {
     const colMap = cols.map(origIdx => {
       const hName = String(headers[origIdx]||'');
       const found  = fileHeaders.findIndex(h=>String(h||'')===hName);
-      return found >= 0 ? found : origIdx; // fallback לפי מיקום
+      return found >= 0 ? found : origIdx;
     });
 
-    // ממיר origColIdx של הגדרת סינון/פיצול → localIdx בתוך cols
-    function toLocal(origIdx) {
-      // origIdx הוא אינדקס בתוך headers (הקובץ הראשון)
-      // צריך להמיר לאינדקס בתוך fileHeaders דרך colMap
-      const posInCols = cols.indexOf(origIdx);
-      if (posInCols < 0) return -1;
-      return posInCols; // localIdx בתוך result
-    }
-    function fileColOf(origIdx) {
-      const posInCols = cols.indexOf(origIdx);
-      return posInCols >= 0 ? colMap[posInCols] : origIdx;
-    }
+    function toLocal(origIdx) { const posInCols = cols.indexOf(origIdx); if (posInCols < 0) return -1; return posInCols; }
+    function fileColOf(origIdx) { const posInCols = cols.indexOf(origIdx); return posInCols >= 0 ? colMap[posInCols] : origIdx; }
 
     setProgress(pctBase + 10, `(${fi+1}/${totalFiles}) מסנן: ${uf.name}...`);
 
     // בחר עמודות
     let result = fileDataRows.map(r => colMap.map(i=>r[i]));
+    // אינדקסי שורות מקור (לשמירת עיצוב) — רק כשיש גיליון יחיד
+    let srcIdx = srcWs ? fileDataRows.map((_, i) => wsHdrRowIdx + 1 + i) : null;
+    function filt(pred){ if(!srcIdx){result=result.filter(pred);return;} const nr=[],ni=[]; result.forEach((r,i)=>{if(pred(r)){nr.push(r);ni.push(srcIdx[i]);}}); result=nr; srcIdx=ni; }
 
     // החל סינונים
     filterDefs.forEach(fd => {
       if (fd.type === 'col') {
-        const li = toLocal(fd.origColIdx);
-        if (li < 0) return;
-        result = result.filter(r => {
-          const v = r[li]!==undefined && r[li]!=='' ? String(r[li]) : '(ריק)';
-          return fd.selected.has(v);
-        });
+        const li = toLocal(fd.origColIdx); if (li<0) return;
+        filt(r => { const v=r[li]!==undefined&&r[li]!==''?String(r[li]):'(ריק)'; return fd.selected.has(v); });
       } else if (fd.type === 'date') {
-        const li = toLocal(fd.origColIdx);
-        if (li < 0) return;
-        result = result.filter(r => {
-          const d = parseFlexDate(String(r[li]||'')); return d&&d>=fd.from&&d<=fd.to;
+        const li = toLocal(fd.origColIdx); if (li<0) return;
+        filt(r => { const d=parseFlexDate(String(r[li]||'')); return d&&d>=fd.from&&d<=fd.to; });
+      } else if (fd.type === 'num') {
+        const li = toLocal(fd.origColIdx); if (li<0) return;
+        filt(r => {
+          const v=parseFloat(r[li]); if(isNaN(v)) return false;
+          if(fd.numType==='num-between') return v>=fd.numFrom&&v<=fd.numTo;
+          if(fd.numType==='num-lt') return v<fd.numVal; if(fd.numType==='num-gt') return v>fd.numVal;
+          if(fd.numType==='num-eq') return v===fd.numVal; if(fd.numType==='num-ne') return v!==fd.numVal;
+          return true;
         });
       }
     });
 
-    // קידומת שם לפלט (כשיש יותר מקובץ אחד)
-    const prefix = totalFiles > 1 ? sanitize(uf.name.replace(/\.[^.]+$/,'')) + '_' : '';
-    const src    = uf.name;
-
     if (outputMode === 'one') {
-      outputFiles.push({name: prefix+'מסונן', data:[filteredHeaders,...result], sourceFile:src});
+      outputFiles.push({name: prefix+'מסונן', data:[filteredHeaders,...result], srcWs, srcIdx, colMap, wsHdrRowIdx, sourceFile:src});
 
     } else if (outputMode === 'split-rows') {
       for (let i=0;i<result.length;i+=rowsPerFile)
-        outputFiles.push({name:`${prefix}חלק_${Math.floor(i/rowsPerFile)+1}`, data:[filteredHeaders,...result.slice(i,i+rowsPerFile)], sourceFile:src});
+        outputFiles.push({name:`${prefix}חלק_${Math.floor(i/rowsPerFile)+1}`, data:[filteredHeaders,...result.slice(i,i+rowsPerFile)], srcWs, srcIdx:srcIdx?srcIdx.slice(i,i+rowsPerFile):null, colMap, wsHdrRowIdx, sourceFile:src});
 
     } else if (outputMode === 'split-col') {
       const li = toLocal(splitByColOrigIdx);
-      if (li < 0) { outputFiles.push({name:prefix+'כל_הנתונים', data:[filteredHeaders,...result], sourceFile:src}); }
+      if (li < 0) { outputFiles.push({name:prefix+'כל_הנתונים', data:[filteredHeaders,...result], srcWs, srcIdx, colMap, wsHdrRowIdx, sourceFile:src}); }
       else {
-        const groups={};
-        result.forEach(r=>{ const k=String(r[li]||'(ריק)'); if(!groups[k])groups[k]=[]; groups[k].push(r); });
-        Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+sanitize(k), data:[filteredHeaders,...rows], sourceFile:src}));
+        const groups={}, gIdx={};
+        result.forEach((r,i)=>{ const k=String(r[li]||'(ריק)'); if(!groups[k]){groups[k]=[];if(srcIdx)gIdx[k]=[];} groups[k].push(r); if(srcIdx)gIdx[k].push(srcIdx[i]); });
+        Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+sanitize(k), data:[filteredHeaders,...rows], srcWs, srcIdx:gIdx[k]||null, colMap, wsHdrRowIdx, sourceFile:src}));
       }
 
     } else if (outputMode === 'split-date') {
       const li = toLocal(splitByDateOrigIdx);
-      if (li < 0) { outputFiles.push({name:prefix+'כל_הנתונים', data:[filteredHeaders,...result], sourceFile:src}); }
+      if (li < 0) { outputFiles.push({name:prefix+'כל_הנתונים', data:[filteredHeaders,...result], srcWs, srcIdx, colMap, wsHdrRowIdx, sourceFile:src}); }
       else {
-        const groups={};
-        result.forEach(r=>{
+        const groups={}, gIdx={};
+        result.forEach((r,i)=>{
           const d=parseFlexDate(String(r[li]||'')); if(!d) return;
           let key;
           if(splitPeriod==='month') key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
           else if(splitPeriod==='quarter') key=`${d.getFullYear()}-Q${Math.ceil((d.getMonth()+1)/3)}`;
           else key=String(d.getFullYear());
-          if(!groups[key])groups[key]=[]; groups[key].push(r);
+          if(!groups[key]){groups[key]=[];if(srcIdx)gIdx[key]=[];} groups[key].push(r); if(srcIdx)gIdx[key].push(srcIdx[i]);
         });
-        Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+k, data:[filteredHeaders,...rows], sourceFile:src}));
+        Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+k, data:[filteredHeaders,...rows], srcWs, srcIdx:gIdx[k]||null, colMap, wsHdrRowIdx, sourceFile:src}));
       }
     }
   }
@@ -1091,10 +1297,15 @@ async function processFile() {
   await new Promise(r=>setTimeout(r,50));
 
   outputFiles.forEach(f=>{
+    if (f.blob) return; // כבר נוצר (מצב multi-sheet)
     const newWb = XLSX.utils.book_new();
-    const newWs = XLSX.utils.aoa_to_sheet(f.data, {cellDates:true});
+    let newWs = buildStyledSheet(f.srcWs, f.wsHdrRowIdx||0, f.srcIdx, f.colMap);
+    if (!newWs) {
+      newWs = XLSX.utils.aoa_to_sheet(f.data, {cellDates:true});
+      fixTimeFormats(newWs);
+    }
     XLSX.utils.book_append_sheet(newWb, newWs, 'נתונים');
-    f.blob  = XLSX.write(newWb, {bookType:'xlsx', type:'array'});
+    f.blob  = XLSX.write(newWb, {bookType:'xlsx', type:'array', cellStyles:true});
     f.rows  = f.data.length-1;
     f.sizeMB = (f.blob.byteLength/1024/1024).toFixed(1);
   });
@@ -1118,10 +1329,12 @@ function showResults() {
   const grid = document.getElementById('results-grid');
 
   function cardHTML(f, i) {
+    const sheetBadge = f.multiSheet ? `<span class="badge" style="background:#fff8ed;color:#b87400">${f.sheetCount} גיליונות</span>` : '';
     return `<div class="result-card">
       <div class="rc-name">📊 ${f.name}.xlsx</div>
       <div class="rc-stats">
         <span class="badge badge-rows">${f.rows.toLocaleString('he')} שורות</span>
+        ${sheetBadge}
         <span class="badge badge-size">${f.sizeMB} MB</span>
       </div>
       <button class="rc-dl" onclick="downloadOne(${i})">⬇ הורדה</button>
@@ -1160,7 +1373,7 @@ function downloadAll() {
 }
 
 function reset() {
-  wb=ws=allData=headers=selectedCols=null; outputFiles=[]; uploadedFiles=[];
+  wb=ws=allData=headers=selectedCols=null; outputFiles=[]; uploadedFiles=[]; selectedSheets=[];
   document.getElementById('file-input').value='';
   dz.classList.remove('loaded','drag');
   dz.querySelector('.drop-icon').textContent='📊';
@@ -1176,6 +1389,65 @@ function formatSize(b) {
   return (b/1024).toFixed(0)+' KB';
 }
 function sanitize(s) { return String(s).replace(/[\\/:*?"<>|]/g,'_').substring(0,30); }
+
+// בניית גיליון פלט עם שמירת עיצוב מלא מהמקור (צבעי רקע, גופן וכד')
+function buildStyledSheet(srcWs, hdrRowIdx, srcRowIndices, colMapArr) {
+  if (!srcWs || !srcRowIndices || !colMapArr || !colMapArr.length) return null;
+  try {
+    const numOutCols = colMapArr.length;
+    const numDataRows = srcRowIndices.length;
+    const outWs = {};
+    const cloneCell = c => {
+      if (!c) return null;
+      const n = {t: c.t, v: c.v};
+      if (c.z !== undefined) n.z = c.z;
+      if (c.s !== undefined) { try { n.s = JSON.parse(JSON.stringify(c.s)); } catch(e){} }
+      return n;
+    };
+    // שורת כותרת
+    colMapArr.forEach((srcC, outC) => {
+      const cell = cloneCell(srcWs[XLSX.utils.encode_cell({r: hdrRowIdx, c: srcC})]);
+      if (cell) outWs[XLSX.utils.encode_cell({r: 0, c: outC})] = cell;
+    });
+    // שורות נתונים
+    srcRowIndices.forEach((srcR, outRowIdx) => {
+      colMapArr.forEach((srcC, outC) => {
+        const cell = cloneCell(srcWs[XLSX.utils.encode_cell({r: srcR, c: srcC})]);
+        if (cell) outWs[XLSX.utils.encode_cell({r: outRowIdx + 1, c: outC})] = cell;
+      });
+    });
+    outWs['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:numDataRows, c:numOutCols-1}});
+    if (srcWs['!cols']) {
+      outWs['!cols'] = colMapArr.map(srcC => srcWs['!cols'][srcC] ? {...srcWs['!cols'][srcC]} : {});
+    }
+    return outWs;
+  } catch(e) { return null; }
+}
+
+// תיקון תאים שנראים כשעות — מקבלים פורמט h:mm במקום תאריך
+function fixTimeFormats(ws) {
+  if (!ws || !ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    let timeVals = 0, total = 0;
+    const sample = Math.min(range.s.r + 10, range.e.r);
+    for (let R = range.s.r + 1; R <= sample; R++) {
+      const cell = ws[XLSX.utils.encode_cell({r: R, c: C})];
+      if (!cell) continue;
+      const isTimeFrac = cell.t === 'n' && cell.v >= 0 && cell.v < 1;
+      const isTimeDate = cell.t === 'd' && cell.v instanceof Date && cell.v.getFullYear() <= 1900;
+      if (isTimeFrac || isTimeDate) { timeVals++; total++; }
+      else if (cell.t === 'n' || cell.t === 'd') { total++; }
+    }
+    if (total > 0 && timeVals / total >= 0.6) {
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const addr = XLSX.utils.encode_cell({r: R, c: C});
+        const cell = ws[addr];
+        if (cell && (cell.t === 'n' || cell.t === 'd')) cell.z = 'h:mm';
+      }
+    }
+  }
+}
 </script>
 </body>
 </html>

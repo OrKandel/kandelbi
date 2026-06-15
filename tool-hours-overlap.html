@@ -204,7 +204,7 @@ tr:hover td{background:var(--bg)}
     </div></div>
     <div class="check-item"><input type="checkbox" id="chk-concurrent"/><div>
       <div class="check-label">👥 ריבוי עובדים בו-זמנית</div>
-      <div class="check-desc">מספר עובדים שעבדו בו-זמנית מעל למותר (שמירה, ניקיון וכד')</div>
+      <div class="check-desc">מספר עובדים שעבדו בו-זמנית מעל למותר (רלוונטי למקרים בהם נדרשת נוכחות של מספר אנשי צוות קבוע. לדוגמה ספק שמירה שנדרש להעמיד שומר אחד בכניסה לא אמור לדווח על 2 עובדים בו-זמנית)</div>
       <div class="check-param"><label>מקסימום עובדים בו-זמנית:</label><input type="number" id="param-maxworkers" value="1" min="1" max="100"/></div>
     </div></div>
     <div class="check-item" style="grid-column:1/-1"><input type="checkbox" id="chk-servicehours"/><div style="flex:1">
@@ -256,6 +256,8 @@ tr:hover td{background:var(--bg)}
 let filesData=[];    // [{name,wb,selectedSheets,headerRowIdx,allRows,headers,rawData}]
 let filesResults=[]; // [{name,headers,rawData,findings,rowFlags}]
 let firstHeaders=[];
+let uniformSheets=null;           // מערך שמות גיליונות אם כל הקבצים זהים, אחרת null
+let globalSelectedOverlapSheets=[]; // בחירה גלובלית כשיש גיליונות אחידים
 const PREFS_KEY='kandelbi_hours_prefs_v1';
 
 // ── חגים ובחירות ──
@@ -340,6 +342,63 @@ function clearAllSheets(fi){
   cbs.forEach((cb,i)=>cb.checked=(i===0));
   onSheetCheckChange(fi);
 }
+/* ── UNIFORM SHEET DETECTION ── */
+function detectUniformSheets(){
+  if(!filesData.length) return null;
+  if(!filesData.some(f=>f.wb&&f.wb.SheetNames.length>1)) return null;
+  const first=filesData[0].wb.SheetNames;
+  if(filesData.every(f=>{
+    if(!f.wb) return false;
+    const n=f.wb.SheetNames;
+    return n.length===first.length&&n.every((s,i)=>s===first[i]);
+  })) return [...first];
+  return null;
+}
+function renderGlobalOverlapSheets(){
+  const wrap=document.getElementById('overlap-sheet-sel-wrap'); if(!wrap) return;
+  if(!uniformSheets||uniformSheets.length<=1){wrap.innerHTML='';return;}
+  const items=uniformSheets.map(name=>{
+    const chk=globalSelectedOverlapSheets.includes(name)?'checked':'';
+    const esc=name.replace(/"/g,'&quot;');
+    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap">
+      <input type="checkbox" data-govlsheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
+      <span>${name}</span></label>`;
+  });
+  wrap.innerHTML=`<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:9px;padding:10px 14px;margin-top:.8rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.85rem">📋 כל הקבצים זהים — בחר גיליונות (יוחל על כולם):</div>
+    <div style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="selectAllGovlSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
+      <button onclick="clearGovlSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
+    </div></div>`;
+  wrap.querySelectorAll('input[data-govlsheet]').forEach(cb=>{ cb.onchange=onGlobalOverlapSheetChange; });
+}
+function onGlobalOverlapSheetChange(){
+  const checked=Array.from(document.querySelectorAll('input[data-govlsheet]'))
+    .filter(cb=>cb.checked).map(cb=>cb.dataset.govlsheet);
+  globalSelectedOverlapSheets=checked.length?checked:[uniformSheets[0]];
+  filesData.forEach((fd,fi)=>{
+    fd.selectedSheets=globalSelectedOverlapSheets.filter(s=>fd.wb.SheetNames.includes(s));
+    if(!fd.selectedSheets.length) fd.selectedSheets=[fd.wb.SheetNames[0]];
+    const allRows=getRowsFromWb(fd.wb,fd.selectedSheets);
+    while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
+    fd.allRows=allRows; fd.headerRowIdx=0;
+    fd.headers=(allRows[0]||[]).map(c=>String(c||''));
+    fd.rawData=allRows.slice(1).filter(r=>r.some(c=>c!==''));
+  });
+  renderFileChips();
+  rebuildColSelects();
+}
+function selectAllGovlSheets(){
+  document.querySelectorAll('input[data-govlsheet]').forEach(cb=>cb.checked=true);
+  onGlobalOverlapSheetChange();
+}
+function clearGovlSheets(){
+  const cbs=Array.from(document.querySelectorAll('input[data-govlsheet]'));
+  cbs.forEach((cb,i)=>cb.checked=(i===0));
+  onGlobalOverlapSheetChange();
+}
+
 function refreshFromSheets(fi){
   const fd=filesData[fi]; if(!fd)return;
   const allRows=getRowsFromWb(fd.wb, fd.selectedSheets);
@@ -421,7 +480,7 @@ function renderFileChips(){
   fl.classList.remove('hidden');
   fl.innerHTML=filesData.map((fd,fi)=>{
     const missing=!fd.rawData.length;
-    const sheetSel=sheetSelectorHtml(fd.wb,fi);
+    const sheetSel=uniformSheets?'':sheetSelectorHtml(fd.wb,fi);
     const hdrSel=headerRowSelectorHtml(fd.allRows,'overlap-hdr-'+fi,`changeFileHeaderRow.bind(null,${fi})`,fd.headerRowIdx||0);
     return `<div class="file-chip" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px">
       <div style="display:flex;align-items:center;gap:8px">
@@ -429,6 +488,7 @@ function renderFileChips(){
         <span class="fc-name">${fd.name}</span>
         <span class="fc-rows">${missing?'':fd.rawData.length+' שורות'}</span>
         ${missing?'<span class="fc-warn">⚠️ ריק</span>':''}
+        <button onclick="removeOverlapFile(${fi})" style="margin-right:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:0 4px;line-height:1" title="הסר קובץ">✕</button>
       </div>
       <div id="overlap-selwrap-${fi}">${sheetSel}${hdrSel}</div>
     </div>`;
@@ -438,6 +498,20 @@ function renderFileChips(){
     const hSel=document.getElementById('overlap-hdr-'+fi);
     if(hSel) hSel.onchange=function(){changeFileHeaderRow(fi,this.value);};
   });
+}
+
+function removeOverlapFile(idx){
+  filesData.splice(idx,1);
+  if(!filesData.length){
+    document.getElementById('files-list').classList.add('hidden');
+    document.getElementById('config-card').classList.add('hidden');
+    document.getElementById('checks-card').classList.add('hidden');
+    dz.classList.remove('loaded');
+    dz.querySelector('.ub-icon').textContent='📁';
+    dz.querySelector('.ub-text').textContent='לחץ לבחירת קבצים, או גרור לכאן';
+    return;
+  }
+  onFilesLoaded();
 }
 
 function rebuildColSelects(){
@@ -451,6 +525,16 @@ function onFilesLoaded(){
   filesData=filesData.filter(Boolean);
   firstHeaders=filesData[0]?.headers||[];
 
+  // זיהוי גיליונות אחידים
+  uniformSheets=detectUniformSheets();
+  if(uniformSheets){
+    globalSelectedOverlapSheets=[uniformSheets[0]];
+    filesData.forEach(fd=>{ fd.selectedSheets=[uniformSheets[0]]; });
+  } else {
+    uniformSheets=null;
+    globalSelectedOverlapSheets=[];
+  }
+  renderGlobalOverlapSheets();
   renderFileChips();
 
   dz.classList.add('loaded');

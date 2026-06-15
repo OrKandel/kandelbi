@@ -181,7 +181,6 @@
 <div class="filters-bar">
   <div class="filter-tabs">
     <button class="filter-tab active" onclick="filterCards('all',this)">הכול</button>
-    <button class="filter-tab" onclick="filterCards('member',this)">מנוי חינמי</button>
     <button class="filter-tab" onclick="filterCards('excel',this)">כלי אקסל</button>
     <button class="filter-tab" onclick="filterCards('procurement',this)">מכרזים והתקשרויות</button>
   </div>
@@ -252,7 +251,7 @@
       <div class="card-meta"><div class="card-title">איחוד קבצי Excel</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">מאחד קבצים חודשיים או קבצים ממספר יחידות לקובץ אחד, כולל עמודת מקור לכל שורה. מתאים לאיחוד דוחות נוכחות, חשבונות ספקים, דיווחי ביצוע או קבצים ממחוזות שונים.</p>
+      <p class="card-desc">מאחד קבצים חודשיים או קבצים ממספר יחידות לקובץ אחד — כל השורות נשמרות, כולל עמודת מקור לכל שורה. מתאים לאיחוד דוחות נוכחות, חשבונות ספקים, דיווחי ביצוע או קבצים ממחוזות שונים.</p>
       <div class="card-tags"><span class="tag">איחוד</span><span class="tag">חודשי</span><span class="tag">מיזוג</span><span class="tag">עמודת מקור</span></div>
       <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel מאוחד עם עמודת מקור לכל שורה</div>
     </div>
@@ -262,7 +261,7 @@
   </div>
 
   <!-- ═══ כלי 3: חפיפת שעות ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="בדיקת תקינות דיווחי שעות">
+  <div class="tool-card" data-tier="member" data-type="excel procurement" data-title="בדיקת תקינות דיווחי שעות">
     <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
       <div class="card-icon icon-excel">🔍</div>
@@ -270,7 +269,7 @@
     </div>
     <div class="card-body">
       <p class="card-desc">10 בדיקות אוטומטיות לדוחות שעות: חפיפות, שעות עגולות, עבודה בשבת/חג, רצף שעות חריג, תאריכים עתידיים, חריגה ממכסה חודשית ועוד. מתאים לבדיקת חשבונות קבלן, שכר ונוכחות.</p>
-      <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">תקינות</span><span class="tag">ביקורת שכר</span></div>
+      <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">תקינות</span><span class="tag">ביקורת שכר</span><span class="tag">מכרזים</span></div>
       <div class="card-output">✅ <strong>התוצר:</strong> דוח חריגות לכל עובד — מסומן לפי סוג הממצא</div>
     </div>
     <div class="card-footer">
@@ -278,38 +277,22 @@
     </div>
   </div>
 
-  <!-- ═══ כלי 4: זמן בין אירועים ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="זמן בין אירועים לאותו עובד">
-    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
-    <div class="card-top">
-      <div class="card-icon icon-excel">⏱️</div>
-      <div class="card-meta"><div class="card-title">זמן בין אירועים — ניתוח רצף</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc">העלו פלט ממערכת תפעולית וקבלו חישוב אוטומטי של משך הזמן בין שלבים בתהליך. מתאים לבדיקת SLA, זמני טיפול בבקשות, פעולות מהירות מדי, עיכובים וחריגות ברצף עבודה.</p>
-      <div class="card-tags"><span class="tag">לוג</span><span class="tag">SLA</span><span class="tag">זמני טיפול</span><span class="tag">חריגות</span></div>
-      <div class="card-output">✅ <strong>התוצר:</strong> טבלת זמני טיפול וסימון חריגות SLA</div>
-    </div>
-    <div class="card-footer">
-<button class="btn-dl btn-member" onclick="handleDL('member','זמן בין אירועים','tool-time-between.html')">⏱️ חשבו זמני טיפול</button>
-    </div>
-  </div>
 
 
-  <!-- ═══ כלי: איחוד דוחות לפי גוף ═══ -->
-  <div class="tool-card" data-tier="member" data-type="excel" data-title="איחוד דוחות Excel לפי גוף">
+  <!-- ═══ כלי: איחוד דוחות EXCEL לטבלה מרוכזת ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="איחוד דוחות EXCEL לטבלה מרוכזת">
     <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
     <div class="card-top">
       <div class="card-icon icon-excel">📁</div>
-      <div class="card-meta"><div class="card-title">איחוד דוחות Excel לפי גוף</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+      <div class="card-meta"><div class="card-title">איחוד דוחות EXCEL לטבלה מרוכזת</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
     </div>
     <div class="card-body">
-      <p class="card-desc">מקבל קבצי Excel מרובים — קובץ לכל גוף מתוקצב, ספק או יחידה — ומאחד אותם לטבלת סיכום עם שורה לכל גוף. תומך גם בכמה קבצים לאותו גוף (לפי תקופות). מעביר ישירות לדשבורד חריגים.</p>
+      <p class="card-desc">מקבל קבצי Excel מרובים — קובץ לכל גוף מתוקצב, ספק, יחידה או תקופה — ומאחד אותם ל<strong>טבלת סיכום עם שורה אחת לכל גוף</strong>. תומך גם בכמה קבצים לאותו גוף (לפי תקופות). אם יש לכם הרבה שורות, אחרי האיחוד מומלץ להעלות את הטבלה לדשבורד חריגים.</p>
       <div class="card-tags"><span class="tag">איחוד</span><span class="tag">גופים מתוקצבים</span><span class="tag">ריבוי קבצים</span><span class="tag">בקרה תקופתית</span></div>
-      <div class="card-output">✅ <strong>התוצר:</strong> טבלת סיכום עם שורה לכל גוף — ניתנת להורדה או לניתוח מיידי בדשבורד</div>
+      <div class="card-output">✅ <strong>התוצר:</strong> טבלת סיכום עם שורה אחת לכל גוף — ניתנת להורדה או לניתוח מיידי בדשבורד</div>
     </div>
     <div class="card-footer">
-      <button class="btn-dl btn-member" onclick="handleDL('member','איחוד דוחות Excel לפי גוף','tool-multi-consolidate.html')">📁 אחדו דוחות עכשיו</button>
+      <button class="btn-dl btn-member" onclick="handleDL('member','איחוד דוחות EXCEL לטבלה מרוכזת','tool-multi-consolidate.html')">📁 אחדו דוחות עכשיו</button>
     </div>
   </div>
 
@@ -330,22 +313,6 @@
     </div>
   </div>
 
-  <!-- ═══ כלי: חילוץ נתוני מכרז ═══ -->
-  <div class="tool-card" data-tier="member" data-type="procurement" data-title="חילוץ נתוני מכרז — מחצית אוטומטי" style="display:none">
-    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
-    <div class="card-top">
-      <div class="card-icon icon-excel">⚖️</div>
-      <div class="card-meta"><div class="card-title">חילוץ נתוני מכרז</div><div class="card-sub">כלי בדפדפן · מחצית אוטומטי</div></div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc">מעלים פדף של מכרז פומבי — הכלי מחלץ אוטומטית תנאי סף, מועדים, שירותים ותעריפים, מסמכים נדרשים ומדדי שירות. סוקרים, עורכים ומייצאים לאקסל מסודר.</p>
-      <div class="card-tags"><span class="tag">מכרז</span><span class="tag">תנאי סף</span><span class="tag">מועדים</span><span class="tag">חילוץ נתונים</span></div>
-      <div class="card-output">✅ <strong>התוצר:</strong> קובץ אקסל עם פרטי המכרז מאורגנים בגיליונות</div>
-    </div>
-    <div class="card-footer">
-      <button class="btn-dl btn-member" onclick="handleDL('member','חילוץ נתוני מכרז','_drafts/tool-tender-chat.html')">⚖️ חלצו נתוני מכרז</button>
-    </div>
-  </div>
 
 </div>
 
@@ -472,6 +439,7 @@
 <!-- ══ MODAL: אישור תנאי שימוש ══ -->
 <div class="modal-overlay" id="modal-terms">
   <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-terms')">✕</button>
     <div class="modal-icon">📋</div>
     <h2>לפני שממשיכים</h2>
     <p class="modal-desc">הכלים של קנדל BI חינמיים לשימוש. הנתונים נשארים בדפדפן שלכם בלבד — לא נשלחים לאף שרת.</p>
@@ -480,6 +448,7 @@
       <label for="terms-cb" style="cursor:pointer;">קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank">תנאי השימוש</a></label>
     </div>
     <button class="btn-sub green" onclick="acceptTermsAndGo()">אישור — פתח כלי ←</button>
+    <button onclick="closeModal('modal-terms')" style="margin-top:0.7rem;background:none;border:none;color:var(--text-muted);font-size:0.88rem;cursor:pointer;font-family:inherit;text-decoration:underline;">ביטול</button>
   </div>
 </div>
 
@@ -754,7 +723,8 @@ function filterCards(t,btn){
     btn.classList.add('active');
   }
   document.querySelectorAll('.tool-card').forEach(c=>{
-    const show=(t==='all'||c.dataset.tier===t||c.dataset.type===t);
+    const types=(c.dataset.type||'').split(' ');
+    const show=(t==='all'||c.dataset.tier===t||types.includes(t));
     c.style.setProperty('display', show ? 'flex' : 'none', 'important');
   });
 }

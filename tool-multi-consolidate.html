@@ -5,7 +5,7 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-FR9DZSW3M4');</script>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>איחוד קבצים לטבלה מאוחדת | קנדל BI</title>
+<title>איחוד דוחות EXCEL לטבלה מרוכזת | קנדל BI</title>
 <meta name="description" content="העלו קבצי אקסל רבים במבנה אחיד — הכלי מאחד אותם לטבלה עם שורה לכל ישות. עובד בדפדפן, הנתונים אצלכם."/>
 <meta name="robots" content="index,follow"/>
 <link rel="canonical" href="https://kandelbi.org/tool-multi-consolidate.html"/>
@@ -78,7 +78,7 @@ tr:hover td{background:var(--bg)}
 <div style="height:64px"></div>
 <main>
 
-<div class="tool-title">📂 איחוד קבצים לטבלה מאוחדת</div>
+<div class="tool-title">📂 איחוד דוחות EXCEL לטבלה מרוכזת</div>
 <div class="tool-sub">מעלים קבצי אקסל רבים במבנה אחיד — הכלי מייצר טבלה עם שורה לכל ישות וסעיפים כעמודות</div>
 
 <div class="step-bar">
@@ -99,6 +99,7 @@ tr:hover td{background:var(--bg)}
     </div>
     <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
     <div class="file-chips" id="chips"></div>
+    <div id="global-sheet-wrap"></div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-next1" disabled onclick="goStep2()">הגדרת מבנה ←</button>
     </div>
@@ -113,16 +114,16 @@ tr:hover td{background:var(--bg)}
     <div class="preview-wrap" id="preview-table-wrap"></div>
     <div class="form-row" style="margin-top:1rem">
       <div class="fg">
+        <label>שורת הכותרת (1 = שורה ראשונה)</label>
+        <input type="number" id="hdr-row" value="1" min="1" max="20" onchange="populateConfig()"/>
+      </div>
+      <div class="fg">
         <label>עמודת שם הסעיף (טקסט)</label>
         <select id="col-cat" onchange="refreshPreview()"></select>
       </div>
       <div class="fg">
-        <label>עמודת הסכום / הערך</label>
+        <label>עמודת הסכום (מספרים בלבד)</label>
         <select id="col-val" onchange="refreshPreview()"></select>
-      </div>
-      <div class="fg">
-        <label>שורות כותרת לדלג (בד"כ 1)</label>
-        <input type="number" id="skip-rows" value="1" min="0" max="10" onchange="refreshPreview()"/>
       </div>
     </div>
     <div class="fg" style="margin-bottom:1rem">
@@ -166,8 +167,10 @@ tr:hover td{background:var(--bg)}
 </main>
 
 <script>
-let filesData = []; // [{file, name, rows}]
+let filesData = []; // [{file, name, rows, wb, selectedSheets}]
 let consolidated = null; // {headers:[], rows:[][]}
+let uniformSheets = null;
+let globalSelectedSheets = [];
 
 /* ───── DRAG & DROP ───── */
 const dz = document.getElementById('dz');
@@ -179,10 +182,77 @@ document.getElementById('fi').addEventListener('change', e => handleFiles(e.targ
 function handleFiles(fileList) {
   Array.from(fileList).forEach(f => {
     if (filesData.some(x => x.file.name === f.name)) return;
-    filesData.push({ file: f, name: f.name.replace(/\.[^.]+$/, ''), rows: null });
+    filesData.push({ file: f, name: f.name.replace(/\.[^.]+$/, ''), rows: null, wb: null, selectedSheets: null });
   });
   renderChips();
   readAllFiles();
+}
+
+/* ── HELPERS: rows from sheet(s) ── */
+function loadRowsFromSheets(wb, sheets) {
+  if (!sheets || !sheets.length) sheets = [wb.SheetNames[0]];
+  if (sheets.length === 1) {
+    return XLSX.utils.sheet_to_json(wb.Sheets[sheets[0]] || wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+  }
+  let all = [];
+  sheets.forEach((name, i) => {
+    const ws = wb.Sheets[name]; if (!ws) return;
+    const r = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (i === 0) all.push(...r); else all.push(...r.slice(1));
+  });
+  return all;
+}
+
+/* ── UNIFORM SHEET DETECTION ── */
+function detectUniformSheetsCons() {
+  if (!filesData.some(d => d.wb && d.wb.SheetNames.length > 1)) return null;
+  const first = filesData[0].wb.SheetNames;
+  if (filesData.every(d => {
+    if (!d.wb) return false;
+    const n = d.wb.SheetNames;
+    return n.length === first.length && n.every((s, i) => s === first[i]);
+  })) return [...first];
+  return null;
+}
+function renderGlobalSheetSelectorCons() {
+  const wrap = document.getElementById('global-sheet-wrap'); if (!wrap) return;
+  if (!uniformSheets || uniformSheets.length <= 1) { wrap.innerHTML = ''; return; }
+  const items = uniformSheets.map(name => {
+    const chk = globalSelectedSheets.includes(name) ? 'checked' : '';
+    const esc = name.replace(/"/g, '&quot;');
+    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap">
+      <input type="checkbox" data-conssheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
+      <span>${name}</span></label>`;
+  });
+  wrap.innerHTML = `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:9px;padding:10px 14px;margin-top:.8rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.85rem">📋 כל הקבצים זהים — בחר גיליונות (יוחל על כולם):</div>
+    <div style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="selectAllConsSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
+      <button onclick="clearConsSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
+    </div></div>`;
+  wrap.querySelectorAll('input[data-conssheet]').forEach(cb => { cb.onchange = onGlobalConsSheetChange; });
+}
+function onGlobalConsSheetChange() {
+  const checked = Array.from(document.querySelectorAll('input[data-conssheet]'))
+    .filter(cb => cb.checked).map(cb => cb.dataset.conssheet);
+  globalSelectedSheets = checked.length ? checked : [uniformSheets[0]];
+  filesData.forEach(d => {
+    d.selectedSheets = globalSelectedSheets.filter(s => d.wb.SheetNames.includes(s));
+    if (!d.selectedSheets.length) d.selectedSheets = [d.wb.SheetNames[0]];
+    d.rows = loadRowsFromSheets(d.wb, d.selectedSheets);
+  });
+  // אם כבר בשלב 2 — רענן תצוגה מקדימה
+  if (!document.getElementById('step2').classList.contains('hidden')) populateConfig();
+}
+function selectAllConsSheets() {
+  document.querySelectorAll('input[data-conssheet]').forEach(cb => cb.checked = true);
+  onGlobalConsSheetChange();
+}
+function clearConsSheets() {
+  const cbs = Array.from(document.querySelectorAll('input[data-conssheet]'));
+  cbs.forEach((cb, i) => cb.checked = (i === 0));
+  onGlobalConsSheetChange();
 }
 
 function renderChips() {
@@ -206,8 +276,9 @@ function readAllFiles() {
       r.onload = ev => {
         try {
           const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          d.rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+          d.wb = wb;
+          d.selectedSheets = [wb.SheetNames[0]];
+          d.rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
         } catch(e) { d.rows = []; }
         resolve();
       };
@@ -216,6 +287,13 @@ function readAllFiles() {
   Promise.all(promises).then(() => {
     if (filesData.every(d => d.rows)) {
       document.getElementById('btn-next1').disabled = false;
+      // זיהוי גיליונות אחידים
+      uniformSheets = detectUniformSheetsCons();
+      if (uniformSheets) {
+        globalSelectedSheets = [uniformSheets[0]];
+        filesData.forEach(d => { d.selectedSheets = [uniformSheets[0]]; });
+      }
+      renderGlobalSheetSelectorCons();
     }
   });
 }
@@ -240,46 +318,81 @@ function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
 /* ───── CONFIG STEP ───── */
+function detectNumericCols(rows, hdrIdx) {
+  // סרוק עד 30 שורות נתונים וזהה עמודות המכילות ערכים מספריים
+  const numCols = new Set();
+  const dataRows = rows.slice(hdrIdx + 1).filter(r => r && r.some(c => c !== '' && c != null));
+  dataRows.slice(0, 30).forEach(row => {
+    (row || []).forEach((cell, i) => {
+      if (typeof cell === 'number' && isFinite(cell)) {
+        numCols.add(i);
+      } else if (typeof cell === 'string' && cell.trim()) {
+        const clean = cell.replace(/,/g, '').replace(/[₪$€\s%]/g, '').trim();
+        if (clean && !isNaN(parseFloat(clean)) && isFinite(parseFloat(clean))) numCols.add(i);
+      }
+    });
+  });
+  return numCols;
+}
+
 function populateConfig() {
   const first = filesData[0];
   if (!first || !first.rows || !first.rows.length) return;
-  const headers = first.rows[0] || [];
+  const hdrRow = parseInt(document.getElementById('hdr-row').value) || 1;
+  const hdrIdx = hdrRow - 1;
+  const headers = first.rows[hdrIdx] || [];
+
+  // זיהוי עמודות מספריות
+  const numCols = detectNumericCols(first.rows, hdrIdx);
+
   const selCat = document.getElementById('col-cat');
   const selVal = document.getElementById('col-val');
+
+  // עמודת סעיף — כל העמודות
   selCat.innerHTML = headers.map((h,i) => `<option value="${i}">${h || 'עמודה '+(i+1)}</option>`).join('');
-  selVal.innerHTML = headers.map((h,i) => `<option value="${i}">${h || 'עמודה '+(i+1)}</option>`).join('');
-  // auto-detect: first text col = cat, first numeric col = val
-  const skip = parseInt(document.getElementById('skip-rows').value) || 1;
-  const dataRow = first.rows[skip] || [];
-  let catIdx = 0, valIdx = 1;
+
+  // עמודת סכום — רק עמודות מספריות (אם זוהו), אחרת כולן
+  const valCols = numCols.size > 0 ? [...numCols].sort((a,b)=>a-b) : headers.map((_,i)=>i);
+  selVal.innerHTML = valCols.map(i => `<option value="${i}">${headers[i] || 'עמודה '+(i+1)}</option>`).join('');
+
+  // auto-detect: עמודת טקסט ראשונה = סעיף, עמודה מספרית ראשונה = סכום
+  const dataRow = first.rows[hdrIdx + 1] || [];
+  let catIdx = -1;
   dataRow.forEach((cell, i) => {
-    if (typeof cell === 'number' && valIdx === 1) valIdx = i;
-    if (typeof cell === 'string' && cell && catIdx === 0) catIdx = i;
+    if (catIdx === -1 && typeof cell === 'string' && cell.trim() && !numCols.has(i)) catIdx = i;
   });
-  selCat.value = catIdx;
-  selVal.value = valIdx !== catIdx ? valIdx : (catIdx === 0 ? 1 : 0);
+  if (catIdx === -1) catIdx = 0;
+  const firstNumCol = valCols[0] ?? (catIdx === 0 ? 1 : 0);
+
+  selCat.value = String(catIdx);
+  selVal.value = String(firstNumCol);
   refreshPreview();
 }
 
 function refreshPreview() {
   const first = filesData[0];
   if (!first || !first.rows) return;
-  const skip = parseInt(document.getElementById('skip-rows').value) || 0;
+  const hdrRow = parseInt(document.getElementById('hdr-row').value) || 1;
+  const hdrIdx = hdrRow - 1;
   const cat = parseInt(document.getElementById('col-cat').value);
   const val = parseInt(document.getElementById('col-val').value);
-  const rows = first.rows.slice(0, skip + 8);
+  const headers = first.rows[hdrIdx] || [];
+  // show up to hdrIdx pre-header rows + 8 data rows
+  const maxShow = Math.min(first.rows.length, hdrIdx + 9);
   let html = '<table><thead><tr>';
-  const header = first.rows[0] || [];
-  header.forEach((h, i) => {
+  headers.forEach((h, i) => {
     let cls = i === cat ? 'col-highlight' : i === val ? 'col-highlight-green' : '';
     html += `<th class="${cls}">${h || 'עמודה '+(i+1)}</th>`;
   });
   html += '</tr></thead><tbody>';
-  for (let r = 1; r < rows.length; r++) {
-    html += '<tr>';
-    rows[r].forEach((cell, i) => {
-      let cls = i === cat ? 'col-highlight' : i === val ? 'col-highlight-green' : '';
-      html += `<td class="${cls}">${cell}</td>`;
+  for (let r = 0; r < maxShow; r++) {
+    if (r === hdrIdx) continue; // כבר מוצג בכותרת
+    const row = first.rows[r] || [];
+    const isAbove = r < hdrIdx;
+    html += `<tr${isAbove ? ' style="opacity:.45;font-style:italic"' : ''}>`;
+    row.forEach((cell, i) => {
+      let cls = !isAbove && (i === cat ? 'col-highlight' : i === val ? 'col-highlight-green' : '');
+      html += `<td${cls ? ` class="${cls}"` : ''}>${cell ?? ''}</td>`;
     });
     html += '</tr>';
   }
@@ -289,7 +402,8 @@ function refreshPreview() {
 
 /* ───── PROCESS ALL FILES ───── */
 function processAll() {
-  const skip = parseInt(document.getElementById('skip-rows').value) || 1;
+  const hdrRow = parseInt(document.getElementById('hdr-row').value) || 1;
+  const hdrIdx = hdrRow - 1; // 0-based index of header row
   const colCat = parseInt(document.getElementById('col-cat').value);
   const colVal = parseInt(document.getElementById('col-val').value);
   const entitySource = document.getElementById('entity-source').value;
@@ -300,7 +414,7 @@ function processAll() {
   for (const fd of filesData) {
     const data = {};
     const rows = fd.rows || [];
-    for (let i = skip; i < rows.length; i++) {
+    for (let i = hdrIdx + 1; i < rows.length; i++) {
       const row = rows[i];
       const cat = String(row[colCat] ?? '').trim();
       const raw = String(row[colVal] ?? '').replace(/,/g, '').replace(/[₪$€]/g, '').trim();

@@ -223,6 +223,7 @@ tr.row-issue:hover td{background:#fde8e8}
       </div>
       <input type="file" id="fi-att" accept=".xlsx,.xls,.csv" multiple hidden/>
       <div class="files-list" id="att-files-list"></div>
+      <div id="att-global-sheet-wrap"></div>
     </div>
     <div>
       <div style="font-weight:700;margin-bottom:6px;color:var(--blue);font-size:0.87rem">💵 חשבון הספק (חובה)</div>
@@ -402,7 +403,9 @@ const TENDER_KEY = 'kbi_tenders_v3';
 let currentTender = null;
 let isNewTender = false;
 let empFileData = { headers: [], rows: [] };
-let attFilesList = [];       // [{ name, data: {headers, rows} }]
+let attFilesList = [];       // [{ name, data: {headers, rows, wb, selectedSheet} }]
+let attUniformSheets = null;
+let attGlobalSelectedSheets = [];
 let invFileData = { headers: [], rows: [], isPdf: false };
 
 // Results
@@ -676,6 +679,60 @@ function saveEmpList() {
   }
 }
 
+// ── UNIFORM SHEET DETECTION (attendance) ──
+function detectAttUniformSheets() {
+  if (!attFilesList.some(f => f.data.wb && f.data.wb.SheetNames.length > 1)) return null;
+  const first = attFilesList[0].data.wb.SheetNames;
+  if (attFilesList.every(f => {
+    if (!f.data.wb) return false;
+    const n = f.data.wb.SheetNames;
+    return n.length === first.length && n.every((s, i) => s === first[i]);
+  })) return [...first];
+  return null;
+}
+function renderAttGlobalSheetSelector() {
+  const wrap = document.getElementById('att-global-sheet-wrap'); if (!wrap) return;
+  if (!attUniformSheets || attUniformSheets.length <= 1) { wrap.innerHTML = ''; return; }
+  const items = attUniformSheets.map(name => {
+    const chk = attGlobalSelectedSheets.includes(name) ? 'checked' : '';
+    const esc = name.replace(/"/g, '&quot;');
+    return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap">
+      <input type="checkbox" data-attgsheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
+      <span>${name}</span></label>`;
+  });
+  wrap.innerHTML = `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:9px;padding:10px 14px;margin-top:.6rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.85rem">📋 כל הקבצים זהים — בחר גיליון (יוחל על כולם):</div>
+    <div style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="selectAllAttSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
+      <button onclick="clearAttSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
+    </div></div>`;
+  wrap.querySelectorAll('input[data-attgsheet]').forEach(cb => { cb.onchange = onAttGlobalSheetChange; });
+}
+function onAttGlobalSheetChange() {
+  const checked = Array.from(document.querySelectorAll('input[data-attgsheet]'))
+    .filter(cb => cb.checked).map(cb => cb.dataset.attgsheet);
+  attGlobalSelectedSheets = checked.length ? checked : [attUniformSheets[0]];
+  attFilesList.forEach(f => {
+    const wb = f.data.wb; if (!wb) return;
+    const sheet = attGlobalSelectedSheets.find(s => wb.SheetNames.includes(s)) || wb.SheetNames[0];
+    f.data.selectedSheet = sheet;
+    const allRows = getRowsFromWbAudit(wb, sheet);
+    while (allRows.length && allRows[0].every(c => !c)) allRows.shift();
+    f.data.allRows = allRows;
+    applyHeaderRow(f.data, f.data.headerRowIdx || 0);
+  });
+}
+function selectAllAttSheets() {
+  document.querySelectorAll('input[data-attgsheet]').forEach(cb => cb.checked = true);
+  onAttGlobalSheetChange();
+}
+function clearAttSheets() {
+  const cbs = Array.from(document.querySelectorAll('input[data-attgsheet]'));
+  cbs.forEach((cb, i) => cb.checked = (i === 0));
+  onAttGlobalSheetChange();
+}
+
 // ── ATTENDANCE FILES ──
 document.getElementById('fi-att').addEventListener('change', async e => {
   for (const file of Array.from(e.target.files)) {
@@ -683,7 +740,14 @@ document.getElementById('fi-att').addEventListener('change', async e => {
     await loadExcelAsync(file, data);
     attFilesList.push({ name: file.name, data });
   }
+  // זיהוי גיליונות אחידים
+  attUniformSheets = detectAttUniformSheets();
+  if (attUniformSheets) {
+    attGlobalSelectedSheets = [attUniformSheets[0]];
+    attFilesList.forEach(f => { if (f.data.wb) f.data.selectedSheet = attUniformSheets[0]; });
+  }
   renderAttList();
+  renderAttGlobalSheetSelector();
   checkStep3();
 });
 
@@ -703,7 +767,11 @@ function renderAttList() {
 
 function removeAtt(idx) {
   attFilesList.splice(idx, 1);
+  attUniformSheets = detectAttUniformSheets();
+  if (attUniformSheets) attGlobalSelectedSheets = [attUniformSheets[0]];
+  else attGlobalSelectedSheets = [];
   renderAttList();
+  renderAttGlobalSheetSelector();
   checkStep3();
 }
 
