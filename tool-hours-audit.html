@@ -1455,13 +1455,16 @@ function renderInvoiceTable() {
 
 function renderAttTable() {
   const ah = attFilesList[0]?.data.headers || [];
+  const snm = getSheetNameMode();
   let html = `<table><thead><tr>
+    ${snm ? '<th>שם גיליון (עובד)</th>' : ''}
     ${ah.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}
     <th>מקור קובץ</th><th>ממצאים</th>
   </tr></thead><tbody>`;
   auditAttRows.forEach(r => {
     const cls = r._hasIssue ? 'row-issue' : '';
     html += `<tr class="${cls}" data-issue="${r._hasIssue}" data-types="${r._types.join(' ')}">`;
+    if (snm) html += `<td style="font-weight:600">${escHtml(String(r._orig._sheetEmp||''))}</td>`;
     ah.forEach((_, ci) => { html += `<td>${escHtml(String(r._orig[ci]||''))}</td>`; });
     html += `<td style="font-size:0.75rem;color:var(--muted)">${escHtml(r._src||'')}</td>`;
     html += `<td class="comment-cell">${r._issues.map(i=>escHtml(i)).join('<br/>')}</td>`;
@@ -1664,7 +1667,9 @@ async function exportAll() {
   const hrsR  = auditInvoiceRows.filter(r=>!r._skip&&r.hoursIssue);
 
   // ── שעות עגולות: חישוב עובדים וסך שעות ──
-  const _allAttFlat = attFilesList.flatMap(f=>f.data.rows);
+  // In sheet-name mode use allAtt (all sheets) with _sheetEmp; otherwise use f.data.rows (selected sheet)
+  const _allAttFlat = sheetNameMode ? allAtt : attFilesList.flatMap(f=>f.data.rows);
+  const _aEmpFlat   = sheetNameMode ? '_sheetEmp' : aEmpCol; // key for employee name in flat rows
   const _aDateCol   = +document.getElementById('col-att-date').value;
 
   // daily round
@@ -1672,9 +1677,10 @@ async function exportAll() {
   if (roundHoursResult.daily) {
     const _daily = {};
     _allAttFlat.forEach(row => {
-      const k = `${row[aEmpCol]}||${dateKey(row[_aDateCol])}`;
+      const empName = String(row[_aEmpFlat]||'');
+      const k = `${empName}||${dateKey(row[_aDateCol])}`;
       const s = toMin(row[aStart]), e = toMin(row[aEnd]), h = (s>=0&&e>s)?(e-s)/60:0;
-      if (!_daily[k]) _daily[k] = { emp: String(row[aEmpCol]||''), h: 0 };
+      if (!_daily[k]) _daily[k] = { emp: empName, h: 0 };
       _daily[k].h += h;
     });
     Object.values(_daily).forEach(d => {
@@ -1687,7 +1693,7 @@ async function exportAll() {
   if (roundHoursResult.entry) {
     _allAttFlat.forEach(row => {
       const s=toMin(row[aStart]), e=toMin(row[aEnd]);
-      if (s>=0 && s%60===0) { reEmps.push(String(row[aEmpCol]||'')); reHrs+=(e>s?(e-s)/60:0); }
+      if (s>=0 && s%60===0) { reEmps.push(String(row[_aEmpFlat]||'')); reHrs+=(e>s?(e-s)/60:0); }
     });
     reEmps = uniq(reEmps);
   }
@@ -1696,7 +1702,7 @@ async function exportAll() {
   if (roundHoursResult.exit) {
     _allAttFlat.forEach(row => {
       const s=toMin(row[aStart]), e=toMin(row[aEnd]);
-      if (e>0 && e%60===0) { rxEmps.push(String(row[aEmpCol]||'')); rxHrs+=(e>s&&s>=0?(e-s)/60:0); }
+      if (e>0 && e%60===0) { rxEmps.push(String(row[_aEmpFlat]||'')); rxHrs+=(e>s&&s>=0?(e-s)/60:0); }
     });
     rxEmps = uniq(rxEmps);
   }
@@ -1708,7 +1714,7 @@ async function exportAll() {
   if (warn.length)  aFinds.push(['שעות גבוהות (אזהרה)',   warn.length,  +warn.reduce((s,r)=>s+r.total,0).toFixed(2),        uniq(warn.map(r=>r.emp)).join(', '),  'ימים שבהם סך השעות גבוה אך מתחת לסף החריגה']);
   if (uA.length) {
     const hrs = uA.reduce((s,r)=>{const st=toMin(r._orig[aStart]),en=toMin(r._orig[aEnd]);return s+(st>=0&&en>st?(en-st)/60:0);},0);
-    aFinds.push(['עובדים לא מאושרים — נוכחות', uA.length, +hrs.toFixed(2), uniq(uA.map(r=>String(r._orig[aEmpCol]||''))).join(', '), 'שורות נוכחות עם עובד שאינו ברשימה המאושרת']);
+    aFinds.push(['עובדים לא מאושרים — נוכחות', uA.length, +hrs.toFixed(2), uniq(uA.map(r=>String(r._orig[sheetNameMode ? '_sheetEmp' : aEmpCol]||''))).join(', '), 'שורות נוכחות עם עובד שאינו ברשימה המאושרת']);
   }
   if (roundHoursResult.daily) aFinds.push([`שעות יומיות עגולות (${roundHoursResult.daily.pct}%)`,  roundHoursResult.daily.count,  +rdHrs.toFixed(2), rdEmps.join(', '), 'חשד לדיווח ידני — מעל 50% מהימים מסתיימים בשעות שלמות בדיוק']);
   if (roundHoursResult.entry) aFinds.push([`שעות כניסה עגולות (${roundHoursResult.entry.pct}%)`,   roundHoursResult.entry.count,  +reHrs.toFixed(2), reEmps.join(', '), 'חשד לדיווח ידני — מעל 50% משעות הכניסה על השעה בדיוק']);
@@ -1813,21 +1819,26 @@ async function exportAll() {
   // ═══════════════════════════════════════════════
   // גיליון 3 — דוחות נוכחות (ממצאים בעמודות הראשונות)
   // ═══════════════════════════════════════════════
+  const _snm3 = getSheetNameMode();
   const ah = attFilesList[0]?.data.headers || [];
-  const N3 = 3 + ah.length;
+  const _snmHdrs = _snm3 ? ['שם גיליון (עובד)'] : [];
+  const N3 = 3 + _snmHdrs.length + ah.length;
   const ws3 = wb.addWorksheet('דוחות נוכחות', {views:[{rightToLeft:true}]});
   addTitle(ws3, `דוחות נוכחות — ${tName} — ${todayStr()}`, N3);
   ws3.addRow([]);
-  // Findings FIRST (cols 1-3), then source data
-  addHdr(ws3, ['סטטוס','ממצאים','מקור קובץ',...ah]);
+  // Findings FIRST (cols 1-3[+snm]), then source data
+  addHdr(ws3, ['סטטוס','ממצאים','מקור קובץ', ..._snmHdrs, ...ah]);
 
   const att3Strs = auditAttRows.map(r=>[
     r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'',
+    ...(_snm3 ? [String(r._orig._sheetEmp||'')] : []),
     ...ah.map((_,i)=>String(r._orig[i]||''))
   ]);
   auditAttRows.forEach((r, ri) => {
     const bg = r._hasIssue ? C.redBg : (ri%2===0 ? C.white : C.altBg);
-    const vals = [r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'', ...ah.map((_,i)=>asNum(r._orig[i]))];
+    const snmVal = _snm3 ? [r._orig._sheetEmp||''] : [];
+    const dataOff = 3 + snmVal.length; // column index where att data starts (0-based)
+    const vals = [r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'', ...snmVal, ...ah.map((_,i)=>asNum(r._orig[i]))];
     const row = ws3.addRow(vals);
     row.height = 18;
     vals.forEach((v,ci) => {
@@ -1836,9 +1847,9 @@ async function exportAll() {
         bg,
         bold:   ci===0 && r._hasIssue,
         color:  r._hasIssue && ci<=1 ? C.red : undefined,
-        fmt:    ci>=3 && typeof v==='number' ? '#,##0.00' : undefined,
+        fmt:    ci>=dataOff && typeof v==='number' ? '#,##0.00' : undefined,
         wrap:   ci===1,
-        align:  ci===0 ? 'center' : ci>=3 && typeof v==='number' ? 'center' : 'right',
+        align:  ci===0 ? 'center' : ci>=dataOff && typeof v==='number' ? 'center' : 'right',
       });
     });
   });
@@ -1846,8 +1857,11 @@ async function exportAll() {
   ws3.getColumn(1).width = 8;
   ws3.getColumn(2).width = Math.min(50, Math.max(10, mxLen(att3Strs.map(r=>r[1]))+2));
   ws3.getColumn(3).width = Math.min(30, Math.max(10, mxLen(att3Strs.map(r=>r[2]))+2));
-  const all3 = [['סטטוס','ממצאים','מקור קובץ',...ah.map(h=>String(h||''))], ...att3Strs];
-  ah.forEach((_,i) => { ws3.getColumn(4+i).width = Math.min(25, Math.max(8, mxLen(all3.map(r=>r[3+i]||''))+2)); });
+  if (_snm3) ws3.getColumn(4).width = Math.min(40, Math.max(14, mxLen(auditAttRows.map(r=>String(r._orig._sheetEmp||'')), 14)+2));
+  const _3off = 3 + (_snm3 ? 1 : 0); // 0-based index where att data starts in att3Strs rows
+  const all3 = [['סטטוס','ממצאים','מקור קובץ',..._snmHdrs,...ah.map(h=>String(h||''))], ...att3Strs];
+  // Excel column for att col i = _3off+1+i (1-indexed: 3 fixed cols + optional snm col + 1-index)
+  ah.forEach((_,i) => { ws3.getColumn(_3off+1+i).width = Math.min(25, Math.max(8, mxLen(all3.map(r=>r[_3off+i]||''))+2)); });
 
   // ═══════════════════════════════════════════════
   // גיליון 4 — רשימת עובדים
