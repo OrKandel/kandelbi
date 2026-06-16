@@ -519,11 +519,21 @@ function confirmTender() {
   const name = document.getElementById('tender-input').value.trim();
   if (!name) return;
 
+  const t = loadTenders();
+
+  // If step2 is already open and showing the saved employee list for this existing tender,
+  // treat a second "המשך" click as "advance to step 3" rather than re-opening step 2.
+  if (t[name]
+      && !document.getElementById('step2-card').classList.contains('hidden')
+      && !document.getElementById('emp-saved-wrap').classList.contains('hidden')) {
+    goToStep3();
+    return;
+  }
+
   currentTender = { name };
   document.getElementById('results-tender-lbl').textContent = name;
   markStep(1, 'done');
 
-  const t = loadTenders();
   if (t[name]) {
     currentTender.employees    = t[name].employees    || [];
     currentTender.requirements = t[name].requirements || null;
@@ -540,6 +550,7 @@ function showStep2Existing() {
   const emps = currentTender.employees || [];
   document.getElementById('step2-card').classList.remove('hidden');
   document.getElementById('s2-note-new').classList.add('hidden');
+  document.getElementById('dz-emp').classList.add('hidden');       // hide upload box — not needed
   document.getElementById('emp-col-map').classList.add('hidden');
   document.getElementById('emp-saved-wrap').classList.remove('hidden');
   markStep(2, 'active');
@@ -558,6 +569,7 @@ function showReplaceEmp() {
   document.getElementById('emp-saved-wrap').classList.add('hidden');
   document.getElementById('emp-col-map').classList.add('hidden');
   document.getElementById('s2-note-new').classList.remove('hidden');
+  document.getElementById('dz-emp').classList.remove('hidden');    // show upload box again for replacement
   resetDZ('dz-emp', '👥', 'העלה רשימת עובדים מאושרים');
   empFileData = { headers: [], rows: [] };
 }
@@ -1556,6 +1568,7 @@ async function exportAll() {
   const _iEmp    = +document.getElementById('col-inv-emp').value;
   const _iRole   = +document.getElementById('col-inv-role').value;
   const _roleMode = _iEmp < 0 && _iRole >= 0;
+  const sheetNameMode = getSheetNameMode();
 
   // ── Color palette ──
   const C = {
