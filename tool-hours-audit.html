@@ -2038,9 +2038,16 @@ function confirmAlias(yes) {
 function toMin(v){
   try{
     if(!v&&v!==0) return -1;
-    if(typeof v==='number') return v<1?v*1440:-1;
-    const m=String(v).trim().match(/(\d{1,2}):(\d{2})/);
-    return m ? parseInt(m[1])*60+parseInt(m[2]) : -1;
+    if(typeof v==='number') return v<1?Math.round(v*1440):-1;
+    const s=String(v).trim();
+    // Match HH:MM[:SS] optionally followed by AM/PM (handles both 12h and 24h formats)
+    const m=s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM|am|pm)?/);
+    if(!m) return -1;
+    let h=parseInt(m[1]), min=parseInt(m[2]);
+    const mer=(m[3]||'').toUpperCase();
+    if(mer==='PM'&&h<12) h+=12;
+    if(mer==='AM'&&h===12) h=0;
+    return h*60+min;
   }catch{return -1;}
 }
 function fmtMin(m){ if(m<0)return '--'; return Math.floor(m/60)+':'+String(Math.round(m)%60).padStart(2,'0'); }
