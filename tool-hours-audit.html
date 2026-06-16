@@ -2097,7 +2097,7 @@ function applyHeaderRow(obj, idx){
 
 function headerRowSelectorHtml(obj, selId, onchangeFn){
   if(!obj||!obj.allRows||obj.allRows.length<=1) return '';
-  const n = Math.min(obj.allRows.length, 8);
+  const n = Math.min(obj.allRows.length, 20);
   const opts = Array.from({length:n},(_,i)=>{
     const rowCells = obj.allRows[i]||[];
     const preview = rowCells.slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');

@@ -303,7 +303,7 @@ function getRowsFromWb(wb, sheetName){
 }
 function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
   if(!allRows||allRows.length<=1) return '';
-  const n=Math.min(allRows.length,8);
+  const n=Math.min(allRows.length,20);
   const opts=Array.from({length:n},(_,i)=>{
     const preview=(allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,18)).filter(Boolean).join(' | ');
     return `<option value="${i}"${(currentIdx||0)===i?' selected':''}>${'שורה '+(i+1)+(i===0?' (ברירת מחדל)':'')}: ${preview.replace(/</g,'&lt;')}</option>`;

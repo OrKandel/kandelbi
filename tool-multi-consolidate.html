@@ -341,7 +341,7 @@ function autoDetectHdrRow(rows) {
 function buildHdrRowSel() {
   const first = filesData[0]; if (!first || !first.rows) return;
   const rows = first.rows;
-  const n = Math.min(rows.length, 8);
+  const n = Math.min(rows.length, 20);
   const autoIdx = autoDetectHdrRow(rows);
   const sel = document.getElementById('hdr-row');
   sel.innerHTML = Array.from({length: n}, (_, i) => {
