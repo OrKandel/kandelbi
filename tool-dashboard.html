@@ -378,15 +378,27 @@ function runPivot(){
 
 function toggleSort(){sortAsc=!sortAsc;runPivot();}
 
+function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
+function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
 function exportPivot(){
   const g1=parseInt(document.getElementById('col-group1').value);
-  const cv=parseInt(document.getElementById('col-value').value);
   const func=document.getElementById('agg-func').value;
+  const funcLabel={sum:'סכום',count:'ספירה',avg:'ממוצע',max:'מקסימום',min:'מינימום'};
   const grandTotal=pivotData.reduce((s,r)=>s+r.total,0);
-  const rows=[[headers[g1],'ערך','ספירה','%'],...pivotData.map(r=>[r.k1,r.total,r.count,grandTotal?Math.round(r.total/grandTotal*100):0])];
+  const hdrRow=[headers[g1],funcLabel[func]||'ערך','ספירת שורות','%'];
+  const dataRows=pivotData.map(r=>[r.k1,r.total,r.count,grandTotal?Math.round(r.total/grandTotal*100):0]);
+  const ws=_xlsSheet(hdrRow,dataRows,{
+    hFill:'1E3A5F',
+    colWidths:[30,16,14,10],
+    getStyle:(val,ri,ci)=>{
+      if(ci===1&&typeof val==='number') return{bg:ri%2===0?'EFF6FF':'E0EDFF'};
+      if(ci===3&&typeof val==='number') return{bg:ri%2===0?'F0FDF4':'E0F7E9',tc:'1A6E3A'};
+      return null;
+    }
+  });
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'פילוח');
-  XLSX.writeFile(wb,'דשבורד_פילוח.xlsx');
+  XLSX.utils.book_append_sheet(wb,ws,'פילוח');
+  XLSX.writeFile(wb,'דשבורד_פילוח.xlsx',{cellStyles:true});
 }
 </script>
 </body>

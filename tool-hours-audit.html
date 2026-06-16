@@ -1425,12 +1425,12 @@ function renderInvoiceTable() {
 
   let html = `<table><thead><tr>
     ${ih.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}
-    <th>סטטוס</th><th>הערות</th>
+    <th>שעות בדיווח נוכחות</th><th>סטטוס</th><th>הערות</th>
   </tr></thead><tbody>`;
 
   auditInvoiceRows.forEach(r => {
     if (r._skip) {
-      html += `<tr>${r._orig.map(c=>`<td>${escHtml(String(c||''))}</td>`).join('')}<td></td><td></td></tr>`;
+      html += `<tr>${r._orig.map(c=>`<td>${escHtml(String(c||''))}</td>`).join('')}<td></td><td></td><td></td></tr>`;
       return;
     }
     const cls = r._status==='issue' ? 'row-issue' : '';
@@ -1442,6 +1442,9 @@ function renderInvoiceTable() {
         ? `<td><span class="cell-issue">${escHtml(String(cell||''))}</span></td>`
         : `<td>${escHtml(String(cell||''))}</td>`;
     });
+    const attH = r._attH || 0;
+    const attMismatch = attH > 0 && (r._hours||0) > 0 && Math.abs((r._hours||0) - attH) > 0.5;
+    html += `<td class="${attMismatch?'cell-issue':''}" style="text-align:center">${attH > 0 ? attH.toFixed(2) : '—'}</td>`;
     html += `<td class="${r._status==='issue'?'status-issue':'status-ok'}">${r._status==='issue'?'✗':'✓'}</td>`;
     html += `<td class="comment-cell">${r._issues.map(i=>escHtml(i)).join('<br/>')}</td>`;
     html += '</tr>';
@@ -1612,19 +1615,19 @@ async function exportAll() {
   // ═══════════════════════════════════════════════
   // גיליון 1 — גיליון מרכז
   // ═══════════════════════════════════════════════
-  const N1 = 6;
+  const N1 = 7;
   const ws1 = wb.addWorksheet('גיליון מרכז', {views:[{rightToLeft:true}]});
   addTitle(ws1, `דוח בדיקת חשבון — ${tName} — ${todayStr()}`, N1);
   ws1.addRow([]);
 
   // ── §1: כל שורות החשבון ──
   addSec(ws1, '▼ ממצאים בחשבון — כל שורות החשבון', N1);
-  addHdr(ws1, [_roleMode?'תפקיד':'שם עובד','שעות בחשבון','תעריף מחויב (₪)','תעריף מאושר (₪)','סטטוס','ממצאים']);
+  addHdr(ws1, [_roleMode?'תפקיד':'שם עובד','שעות בחשבון','תעריף מחויב (₪)','שעות בדיווח נוכחות','תעריף ברשימת תעריפים (₪)','סטטוס','ממצאים']);
   auditInvoiceRows.forEach((r, ri) => {
     if (r._skip) {
-      const row = ws1.addRow([r._orig.join(' | '),'','','','שורת סיכום','']);
+      const row = ws1.addRow([r._orig.join(' | '),'','','','','שורת סיכום','']);
       row.height = 14;
-      [1,2,3,4,5,6].forEach(i => dStyle(row.getCell(i), {color:C.gray, wrap:i===6}));
+      [1,2,3,4,5,6,7].forEach(i => dStyle(row.getCell(i), {color:C.gray, wrap:i===7}));
       return;
     }
     const isIssue = r._status === 'issue';
@@ -1632,14 +1635,17 @@ async function exportAll() {
     const empOrRole = _roleMode
       ? (r._role||'') + (r._emp ? `\n(${r._emp})` : '')
       : (r._emp||'');
-    const row = ws1.addRow([empOrRole, r._hours||0, r._rate||0, r._approvedRate||0, isIssue?'✗':'✓', r._issues.join('; ')]);
+    const attHrsMismatch = r._attH > 0 && r._hours > 0 && Math.abs(r._hours - r._attH) > 0.5;
+    const attBg = attHrsMismatch ? C.redBg : bg;
+    const row = ws1.addRow([empOrRole, r._hours||0, r._rate||0, r._attH||0, r._approvedRate||0, isIssue?'✗':'✓', r._issues.join('; ')]);
     row.height = 18;
     dStyle(row.getCell(1), {bg});
     dStyle(row.getCell(2), {bg, fmt:'#,##0.00', align:'center'});
     dStyle(row.getCell(3), {bg, fmt:'#,##0.00', align:'center'});
-    dStyle(row.getCell(4), {bg, fmt:'#,##0.00', align:'center'});
-    dStyle(row.getCell(5), {bg, bold:true, color:isIssue?C.red:C.green, align:'center'});
-    dStyle(row.getCell(6), {bg, wrap:true});
+    dStyle(row.getCell(4), {bg:attBg, fmt:'#,##0.00', align:'center', bold:attHrsMismatch});
+    dStyle(row.getCell(5), {bg, fmt:'#,##0.00', align:'center'});
+    dStyle(row.getCell(6), {bg, bold:true, color:isIssue?C.red:C.green, align:'center'});
+    dStyle(row.getCell(7), {bg, wrap:true});
   });
   ws1.addRow([]);
 
@@ -1749,7 +1755,7 @@ async function exportAll() {
       dStyle(row.getCell(6), {bg, wrap:true});
     });
   } else {
-    ws1.addRow(['אין עובדים ברשימה','','','','','']);
+    ws1.addRow(['אין עובדים ברשימה','','','','','','']);
   }
 
   // Column widths — sheet 1 (fixed, designed to fit all 3 sections)
@@ -1757,12 +1763,15 @@ async function exportAll() {
   ws1.getColumn(1).width = Math.min(50, Math.max(30, mxLen(empNames.concat(aFinds.map(f=>f[0]),'שם עובד'))));
   ws1.getColumn(2).width = 14;
   ws1.getColumn(3).width = 16;
+  // col 4: §1=שעות בדיווח נוכחות(num) | §2=עובדים רלוונטיים(long) | §3=תעריף מאושר(num) → driven by §2
   ws1.getColumn(4).width = Math.min(50, Math.max(20, mxLen(aFinds.map(f=>String(f[3]||'')), 20)+2));
-  // col 5: §1=סטטוס(1chr) | §2=הסבר(long) | §3=שעות בתקופה(num) → driven by §2
+  // col 5: §1=תעריף ברשימת תעריפים(num) | §2=הסבר(long) | §3=שעות בתקופה(num) → driven by §2
   ws1.getColumn(5).width = Math.min(50, Math.max(14, mxLen(aFinds.map(f=>String(f[4]||'')), 14)+2));
-  // col 6: §1=ממצאים(long) | §2='' | §3=הערה(25chr) → driven by §1 and §3
+  // col 6: §1=סטטוס(✗/✓) | §2='' | §3=הערה(25chr) → driven by §3
   const _emp6Notes = employees.map(e=>{ const h=attHrById[nId(e.id||'')]||attHrByName[nName(e.name||'')]||0; return h===0?'לא נמצאו שעות בתקופה זו':''; });
-  ws1.getColumn(6).width = Math.min(50, Math.max(14, mxLen([...auditInvoiceRows.filter(r=>!r._skip).map(r=>r._issues.join('; ')), ..._emp6Notes], 14)+2));
+  ws1.getColumn(6).width = Math.min(30, Math.max(8, mxLen(_emp6Notes, 8)+2));
+  // col 7: §1=ממצאים(long) | §2=N/A | §3=N/A → driven by §1
+  ws1.getColumn(7).width = Math.min(50, Math.max(14, mxLen(auditInvoiceRows.filter(r=>!r._skip).map(r=>r._issues.join('; ')), 14)+2));
 
   // ═══════════════════════════════════════════════
   // גיליון 2 — חשבון

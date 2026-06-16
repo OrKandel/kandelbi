@@ -509,16 +509,25 @@ function rebuildResultTable() {
 }
 
 /* ───── EXPORT ───── */
+function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
+function _xlsSheet(headers,dataRows,opts={}){const ws={};const nC=headers.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};headers.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
+function _xlsAutoW(headers,rows){return headers.map((h,ci)=>{const max=rows.reduce((mx,r)=>Math.max(mx,String(r[ci]??'').length),0);return Math.min(Math.max(String(h||'').length+3,max+3,9),48);});}
 function exportExcel() {
-  const ws = XLSX.utils.aoa_to_sheet([consolidated.headers, ...consolidated.rows]);
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let c = range.s.c; c <= range.e.c; c++) {
-    const addr = XLSX.utils.encode_cell({ r: 0, c });
-    if (ws[addr]) ws[addr].s = { font: { bold: true } };
-  }
+  const headers = consolidated.headers;
+  const dataRows = consolidated.rows;
+  const colWidths = _xlsAutoW(headers, dataRows);
+  const ws = _xlsSheet(headers, dataRows, {
+    hFill: '0D1F3C',
+    colWidths,
+    getStyle: (val, ri, ci) => {
+      if (ci < 2) return { bg: ri%2===0?'EFF3FF':'E6ECFB', tc:'0D1F3C', b: true };
+      if (typeof val === 'number' && val > 0) return { bg: ri%2===0?'FFFFFF':'F7F9FC' };
+      return null;
+    }
+  });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'מאוחד');
-  XLSX.writeFile(wb, 'טבלה-מאוחדת.xlsx');
+  XLSX.writeFile(wb, 'טבלה-מאוחדת.xlsx', {cellStyles:true});
 }
 </script>
 </body>

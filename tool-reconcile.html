@@ -618,19 +618,37 @@ function filterResults(status,btn){
   renderResults(filtered);
 }
 
+function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
+function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
+function _xlsAutoW(hdrs,rows){return hdrs.map((h,ci)=>{const max=rows.reduce((mx,r)=>Math.max(mx,String(r[ci]??'').length),0);return Math.min(Math.max(String(h||'').length+3,max+3,9),48);});}
 function exportResults(){
   const groupHeaders=groupCols.map(g=>g.label);
-  const header=[...groupHeaders,'סכום פירוט ₪','סכום סיכום ₪','הפרש ₪','סטטוס'];
-  const rows=allResults.map(r=>[
+  const nGroup=groupHeaders.length;
+  const hdrs=[...groupHeaders,'סכום פירוט ₪','סכום סיכום ₪','הפרש ₪','סטטוס'];
+  const statusColIdx=hdrs.length-1;
+  const dataRows=allResults.map(r=>[
     ...r.keyVals,
     r.detailSum??'',
     r.summarySum??'',
     r.diff??'',
     r.status==='ok'?'התאמה':r.status==='diff'?'הפרש':r.status==='missing'?'חסר בסיכום':'עודף בסיכום'
   ]);
+  const ws=_xlsSheet(hdrs,dataRows,{
+    hFill:'0D1F3C',
+    colWidths:_xlsAutoW(hdrs,dataRows),
+    getStyle:(val,ri,ci)=>{
+      if(ci===statusColIdx){
+        if(val==='התאמה')       return{bg:ri%2===0?'D9EFD2':'C8E6C0',tc:'1A5E1A',b:true};
+        if(val==='הפרש')        return{bg:ri%2===0?'FDECEA':'FADADD',tc:'8B0000',b:true};
+        if(val==='חסר בסיכום'||val==='עודף בסיכום') return{bg:ri%2===0?'FFF9C4':'FFF3A0',tc:'7A5500',b:true};
+      }
+      if(ci===statusColIdx-1&&typeof val==='number'&&val!==0) return{bg:ri%2===0?'FDECEA':'FADADD',tc:'8B0000',b:true};
+      return null;
+    }
+  });
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([header,...rows]),'השוואה');
-  XLSX.writeFile(wb,'השוואת_פירוט_סיכום.xlsx');
+  XLSX.utils.book_append_sheet(wb,ws,'השוואה');
+  XLSX.writeFile(wb,'השוואת_פירוט_סיכום.xlsx',{cellStyles:true});
 }
 
 function resetTool(){

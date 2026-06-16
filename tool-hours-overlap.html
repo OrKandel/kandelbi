@@ -1183,7 +1183,7 @@ function exportFindings(){
     ),safeSheetName(m.label));
   });
 
-  XLSX.writeFile(wb,'ממצאי_בדיקת_שעות.xlsx');
+  XLSX.writeFile(wb,'ממצאי_בדיקת_שעות.xlsx',{cellStyles:true});
 }
 
 // ── ייצוא דוחות מוערכים ──
@@ -1275,7 +1275,7 @@ function exportAnnotated(){
     XLSX.utils.book_append_sheet(wb,ws,sheetName);
   });
 
-  XLSX.writeFile(wb,'דוחות_מוערכים.xlsx');
+  XLSX.writeFile(wb,'דוחות_מוערכים.xlsx',{cellStyles:true});
 }
 
 // ── אתחול ──
