@@ -275,17 +275,22 @@ function sheetSelectorHtml(wb, selId, onchangeFn){
 function unmergeSheet(ws) {
   if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
   const out = Object.assign({}, ws);
+  const rowCols = {};
+  Object.keys(ws).forEach(key => {
+    if (key[0] === '!') return;
+    try { const {r,c}=XLSX.utils.decode_cell(key); if(ws[key]&&ws[key].v!==''&&ws[key].v!=null)(rowCols[r]||(rowCols[r]=new Set())).add(c); } catch(e){}
+  });
   ws['!merges'].forEach(m => {
     const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
     if (!src) return;
-    for (let r = m.s.r; r <= m.e.r; r++)
+    for (let r = m.s.r + 1; r <= m.e.r; r++) {
+      const cols = rowCols[r];
+      if (!cols || ![...cols].some(c => c < m.s.c || c > m.e.c)) continue;
       for (let c = m.s.c; c <= m.e.c; c++) {
-        if (r === m.s.r) continue;
         const addr = XLSX.utils.encode_cell({r, c});
-        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
-          out[addr] = {...src};
-        }
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) out[addr] = {...src};
       }
+    }
   });
   return out;
 }

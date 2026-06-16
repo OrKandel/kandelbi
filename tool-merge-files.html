@@ -185,20 +185,30 @@ let globalSelectedSheets = []; // active selection in uniform mode
 function unmergeSheet(ws) {
   if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
   const out = Object.assign({}, ws);
+  // מיפוי מקדים: אילו עמודות יש ערכים אמיתיים בכל שורה
+  const rowCols = {};
+  Object.keys(ws).forEach(key => {
+    if (key[0] === '!') return;
+    try {
+      const {r, c} = XLSX.utils.decode_cell(key);
+      if (ws[key] && ws[key].v !== '' && ws[key].v != null)
+        (rowCols[r] || (rowCols[r] = new Set())).add(c);
+    } catch(e) {}
+  });
   ws['!merges'].forEach(m => {
     const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
     if (!src) return;
-    // מלא רק תאים שנמצאים מתחת לתא המקור (מיזוג אנכי כלפי מטה)
-    // תאים באותה שורה כמו המקור אבל בעמודות שונות (מיזוג אופקי) — גם ממלאים
-    for (let r = m.s.r; r <= m.e.r; r++)
+    // מלא רק שורות מתחת לשורה הראשונה (אנכי בלבד)
+    // ורק אם לשורה יש נתונים עצמאיים מחוץ לטווח עמודות המיזוג (למנוע שורות-רוח ממיזוג ויזואלי)
+    for (let r = m.s.r + 1; r <= m.e.r; r++) {
+      const cols = rowCols[r];
+      if (!cols || ![...cols].some(c => c < m.s.c || c > m.e.c)) continue;
       for (let c = m.s.c; c <= m.e.c; c++) {
-        if (r === m.s.r) continue; // דלג על כל התאים בשורת המיזוג העליונה (אופקי) — מלא רק שורות מתחת (אנכי)
-        // אל תדרוס תא שכבר יש בו ערך (לדוגמה: תא בשורת הנתונים שהמיזוג "חודר" לתוכו מלמעלה)
         const addr = XLSX.utils.encode_cell({r, c});
-        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null)
           out[addr] = {...src};
-        }
       }
+    }
   });
   return out;
 }
