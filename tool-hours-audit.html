@@ -1569,6 +1569,7 @@ async function exportAll() {
   const _iRole   = +document.getElementById('col-inv-role').value;
   const _roleMode = _iEmp < 0 && _iRole >= 0;
   const sheetNameMode = getSheetNameMode();
+  const allAtt = buildAllAttRows(sheetNameMode);
 
   // ── Color palette ──
   const C = {
