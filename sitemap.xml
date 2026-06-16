@@ -74,11 +74,6 @@
     <priority>0.8</priority>
   </url>
 
-  <url>
-    <loc>https://kandelbi.org/tool-outlier-dashboard.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
 <url>
     <loc>https://kandelbi.org/vba-guide.html</loc>

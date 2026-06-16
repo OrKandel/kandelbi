@@ -254,7 +254,15 @@ tr.row-issue:hover td{background:#fde8e8}
   <div id="att-sheet-sel-wrap"></div>
   <div id="att-hdr-sel-wrap"></div>
   <div class="grid2">
-    <div class="form-group"><label>מזהה עובד (ת.ז / שם):</label><select id="col-att-emp"></select></div>
+    <div class="form-group" id="att-emp-col-wrap">
+      <label>מזהה עובד (ת.ז / שם):</label>
+      <select id="col-att-emp"></select>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:5px;font-size:0.8rem;color:var(--navy);cursor:pointer;font-weight:400">
+        <input type="checkbox" id="att-sheet-name-mode" onchange="toggleSheetNameMode()" style="accent-color:var(--blue);cursor:pointer"/>
+        שם הגיליון = שם העובד
+      </label>
+      <div id="att-sheet-name-note" style="display:none;font-size:0.76rem;color:var(--muted);margin-top:3px">שם כל גיליון בדיווח הנוכחות יותאם לשם העובד ברשימה ובחשבון</div>
+    </div>
     <div class="form-group"><label>תאריך:</label><select id="col-att-date"></select></div>
     <div class="form-group"><label>שעת כניסה:</label><select id="col-att-start"></select></div>
     <div class="form-group"><label>שעת יציאה:</label><select id="col-att-end"></select></div>
@@ -975,9 +983,39 @@ function changeInvHeaderRow(idx) {
   buildInvColSelects();
 }
 
+// ── SHEET-NAME MODE ──
+function getSheetNameMode() {
+  return document.getElementById('att-sheet-name-mode')?.checked || false;
+}
+function toggleSheetNameMode() {
+  const on = getSheetNameMode();
+  const sel = document.getElementById('col-att-emp');
+  sel.disabled = on;
+  sel.style.opacity = on ? '0.35' : '';
+  document.getElementById('att-sheet-name-note').style.display = on ? 'block' : 'none';
+}
+/* בונה את כל שורות הנוכחות:
+   במצב רגיל — מהגיליון הנבחר בכל קובץ.
+   במצב "שם גיליון" — מכל גיליון בכל קובץ, כאשר _sheetEmp = שם הגיליון. */
+function buildAllAttRows(sheetNameMode) {
+  if (!sheetNameMode) {
+    return attFilesList.flatMap(f => f.data.rows.map(r => ({...r, _src: f.name})));
+  }
+  return attFilesList.flatMap(f => {
+    if (!f.data.wb) return f.data.rows.map(r => ({...r, _sheetEmp: f.name, _src: f.name}));
+    const hdrIdx = f.data.headerRowIdx || 0;
+    return f.data.wb.SheetNames.flatMap(sheetName => {
+      const allRows = getRowsFromWbAudit(f.data.wb, sheetName);
+      return allRows.slice(hdrIdx + 1).filter(r => r.some(c => c !== ''))
+        .map(r => ({...r, _sheetEmp: sheetName, _src: f.name}));
+    });
+  });
+}
+
 // ── MAIN AUDIT ──
 function runFullAudit() {
-  const aEmp   = +document.getElementById('col-att-emp').value;
+  const sheetNameMode = getSheetNameMode();
+  const aEmp   = sheetNameMode ? '_sheetEmp' : +document.getElementById('col-att-emp').value;
   const aDate  = +document.getElementById('col-att-date').value;
   const aStart = +document.getElementById('col-att-start').value;
   const aEnd   = +document.getElementById('col-att-end').value;
@@ -996,7 +1034,7 @@ function runFullAudit() {
   }
 
   // Merge attendance rows
-  const allAtt = attFilesList.flatMap(f => f.data.rows.map(r => ({ ...r, _src: f.name })));
+  const allAtt = buildAllAttRows(sheetNameMode);
   const attHeaders = attFilesList[0]?.data.headers || [];
   const employees = currentTender?.employees || [];
 
@@ -1278,11 +1316,12 @@ function runFullAudit() {
 
 // ── ROUND HOURS CHECK ──
 function checkRoundHours() {
-  const aEmp   = +document.getElementById('col-att-emp').value;
+  const sheetNameMode = getSheetNameMode();
+  const aEmp   = sheetNameMode ? '_sheetEmp' : +document.getElementById('col-att-emp').value;
   const aDate  = +document.getElementById('col-att-date').value;
   const aStart = +document.getElementById('col-att-start').value;
   const aEnd   = +document.getElementById('col-att-end').value;
-  const allAtt = attFilesList.flatMap(f => f.data.rows);
+  const allAtt = buildAllAttRows(sheetNameMode);
 
   // סה"כ שעות יומי עגול
   const daily = {};
@@ -1437,14 +1476,16 @@ function renderEmployeesTab() {
   }
   const iEmp = +document.getElementById('col-inv-emp').value;
   const iRole = +document.getElementById('col-inv-role').value;
-  const aEmp = +document.getElementById('col-att-emp').value;
+  const sheetNameMode = getSheetNameMode();
+  const aEmp = sheetNameMode ? '_sheetEmp' : +document.getElementById('col-att-emp').value;
   const useRoleMode = iEmp < 0 && iRole >= 0;
   // Invoice lookup: by name (name mode) or by role (role mode)
   const invIds   = useRoleMode ? new Set() : new Set(invFileData.rows.map(r=>nId(String(r[iEmp]||''))));
   const invNames = useRoleMode ? new Set() : new Set(invFileData.rows.map(r=>nName(String(r[iEmp]||''))));
   const invRoles = useRoleMode ? new Set(invFileData.rows.map(r=>String(r[iRole]||'').trim().toLowerCase()).filter(Boolean)) : new Set();
-  const attIds   = new Set(attFilesList.flatMap(f=>f.data.rows.map(r=>nId(String(r[aEmp]||'')))));
-  const attNames = new Set(attFilesList.flatMap(f=>f.data.rows.map(r=>nName(String(r[aEmp]||'')))));
+  const allAttForEmp = buildAllAttRows(sheetNameMode);
+  const attIds   = new Set(allAttForEmp.map(r=>nId(String(r[aEmp]||''))));
+  const attNames = new Set(allAttForEmp.map(r=>nName(String(r[aEmp]||''))));
 
   const unauth = useRoleMode ? [] :
     [...new Set(invFileData.rows.map(r=>String(r[iEmp]||'').trim()))]
