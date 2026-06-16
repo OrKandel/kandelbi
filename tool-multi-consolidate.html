@@ -145,8 +145,6 @@ tr:hover td{background:var(--bg)}
     <div class="preview-wrap" id="result-table-wrap"></div>
     <div class="btn-row">
       <button class="btn btn-accent" onclick="exportExcel()">⬇ הורד כאקסל</button>
-      <button class="btn btn-green" onclick="openDashboard()">📊 פתח בדשבורד חריגים ←</button>
-      <button class="btn btn-outline" onclick="goStep1()">← העלה קבצים נוספים</button>
     </div>
   </div>
 </div>
@@ -202,6 +200,17 @@ function unmergeSheet(ws) {
 }
 function getSheetRows(wb, sheetName) {
   return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]]), { header: 1, defval: '' });
+}
+/* פרסר ערך תא — מטפל גם במספרים רגילים וגם בשעות/משכי זמן (כגון 10:30) */
+function parseCellNum(ws, r, c, fallbackRaw) {
+  const cell = ws[XLSX.utils.encode_cell({r, c})];
+  // תא מסוג שעה/משך זמן: הערך המפורמט (.w) נראה כמו "10:30" או "1:30:00"
+  if (cell && cell.t === 'n' && cell.w && /^\d+:\d{2}(:\d{2})?$/.test(cell.w)) {
+    const parts = cell.w.split(':').map(Number);
+    return parts[0] + (parts[1] || 0) / 60 + (parts[2] || 0) / 3600;
+  }
+  const raw = String(fallbackRaw ?? (cell ? cell.v : '') ?? '').replace(/,/g,'').replace(/[₪$€]/g,'').trim();
+  return parseFloat(raw);
 }
 
 /* ── Per-file sheet selection ── */
@@ -448,14 +457,17 @@ function processAll() {
   for (const fd of filesData) {
     const sheets = fd.selectedSheets && fd.selectedSheets.length ? fd.selectedSheets : [fd.wb.SheetNames[0]];
     for (const sheetName of sheets) {
-      const rows = getSheetRows(fd.wb, sheetName);
+      const rawWs = fd.wb.Sheets[sheetName] || fd.wb.Sheets[fd.wb.SheetNames[0]];
+      const ws = unmergeSheet(rawWs);
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      const range = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : {s:{r:0,c:0}};
+      const rOff = range.s.r, cOff = range.s.c;
       const data = {};
       for (let i = hdrIdx + 1; i < rows.length; i++) {
         const row = rows[i] || [];
         if (!row.some(c => c !== '' && c != null)) continue;
         const cat = String(row[colCat] ?? '').trim();
-        const raw = String(row[colVal] ?? '').replace(/,/g, '').replace(/[₪$€]/g, '').trim();
-        const val = parseFloat(raw);
+        const val = parseCellNum(ws, rOff + i, cOff + colVal, row[colVal]);
         if (cat && !isNaN(val)) { data[cat] = (data[cat] || 0) + val; allCats.add(cat); }
       }
       entities.push({ fileName: fd.name, sheetName, data });
@@ -479,7 +491,7 @@ function renderResult() {
   document.getElementById('result-stats').innerHTML = [
     { val: filesData.length, lbl: 'קבצים עובדו' },
     { val: consolidated.rows.length, lbl: 'גיליונות (שורות)' },
-    { val: consolidated.headers.length - 2, lbl: 'סעיפים' }
+    { val: consolidated.headers.length - 2, lbl: 'ערכים ייחודיים' }
   ].map(s => `<div class="stat"><span class="stat-val">${s.val}</span><span class="stat-lbl">${s.lbl}</span></div>`).join('');
   rebuildResultTable();
 }
@@ -507,14 +519,6 @@ function exportExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'מאוחד');
   XLSX.writeFile(wb, 'טבלה-מאוחדת.xlsx');
-}
-
-/* ───── OPEN DASHBOARD ───── */
-function openDashboard() {
-  try {
-    sessionStorage.setItem('consolidatedData', JSON.stringify({ headers: consolidated.headers, rows: consolidated.rows }));
-    window.open('tool-outlier-dashboard.html', '_blank');
-  } catch(e) { alert('הורידו את הקובץ והעלו אותו לדשבורד.'); }
 }
 </script>
 </body>

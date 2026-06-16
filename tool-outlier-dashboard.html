@@ -238,6 +238,25 @@ function unmergeSheet(ws) {
   });
   return out;
 }
+/* המרת גיליון לשורות — תאי שעה/משך (כגון 10:30) מומרים לשעות עשרוניות (10.5) */
+function wsToRowsTimeAware(ws) {
+  const ref = ws['!ref']; if (!ref) return [];
+  const range = XLSX.utils.decode_range(ref);
+  const rows = [];
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const row = [];
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({r, c})];
+      if (!cell) { row.push(''); continue; }
+      if (cell.t === 'n' && cell.w && /^\d+:\d{2}(:\d{2})?$/.test(cell.w)) {
+        const parts = cell.w.split(':').map(Number);
+        row.push(parts[0] + (parts[1]||0)/60 + (parts[2]||0)/3600);
+      } else { row.push(cell.v !== undefined ? cell.v : ''); }
+    }
+    rows.push(row);
+  }
+  return rows;
+}
 function loadFile(file) {
   if (!file) return;
   dz.classList.remove('drag','loaded');
@@ -247,7 +266,7 @@ function loadFile(file) {
   r.onload = ev => {
     const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(unmergeSheet(ws), {header:1, defval:''});
+    const rows = wsToRowsTimeAware(unmergeSheet(ws));
     const headers = rows[0] || [];
     const dataRows = rows.slice(1).filter(r => r.some(c => c !== ''));
     ingestRaw(headers, dataRows);
