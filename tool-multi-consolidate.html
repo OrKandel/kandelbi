@@ -92,7 +92,7 @@ tr:hover td{background:var(--bg)}
 <div id="step1">
   <div class="card">
     <div class="card-title">📁 העלאת קבצים</div>
-    <div class="info-box">כל קובץ מייצג ישות אחת (סניף, גוף, ספק וכד'). אפשר להעלות גם כמה קבצים לאותה ישות — תקופות שונות. הקבצים חייבים להיות באותו מבנה.</div>
+    <div class="info-box">כל קובץ מייצג ישות אחת (סניף, גוף, ספק וכד'). כל <strong>גיליון</strong> בקובץ יהפוך לשורה נפרדת בפלט. הקבצים חייבים להיות באותו מבנה.</div>
     <div class="upload-zone" id="dz" onclick="document.getElementById('fi').click()">
       <div class="uz-icon">📊</div>
       <div class="uz-text">לחצו לבחירת קבצים או גררו לכאן</div>
@@ -100,7 +100,7 @@ tr:hover td{background:var(--bg)}
     </div>
     <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
     <div class="file-chips" id="chips"></div>
-    <div id="global-sheet-wrap"></div>
+    <div id="files-list-wrap"></div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-next1" disabled onclick="goStep2()">הגדרת מבנה ←</button>
     </div>
@@ -111,7 +111,7 @@ tr:hover td{background:var(--bg)}
 <div id="step2" class="hidden">
   <div class="card">
     <div class="card-title">⚙️ הגדרת מבנה הקובץ</div>
-    <div class="warn-box">📋 להלן תצוגה מקדימה של הקובץ הראשון. בחרו איזו עמודה מכילה את <strong>שם הסעיף</strong> ואיזו את <strong>הערך המספרי</strong>.</div>
+    <div class="warn-box">📋 להלן תצוגה מקדימה של הגיליון הראשון. בחרו איזו עמודה מכילה את <strong>שם הסעיף</strong> ואיזו את <strong>הערך המספרי</strong>. הבחירה תחול על כל הגיליונות בכל הקבצים.</div>
     <div class="preview-wrap" id="preview-table-wrap"></div>
     <div style="margin-top:1rem;margin-bottom:1rem">
       <div style="background:#fff8ed;border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;font-size:0.82rem">
@@ -130,13 +130,6 @@ tr:hover td{background:var(--bg)}
         <select id="col-val" onchange="refreshPreview()"></select>
       </div>
     </div>
-    <div class="fg" style="margin-bottom:1rem">
-      <label>שם הישות ייקבע לפי: </label>
-      <select id="entity-source">
-        <option value="filename">שם הקובץ (ברירת מחדל)</option>
-        <option value="manual">ידני — אקבע בעצמי</option>
-      </select>
-    </div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="goStep1()">← חזרה</button>
       <button class="btn btn-primary" onclick="processAll()">עבד את כל הקבצים ←</button>
@@ -149,12 +142,6 @@ tr:hover td{background:var(--bg)}
   <div class="card">
     <div class="card-title">✅ טבלה מאוחדת</div>
     <div class="result-stats" id="result-stats"></div>
-
-    <div id="entity-names-edit" class="hidden" style="margin-bottom:1rem">
-      <div style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--navy)">ערכו את שמות הישויות לפני הייצוא:</div>
-      <div id="names-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
-    </div>
-
     <div class="preview-wrap" id="result-table-wrap"></div>
     <div class="btn-row">
       <button class="btn btn-accent" onclick="exportExcel()">⬇ הורד כאקסל</button>
@@ -171,10 +158,8 @@ tr:hover td{background:var(--bg)}
 </main>
 
 <script>
-let filesData = []; // [{file, name, rows, wb, selectedSheets}]
+let filesData = []; // [{file, name, wb, rows, selectedSheets}]
 let consolidated = null; // {headers:[], rows:[][]}
-let uniformSheets = null;
-let globalSelectedSheets = [];
 
 /* ───── DRAG & DROP ───── */
 const dz = document.getElementById('dz');
@@ -192,71 +177,108 @@ function handleFiles(fileList) {
   readAllFiles();
 }
 
-/* ── HELPERS: rows from sheet(s) ── */
-function loadRowsFromSheets(wb, sheets) {
-  if (!sheets || !sheets.length) sheets = [wb.SheetNames[0]];
-  if (sheets.length === 1) {
-    return XLSX.utils.sheet_to_json(wb.Sheets[sheets[0]] || wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
-  }
-  let all = [];
-  sheets.forEach((name, i) => {
-    const ws = wb.Sheets[name]; if (!ws) return;
-    const r = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    if (i === 0) all.push(...r); else all.push(...r.slice(1));
+/* ── HELPERS ── */
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
   });
-  return all;
+  return out;
+}
+function getSheetRows(wb, sheetName) {
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]]), { header: 1, defval: '' });
 }
 
-/* ── UNIFORM SHEET DETECTION ── */
-function detectUniformSheetsCons() {
-  if (!filesData.some(d => d.wb && d.wb.SheetNames.length > 1)) return null;
-  const first = filesData[0].wb.SheetNames;
-  if (filesData.every(d => {
-    if (!d.wb) return false;
-    const n = d.wb.SheetNames;
-    return n.length === first.length && n.every((s, i) => s === first[i]);
-  })) return [...first];
-  return null;
-}
-function renderGlobalSheetSelectorCons() {
-  const wrap = document.getElementById('global-sheet-wrap'); if (!wrap) return;
-  if (!uniformSheets || uniformSheets.length <= 1) { wrap.innerHTML = ''; return; }
-  const items = uniformSheets.map(name => {
-    const chk = globalSelectedSheets.includes(name) ? 'checked' : '';
+/* ── Per-file sheet selection ── */
+function perFileSheetHtml(wb, fi) {
+  if (!wb || !wb.SheetNames || wb.SheetNames.length <= 1) return '';
+  const fd = filesData[fi];
+  const selected = fd ? (fd.selectedSheets || [wb.SheetNames[0]]) : [wb.SheetNames[0]];
+  const items = wb.SheetNames.map(name => {
+    const ws = wb.Sheets[name];
+    let rowCount = 0;
+    try { const rng = XLSX.utils.decode_range(ws['!ref'] || 'A1'); rowCount = rng.e.r - rng.s.r + 1; } catch {}
+    const chk = selected.includes(name) ? 'checked' : '';
     const esc = name.replace(/"/g, '&quot;');
     return `<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap">
-      <input type="checkbox" data-conssheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
-      <span>${name}</span></label>`;
+      <input type="checkbox" data-fi="${fi}" data-sheet="${esc}" ${chk} style="accent-color:var(--blue);cursor:pointer"/>
+      <span>${name} <span style="color:#9aa5bb">(${rowCount} שורות)</span></span>
+    </label>`;
   });
-  wrap.innerHTML = `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:9px;padding:10px 14px;margin-top:.8rem">
-    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.85rem">📋 כל הקבצים זהים — בחר גיליונות (יוחל על כולם):</div>
-    <div style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
+  const hint = fi === 0
+    ? '<div style="font-size:0.72rem;color:#6b7a99;margin-top:3px">שינוי ידני יוחל לפי שם גיליון · "בחר הכל" יוחל על כל הגיליונות בכל הקבצים</div>'
+    : '<div style="font-size:0.72rem;color:#6b7a99;margin-top:3px">סונכרן מהקובץ הראשון — ניתן לשנות ידנית</div>';
+  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.82rem">📋 בחר גיליונות לעיבוד:</div>
+    <div id="sheet-cbs-cons-${fi}" style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div>
     <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="selectAllConsSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
-      <button onclick="clearConsSheets()" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
-    </div></div>`;
-  wrap.querySelectorAll('input[data-conssheet]').forEach(cb => { cb.onchange = onGlobalConsSheetChange; });
+      <button onclick="selectAllConsSheets(${fi})" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#1e6abf;font-family:inherit">בחר הכל</button>
+      <button onclick="clearConsSheets(${fi})" style="background:none;border:1px solid #c8d9f2;padding:2px 8px;border-radius:5px;font-size:0.76rem;cursor:pointer;color:#6b7a99;font-family:inherit">נקה הכל</button>
+    </div>
+    ${hint}
+  </div>`;
 }
-function onGlobalConsSheetChange() {
-  const checked = Array.from(document.querySelectorAll('input[data-conssheet]'))
-    .filter(cb => cb.checked).map(cb => cb.dataset.conssheet);
-  globalSelectedSheets = checked.length ? checked : [uniformSheets[0]];
-  filesData.forEach(d => {
-    d.selectedSheets = globalSelectedSheets.filter(s => d.wb.SheetNames.includes(s));
-    if (!d.selectedSheets.length) d.selectedSheets = [d.wb.SheetNames[0]];
-    d.rows = loadRowsFromSheets(d.wb, d.selectedSheets);
+function wireSheetCbs(fi) {
+  document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`).forEach(cb => {
+    cb.onchange = () => onFileSheetChange(fi);
   });
-  // אם כבר בשלב 2 — רענן תצוגה מקדימה
-  if (!document.getElementById('step2').classList.contains('hidden')) populateConfig();
 }
-function selectAllConsSheets() {
-  document.querySelectorAll('input[data-conssheet]').forEach(cb => cb.checked = true);
-  onGlobalConsSheetChange();
+function selectAllConsSheets(fi) {
+  document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`).forEach(cb => cb.checked = true);
+  onFileSheetChange(fi, fi === 0);
 }
-function clearConsSheets() {
-  const cbs = Array.from(document.querySelectorAll('input[data-conssheet]'));
+function clearConsSheets(fi) {
+  const cbs = Array.from(document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`));
   cbs.forEach((cb, i) => cb.checked = (i === 0));
-  onGlobalConsSheetChange();
+  onFileSheetChange(fi);
+}
+function onFileSheetChange(idx, fromSelectAll) {
+  const fd = filesData[idx]; if (!fd || !fd.wb) return;
+  const checked = Array.from(document.querySelectorAll(`input[data-fi="${idx}"][data-sheet]`))
+    .filter(cb => cb.checked).map(cb => cb.dataset.sheet);
+  fd.selectedSheets = checked.length ? checked : [fd.wb.SheetNames[0]];
+  if (idx === 0) fd.rows = getSheetRows(fd.wb, fd.selectedSheets[0]);
+  if (idx === 0) {
+    filesData.forEach((other, i) => {
+      if (i === 0 || !other.wb) return;
+      if (fromSelectAll) {
+        other.selectedSheets = [...other.wb.SheetNames];
+        document.querySelectorAll(`input[data-fi="${i}"][data-sheet]`).forEach(cb => cb.checked = true);
+      } else {
+        const matching = fd.selectedSheets.filter(s => other.wb.SheetNames.includes(s));
+        other.selectedSheets = matching.length ? matching : [other.wb.SheetNames[0]];
+        document.querySelectorAll(`input[data-fi="${i}"][data-sheet]`).forEach(cb => {
+          cb.checked = other.selectedSheets.includes(cb.dataset.sheet);
+        });
+      }
+    });
+  }
+  renderFilesList();
+  if (!document.getElementById('step2').classList.contains('hidden')) { buildHdrRowSel(); populateConfig(); }
+}
+function renderFilesList() {
+  const wrap = document.getElementById('files-list-wrap'); if (!wrap) return;
+  const hasMultiSheet = filesData.some(d => d.wb && d.wb.SheetNames.length > 1);
+  if (!hasMultiSheet || !filesData.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = filesData.map((fd, i) => {
+    const shHtml = perFileSheetHtml(fd.wb, i);
+    if (!shHtml) return '';
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 14px;margin-top:.6rem">
+      <div style="font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:6px">📄 ${fd.file.name}</div>
+      ${shHtml}
+    </div>`;
+  }).join('');
+  filesData.forEach((_, i) => wireSheetCbs(i));
 }
 
 function renderChips() {
@@ -270,6 +292,7 @@ function renderChips() {
 function removeFile(i) {
   filesData.splice(i, 1);
   renderChips();
+  renderFilesList();
 }
 
 function readAllFiles() {
@@ -288,7 +311,7 @@ function readAllFiles() {
           const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
           d.wb = wb;
           d.selectedSheets = [wb.SheetNames[0]];
-          d.rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+          d.rows = getSheetRows(wb, wb.SheetNames[0]);
         } catch(e) { d.rows = []; }
         resolve();
       };
@@ -300,42 +323,32 @@ function readAllFiles() {
       dz.querySelector('.uz-text').textContent = filesData.length + ' קבצים נטענו — לחצו להוספת עוד';
       dz.classList.add('loaded');
       document.getElementById('btn-next1').disabled = false;
-      // זיהוי גיליונות אחידים
-      uniformSheets = detectUniformSheetsCons();
-      if (uniformSheets) {
-        globalSelectedSheets = [uniformSheets[0]];
-        filesData.forEach(d => { d.selectedSheets = [uniformSheets[0]]; });
-      }
-      renderGlobalSheetSelectorCons();
+      renderFilesList();
     }
   });
 }
 
 /* ───── NAVIGATION ───── */
-function goStep1() {
-  show('step1'); hide('step2'); hide('step3');
-  setStepBar(1);
-}
+function goStep1() { show('step1'); hide('step2'); hide('step3'); setStepBar(1); }
 function autoDetectHdrRow(rows) {
-  // מצא את השורה הראשונה שמכילה לפחות 2 ערכי טקסט לא-מספריים — סביר שהן כותרות
   for (let i = 0; i < Math.min(rows.length, 15); i++) {
     const row = rows[i] || [];
     const textCells = row.filter(c => c !== '' && c != null && typeof c === 'string' && isNaN(parseFloat(String(c).replace(/,/g,''))));
-    if (textCells.length >= 2) return i + 1; // החזר 1-based
+    if (textCells.length >= 2) return i + 1;
   }
   return 1;
 }
-
 function buildHdrRowSel() {
-  const first = filesData[0];
-  if (!first || !first.rows) return;
+  const first = filesData[0]; if (!first || !first.rows) return;
   const rows = first.rows;
   const n = Math.min(rows.length, 8);
-  const autoIdx = autoDetectHdrRow(rows); // 1-based
+  const autoIdx = autoDetectHdrRow(rows);
   const sel = document.getElementById('hdr-row');
   sel.innerHTML = Array.from({length: n}, (_, i) => {
-    const preview = (rows[i] || []).slice(0, 5).map(c => String(c || '').slice(0, 18)).filter(Boolean).join(' | ');
-    return `<option value="${i+1}"${(i+1)===autoIdx?' selected':''}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${preview.replace(/</g,'&lt;')}</option>`;
+    const rowCells = rows[i] || [];
+    const preview = rowCells.slice(0, 5).map(c => String(c || '').slice(0, 18)).filter(Boolean).join(' | ');
+    const isEmpty = !rowCells.some(c => c !== '');
+    return `<option value="${i+1}"${(i+1)===autoIdx?' selected':''}>שורה ${i+1}${isEmpty?' (ריקה)':''}: ${preview.replace(/</g,'&lt;')}</option>`;
   }).join('');
 }
 function goStep2() {
@@ -355,14 +368,12 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
 /* ───── CONFIG STEP ───── */
 function detectNumericCols(rows, hdrIdx) {
-  // סרוק עד 30 שורות נתונים וזהה עמודות המכילות ערכים מספריים
   const numCols = new Set();
   const dataRows = rows.slice(hdrIdx + 1).filter(r => r && r.some(c => c !== '' && c != null));
   dataRows.slice(0, 30).forEach(row => {
     (row || []).forEach((cell, i) => {
-      if (typeof cell === 'number' && isFinite(cell)) {
-        numCols.add(i);
-      } else if (typeof cell === 'string' && cell.trim()) {
+      if (typeof cell === 'number' && isFinite(cell)) numCols.add(i);
+      else if (typeof cell === 'string' && cell.trim()) {
         const clean = cell.replace(/,/g, '').replace(/[₪$€\s%]/g, '').trim();
         if (clean && !isNaN(parseFloat(clean)) && isFinite(parseFloat(clean))) numCols.add(i);
       }
@@ -370,50 +381,33 @@ function detectNumericCols(rows, hdrIdx) {
   });
   return numCols;
 }
-
 function populateConfig() {
-  const first = filesData[0];
-  if (!first || !first.rows || !first.rows.length) return;
+  const first = filesData[0]; if (!first || !first.rows || !first.rows.length) return;
   const hdrRow = parseInt(document.getElementById('hdr-row').value) || 1;
   const hdrIdx = hdrRow - 1;
   const headers = first.rows[hdrIdx] || [];
-
-  // זיהוי עמודות מספריות
   const numCols = detectNumericCols(first.rows, hdrIdx);
-
   const selCat = document.getElementById('col-cat');
   const selVal = document.getElementById('col-val');
-
-  // עמודת סעיף — כל העמודות
   selCat.innerHTML = headers.map((h,i) => `<option value="${i}">${h || 'עמודה '+(i+1)}</option>`).join('');
-
-  // עמודת סכום — רק עמודות מספריות (אם זוהו), אחרת כולן
   const valCols = numCols.size > 0 ? [...numCols].sort((a,b)=>a-b) : headers.map((_,i)=>i);
   selVal.innerHTML = valCols.map(i => `<option value="${i}">${headers[i] || 'עמודה '+(i+1)}</option>`).join('');
-
-  // auto-detect: עמודת טקסט ראשונה = סעיף, עמודה מספרית ראשונה = סכום
   const dataRow = first.rows[hdrIdx + 1] || [];
   let catIdx = -1;
-  dataRow.forEach((cell, i) => {
-    if (catIdx === -1 && typeof cell === 'string' && cell.trim() && !numCols.has(i)) catIdx = i;
-  });
+  dataRow.forEach((cell, i) => { if (catIdx === -1 && typeof cell === 'string' && cell.trim() && !numCols.has(i)) catIdx = i; });
   if (catIdx === -1) catIdx = 0;
   const firstNumCol = valCols[0] ?? (catIdx === 0 ? 1 : 0);
-
   selCat.value = String(catIdx);
   selVal.value = String(firstNumCol);
   refreshPreview();
 }
-
 function refreshPreview() {
-  const first = filesData[0];
-  if (!first || !first.rows) return;
+  const first = filesData[0]; if (!first || !first.rows) return;
   const hdrRow = parseInt(document.getElementById('hdr-row').value) || 1;
   const hdrIdx = hdrRow - 1;
   const cat = parseInt(document.getElementById('col-cat').value);
   const val = parseInt(document.getElementById('col-val').value);
   const headers = first.rows[hdrIdx] || [];
-  // show up to hdrIdx pre-header rows + 8 data rows
   const maxShow = Math.min(first.rows.length, hdrIdx + 9);
   let html = '<table><thead><tr>';
   headers.forEach((h, i) => {
@@ -422,7 +416,7 @@ function refreshPreview() {
   });
   html += '</tr></thead><tbody>';
   for (let r = 0; r < maxShow; r++) {
-    if (r === hdrIdx) continue; // כבר מוצג בכותרת
+    if (r === hdrIdx) continue;
     const row = first.rows[r] || [];
     const isAbove = r < hdrIdx;
     html += `<tr${isAbove ? ' style="opacity:.45;font-style:italic"' : ''}>`;
@@ -439,78 +433,59 @@ function refreshPreview() {
 /* ───── PROCESS ALL FILES ───── */
 function processAll() {
   const hdrRow = parseInt(document.getElementById('hdr-row').value) || 1;
-  const hdrIdx = hdrRow - 1; // 0-based index of header row
+  const hdrIdx = hdrRow - 1;
   const colCat = parseInt(document.getElementById('col-cat').value);
   const colVal = parseInt(document.getElementById('col-val').value);
-  const entitySource = document.getElementById('entity-source').value;
 
   const allCats = new Set();
-  const entities = [];
+  const entities = []; // [{fileName, sheetName, data:{cat:sum}}]
 
   for (const fd of filesData) {
-    const data = {};
-    const rows = fd.rows || [];
-    for (let i = hdrIdx + 1; i < rows.length; i++) {
-      const row = rows[i];
-      const cat = String(row[colCat] ?? '').trim();
-      const raw = String(row[colVal] ?? '').replace(/,/g, '').replace(/[₪$€]/g, '').trim();
-      const val = parseFloat(raw);
-      if (cat && !isNaN(val)) {
-        data[cat] = (data[cat] || 0) + val;
-        allCats.add(cat);
+    const sheets = fd.selectedSheets && fd.selectedSheets.length ? fd.selectedSheets : [fd.wb.SheetNames[0]];
+    for (const sheetName of sheets) {
+      const rows = getSheetRows(fd.wb, sheetName);
+      const data = {};
+      for (let i = hdrIdx + 1; i < rows.length; i++) {
+        const row = rows[i] || [];
+        if (!row.some(c => c !== '' && c != null)) continue;
+        const cat = String(row[colCat] ?? '').trim();
+        const raw = String(row[colVal] ?? '').replace(/,/g, '').replace(/[₪$€]/g, '').trim();
+        const val = parseFloat(raw);
+        if (cat && !isNaN(val)) { data[cat] = (data[cat] || 0) + val; allCats.add(cat); }
       }
+      entities.push({ fileName: fd.name, sheetName, data });
     }
-    entities.push({ name: fd.name, data });
   }
 
-  if (allCats.size === 0) {
-    alert('לא נמצאו נתונים תקינים. בדקו את בחירת העמודות.');
-    return;
-  }
+  if (allCats.size === 0) { alert('לא נמצאו נתונים תקינים. בדקו את בחירת העמודות.'); return; }
 
   const cats = [...allCats].sort();
   consolidated = {
-    headers: ['ישות', ...cats],
-    rows: entities.map(e => [e.name, ...cats.map(c => e.data[c] !== undefined ? e.data[c] : '')])
+    headers: ['קובץ', 'גיליון', ...cats],
+    rows: entities.map(e => [e.fileName, e.sheetName, ...cats.map(c => e.data[c] !== undefined ? e.data[c] : '')])
   };
-
   show('step3'); hide('step2');
   setStepBar(3);
-  renderResult(entitySource === 'manual');
+  renderResult();
 }
 
 /* ───── RENDER RESULT ───── */
-function renderResult(showNameEdit) {
-  const stats = document.getElementById('result-stats');
-  stats.innerHTML = [
-    { val: consolidated.rows.length, lbl: 'ישויות' },
-    { val: consolidated.headers.length - 1, lbl: 'סעיפים' },
-    { val: filesData.length, lbl: 'קבצים עובדו' }
+function renderResult() {
+  document.getElementById('result-stats').innerHTML = [
+    { val: filesData.length, lbl: 'קבצים עובדו' },
+    { val: consolidated.rows.length, lbl: 'גיליונות (שורות)' },
+    { val: consolidated.headers.length - 2, lbl: 'סעיפים' }
   ].map(s => `<div class="stat"><span class="stat-val">${s.val}</span><span class="stat-lbl">${s.lbl}</span></div>`).join('');
-
-  // Name editor
-  const nameEdit = document.getElementById('entity-names-edit');
-  if (showNameEdit) {
-    nameEdit.classList.remove('hidden');
-    document.getElementById('names-list').innerHTML = consolidated.rows.map((row, i) =>
-      `<input class="entity-name-edit" value="${row[0]}" onchange="consolidated.rows[${i}][0]=this.value; rebuildResultTable()"/>`
-    ).join('');
-  } else {
-    nameEdit.classList.add('hidden');
-  }
-
   rebuildResultTable();
 }
-
 function rebuildResultTable() {
-  const allRows = [consolidated.headers, ...consolidated.rows];
-  let html = '<table><thead><tr>' + consolidated.headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  let html = '<table><thead><tr>' + consolidated.headers.map((h, i) =>
+    `<th${i < 2 ? ' style="background:#1a3561"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>';
   consolidated.rows.forEach(row => {
-    html += '<tr>' + row.map((cell, i) =>
-      `<td style="${i>0?'text-align:left;font-family:monospace':'font-weight:700'}">${
-        i > 0 && cell !== '' ? Number(cell).toLocaleString('he-IL') : cell
-      }</td>`
-    ).join('') + '</tr>';
+    html += '<tr>' + row.map((cell, i) => {
+      if (i < 2) return `<td style="font-weight:700">${cell}</td>`;
+      return `<td style="text-align:left;font-family:monospace">${cell !== '' ? Number(cell).toLocaleString('he-IL') : ''}</td>`;
+    }).join('') + '</tr>';
   });
   html += '</tbody></table>';
   document.getElementById('result-table-wrap').innerHTML = html;
@@ -519,7 +494,6 @@ function rebuildResultTable() {
 /* ───── EXPORT ───── */
 function exportExcel() {
   const ws = XLSX.utils.aoa_to_sheet([consolidated.headers, ...consolidated.rows]);
-  // Style header row (basic)
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let c = range.s.c; c <= range.e.c; c++) {
     const addr = XLSX.utils.encode_cell({ r: 0, c });
@@ -532,16 +506,10 @@ function exportExcel() {
 
 /* ───── OPEN DASHBOARD ───── */
 function openDashboard() {
-  // Save consolidated data to sessionStorage for dashboard to pick up
   try {
-    sessionStorage.setItem('consolidatedData', JSON.stringify({
-      headers: consolidated.headers,
-      rows: consolidated.rows
-    }));
+    sessionStorage.setItem('consolidatedData', JSON.stringify({ headers: consolidated.headers, rows: consolidated.rows }));
     window.open('tool-outlier-dashboard.html', '_blank');
-  } catch(e) {
-    alert('הורידו את הקובץ והעלו אותו לדשבורד.');
-  }
+  } catch(e) { alert('הורידו את הקובץ והעלו אותו לדשבורד.'); }
 }
 </script>
 </body>

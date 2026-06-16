@@ -104,6 +104,9 @@ tr.row-issue:hover td{background:#fde8e8}
 .files-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .file-item{background:var(--green-bg);border:1px solid #b2ddd0;border-radius:7px;padding:5px 12px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem}
 .fi-remove{color:var(--red);cursor:pointer;font-weight:900;font-size:0.85rem;background:none;border:none;font-family:inherit;padding:0}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 .month-chart{display:flex;align-items:flex-end;gap:6px;height:130px;padding-bottom:8px;border-bottom:2px solid var(--border);margin-bottom:0.8rem;overflow-x:auto}
 .month-bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px}
 .month-bar{width:100%;border-radius:4px 4px 0 0;transition:height 0.4s}
@@ -223,7 +226,7 @@ tr.row-issue:hover td{background:#fde8e8}
         <div class="ub-sub">xlsx / xls / csv · ניתן להעלות מספר קבצים</div>
       </div>
       <input type="file" id="fi-att" accept=".xlsx,.xls,.csv" multiple hidden/>
-      <div class="files-list" id="att-files-list"></div>
+      <div class="file-chips" id="att-chips"></div>
       <div id="att-global-sheet-wrap"></div>
     </div>
     <div>
@@ -720,8 +723,8 @@ function onAttGlobalSheetChange() {
     const sheet = attGlobalSelectedSheets.find(s => wb.SheetNames.includes(s)) || wb.SheetNames[0];
     f.data.selectedSheet = sheet;
     const allRows = getRowsFromWbAudit(wb, sheet);
-    while (allRows.length && allRows[0].every(c => !c)) allRows.shift();
-    f.data.allRows = allRows;
+    let _el=0; while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); _el++; }
+    f.data.allRows = allRows; f.data.emptyLeadRows = _el;
     applyHeaderRow(f.data, f.data.headerRowIdx || 0);
   });
 }
@@ -756,12 +759,10 @@ document.getElementById('fi-att').addEventListener('change', async e => {
 });
 
 function renderAttList() {
-  const wrap = document.getElementById('att-files-list');
-  wrap.innerHTML = attFilesList.map((f, i) => `
-    <div class="file-item">
-      <span>📋 ${escHtml(f.name)} (${f.data.rows.length} שורות)</span>
-      <button class="fi-remove" onclick="removeAtt(${i})">✕</button>
-    </div>`).join('');
+  const chips = document.getElementById('att-chips');
+  chips.innerHTML = attFilesList.map((f, i) =>
+    `<div class="chip">📋 ${escHtml(f.name)} <span class="x" onclick="removeAtt(${i})">✕</span></div>`
+  ).join('');
   if (attFilesList.length) {
     setDZLoaded('dz-att', '✅', `${attFilesList.length} קובץ/קבצים נטענו`);
   } else {
@@ -2006,24 +2007,41 @@ function _fmtCellAudit(v){
   return v;
 }
 
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWbAudit(wb, sheetName){
   if(sheetName==='__ALL__'){
     let all=[];
     wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!=='')).map(row=>row.map(_fmtCellAudit));
+      const r=XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).map(row=>row.map(_fmtCellAudit));
       if(i===0) all.push(...r);
       else all.push(...r.slice(1));
     });
     return all;
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!=='')).map(row=>row.map(_fmtCellAudit));
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).map(row=>row.map(_fmtCellAudit));
 }
 
 function changeEmpSheet(sheetName){
   if(!empFileData.wb) return;
   const allRows=getRowsFromWbAudit(empFileData.wb, sheetName);
-  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-  empFileData.allRows=allRows; empFileData.selectedSheet=sheetName;
+  let _el=0; while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}
+  empFileData.allRows=allRows; empFileData.emptyLeadRows=_el; empFileData.selectedSheet=sheetName;
   applyHeaderRow(empFileData, 0);
   const wrap=document.getElementById('emp-sheet-sel-wrap');
   if(wrap) wrap.innerHTML=sheetSelectorHtml(empFileData.wb,'emp-sh-sel','changeEmpSheet');
@@ -2033,8 +2051,8 @@ function changeAttSheet(sheetName){
   // Apply to first file only (all files share same column structure)
   const first=attFilesList[0]; if(!first||!first.data.wb) return;
   const allRows=getRowsFromWbAudit(first.data.wb, sheetName);
-  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-  first.data.allRows=allRows; first.data.selectedSheet=sheetName;
+  let _el=0; while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}
+  first.data.allRows=allRows; first.data.emptyLeadRows=_el; first.data.selectedSheet=sheetName;
   applyHeaderRow(first.data, 0);
   const wrap=document.getElementById('att-sheet-sel-wrap');
   if(wrap) wrap.innerHTML=sheetSelectorHtml(first.data.wb,'att-sh-sel','changeAttSheet');
@@ -2043,8 +2061,8 @@ function changeAttSheet(sheetName){
 function changeInvSheet(sheetName){
   if(!invFileData.wb||invFileData.isPdf) return;
   const allRows=getRowsFromWbAudit(invFileData.wb, sheetName);
-  while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-  invFileData.allRows=allRows; invFileData.selectedSheet=sheetName;
+  let _el=0; while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}
+  invFileData.allRows=allRows; invFileData.emptyLeadRows=_el; invFileData.selectedSheet=sheetName;
   applyHeaderRow(invFileData, 0);
   ['inv-sheet-sel-wrap','inv-sheet-sel-wrap-step4'].forEach(id=>{
     const wrap=document.getElementById(id);
@@ -2061,8 +2079,8 @@ function loadExcel(file, obj, cb, sheetWrapId){
     obj.wb = wb;
     obj.selectedSheet = wb.SheetNames[0];
     const allRows = getRowsFromWbAudit(wb, wb.SheetNames[0]);
-    while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
-    obj.allRows = allRows;
+    let _el=0; while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}
+    obj.allRows = allRows; obj.emptyLeadRows = _el;
     applyHeaderRow(obj, 0);
     cb();
   };
@@ -2081,9 +2099,12 @@ function headerRowSelectorHtml(obj, selId, onchangeFn){
   if(!obj||!obj.allRows||obj.allRows.length<=1) return '';
   const n = Math.min(obj.allRows.length, 8);
   const opts = Array.from({length:n},(_,i)=>{
-    const preview = (obj.allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');
+    const rowCells = obj.allRows[i]||[];
+    const preview = rowCells.slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');
+    const isEmpty = !rowCells.some(c=>c!=='');
+    const rowNum = (obj.emptyLeadRows||0)+i+1;
     const cur = (obj.headerRowIdx||0)===i ? 'selected' : '';
-    return `<option value="${i}" ${cur}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${escHtml(preview)}</option>`;
+    return `<option value="${i}" ${cur}>שורה ${rowNum}${isEmpty?' (ריקה)':''}: ${escHtml(preview)}</option>`;
   });
   return `<div style="background:var(--orange-bg);border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.9rem;font-size:0.82rem">
     <div style="font-weight:700;color:var(--orange);margin-bottom:5px">⚠️ שורת הכותרות בקובץ:</div>

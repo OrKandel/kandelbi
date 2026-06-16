@@ -40,6 +40,9 @@ main{max-width:1100px;margin:0 auto;padding:2rem 5vw 5rem}
 .btn-red{background:#fde8e8;color:var(--red);border:1px solid #f5b7b7}.btn-red:hover{background:var(--red);color:#fff}
 .btn-row{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:1rem}
 .hidden{display:none}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 
 /* ── METRIC CARDS GRID ── */
 .metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.2rem;margin-bottom:1.5rem}
@@ -117,6 +120,7 @@ main{max-width:1100px;margin:0 auto;padding:2rem 5vw 5rem}
     <div class="uz-sub">xlsx / xls / csv — שורה לכל ישות, עמודות = סעיפים</div>
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+  <div class="file-chips" id="outlier-chip"></div>
   <div id="from-consolidate-note" class="hidden info-box" style="margin-top:.8rem;margin-bottom:0">
     ✅ הנתונים הועברו מכלי האיחוד אוטומטית
   </div>
@@ -212,6 +216,23 @@ dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); loadFile(e.dataTransfer.files[0]); });
 document.getElementById('fi').addEventListener('change', e => loadFile(e.target.files[0]));
 
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function loadFile(file) {
   if (!file) return;
   dz.classList.remove('drag','loaded');
@@ -221,15 +242,25 @@ function loadFile(file) {
   r.onload = ev => {
     const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    const rows = XLSX.utils.sheet_to_json(unmergeSheet(ws), {header:1, defval:''});
     const headers = rows[0] || [];
     const dataRows = rows.slice(1).filter(r => r.some(c => c !== ''));
     ingestRaw(headers, dataRows);
     dz.classList.add('loaded');
     dz.querySelector('.uz-icon').textContent='✅';
     document.getElementById('uz-txt').textContent = file.name;
+    document.getElementById('outlier-chip').innerHTML=`<div class="chip">📄 ${file.name.replace(/</g,'&lt;')} <span class="x" onclick="clearOutlierFile()">✕</span></div>`;
   };
   r.readAsArrayBuffer(file);
+}
+
+function clearOutlierFile(){
+  allHeaders=[]; tableData=[];
+  document.getElementById('outlier-chip').innerHTML='';
+  dz.classList.remove('loaded');
+  dz.querySelector('.uz-icon').textContent='📊';
+  document.getElementById('uz-txt').textContent='לחצו לבחירת קובץ או גררו לכאן';
+  document.getElementById('config-card').classList.add('hidden');
 }
 
 function ingestRaw(headers, rows) {

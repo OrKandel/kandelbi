@@ -57,6 +57,10 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .fc-warn{color:var(--orange);font-size:0.76rem;flex-shrink:0;font-weight:600}
 .fc-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:0 2px;line-height:1;flex-shrink:0}
 .fc-remove:hover{color:var(--red)}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip.warn-chip{border-color:var(--orange)}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 
 /* Form */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
@@ -139,7 +143,8 @@ td.source-cell{font-weight:700;color:var(--blue);font-size:0.78rem;white-space:n
     <div class="ub-sub">xlsx / xls / csv · ניתן לבחור מספר קבצים בו-זמנית</div>
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
-  <div class="files-list hidden" id="files-list"></div>
+  <div class="file-chips" id="chips"></div>
+  <div id="files-list-wrap"></div>
 </div>
 
 <!-- Config -->
@@ -177,13 +182,34 @@ let globalSelectedSheets = []; // active selection in uniform mode
 
 // ── Data helpers ──
 
-function getRowsAndSheetsFromWb(wb, sheets) {
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    // מלא רק תאים שנמצאים מתחת לתא המקור (מיזוג אנכי כלפי מטה)
+    // תאים באותה שורה כמו המקור אבל בעמודות שונות (מיזוג אופקי) — גם ממלאים
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue; // דלג על כל התאים בשורת המיזוג העליונה (אופקי) — מלא רק שורות מתחת (אנכי)
+        // אל תדרוס תא שכבר יש בו ערך (לדוגמה: תא בשורת הנתונים שהמיזוג "חודר" לתוכו מלמעלה)
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
+function getRowsAndSheetsFromWb(wb, sheets, skipRows) {
   const names = Array.isArray(sheets) ? (sheets.length ? sheets : [wb.SheetNames[0]]) : [sheets || wb.SheetNames[0]];
+  const skip = skipRows != null ? skipRows : 1;
   const allRows = [], allRowsSheets = [];
   names.forEach((name, i) => {
-    const ws = wb.Sheets[name] || wb.Sheets[wb.SheetNames[0]];
-    const r = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true}).filter(row => row.some(c => c !== ''));
-    const rows = i === 0 ? r : r.slice(1);
+    const ws = unmergeSheet(wb.Sheets[name] || wb.Sheets[wb.SheetNames[0]]);
+    const r = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true});
+    const rows = i === 0 ? r : r.slice(skip);
     allRows.push(...rows);
     allRowsSheets.push(...rows.map(() => name));
   });
@@ -234,7 +260,9 @@ function applyHdr(fd, idx) {
 
 function reloadFileRows(fd, idx) {
   const sheets = fd.selectedSheets && fd.selectedSheets.length ? fd.selectedSheets : [fd.wb.SheetNames[0]];
-  const { allRows, allRowsSheets } = getRowsAndSheetsFromWb(fd.wb, sheets);
+  // לגיליונות 2+ — דלג על שורת הכותרת וכל השורות שמעליה
+  const skipRows = (fd.emptyLeadRows || 0) + (fd.headerRowIdx || 0) + 1;
+  const { allRows, allRowsSheets } = getRowsAndSheetsFromWb(fd.wb, sheets, skipRows);
   let emptyLead = 0;
   while (allRows.length && allRows[0].every(c => !c)) { allRows.shift(); allRowsSheets.shift(); emptyLead++; }
   fd.allRows = allRows;
@@ -283,7 +311,8 @@ function loadFiles(fileList) {
 function removeFile(idx) {
   filesData.splice(idx, 1);
   if (!filesData.length) {
-    document.getElementById('files-list').classList.add('hidden');
+    document.getElementById('chips').innerHTML = '';
+    document.getElementById('files-list-wrap').innerHTML = '';
     document.getElementById('config-card').classList.add('hidden');
     document.getElementById('results-card').classList.add('hidden');
     document.getElementById('global-sheet-wrap').innerHTML = '';
@@ -308,6 +337,7 @@ function onFilesLoaded() {
     globalSelectedSheets = [uniformSheets[0]];
   }
   renderGlobalSheetSelector();
+  renderChips();
   renderFilesList();
   checkHeaders();
   dz.classList.add('loaded');
@@ -386,17 +416,23 @@ function onFileSheetChange(idx, fromSelectAll) {
     });
     filesData.forEach((f, i) => { if (i > 0) autoDetectHdr(f, fd.headers); });
   }
+  renderChips();
   renderFilesList();
   checkHeaders();
 }
 
 // ── Header row selector (per file) ──
-function headerRowSelectorHtml(allRows, currentIdx, fi) {
+function headerRowSelectorHtml(allRows, currentIdx, fi, emptyLead) {
   if (!allRows || allRows.length <= 1) return '';
-  const n = Math.min(allRows.length, 8);
+  const n = Math.min(allRows.length, 20);
+  const lead = emptyLead || 0;
   const opts = Array.from({length: n}, (_, i) => {
-    const preview = (allRows[i] || []).slice(0, 5).map(c => String(c || '').slice(0, 18)).filter(Boolean).join(' | ');
-    return `<option value="${i}"${(currentIdx || 0) === i ? ' selected' : ''}>${'שורה ' + (i+1) + (i === 0 ? ' (ברירת מחדל)' : '')}: ${preview.replace(/</g,'&lt;')}</option>`;
+    const rowCells = allRows[i] || [];
+    const preview = rowCells.slice(0, 5).map(c => String(c || '').slice(0, 18)).filter(Boolean).join(' | ');
+    const isEmpty = !rowCells.some(c => c !== '');
+    const rowNum = lead + i + 1;
+    const label = `שורה ${rowNum}${isEmpty ? ' (ריקה)' : ''}: ${preview.replace(/</g,'&lt;')}`;
+    return `<option value="${i}"${(currentIdx || 0) === i ? ' selected' : ''}>${label}</option>`;
   });
   const isFirst = (fi === 0);
   const bg    = isFirst ? '#fff8ed' : '#edf7f3';
@@ -413,31 +449,34 @@ function headerRowSelectorHtml(allRows, currentIdx, fi) {
   </div>`;
 }
 function applyMergeFileHdr(idx, hdrIdx) {
-  const fd = filesData[idx]; if (!fd || !fd.allRows) return;
-  applyHdr(fd, +hdrIdx);
+  const fd = filesData[idx]; if (!fd) return;
+  fd.headerRowIdx = +hdrIdx; // קבע לפני reloadFileRows כדי שהskip לגיליונות 2+ יהיה נכון
+  reloadFileRows(fd, idx);
   // Re-detect for all other files when first file changes
   if (idx === 0) filesData.forEach((f, i) => { if (i > 0) autoDetectHdr(f, fd.headers); });
-  renderFilesList(); checkHeaders();
+  renderChips(); renderFilesList(); checkHeaders();
 }
 
-// ── Files list ──
-function renderFilesList() {
-  const fl = document.getElementById('files-list');
-  fl.classList.remove('hidden');
+// ── Chips (pill badges with X) ──
+function renderChips() {
+  const chips = document.getElementById('chips');
   const baseHeaders = JSON.stringify(filesData[0]?.headers || []);
-  fl.innerHTML = filesData.map((fd, i) => {
-    const mismatch = JSON.stringify(fd.headers) !== baseHeaders;
+  chips.innerHTML = filesData.map((fd, i) => {
+    const mismatch = filesData.length > 1 && JSON.stringify(fd.headers) !== baseHeaders;
+    return `<div class="chip${mismatch ? ' warn-chip' : ''}">${mismatch ? '⚠️' : '📄'} ${fd.name.replace(/</g,'&lt;')} <span class="x" onclick="removeFile(${i})">✕</span></div>`;
+  }).join('');
+}
+
+// ── Files list (per-file sheet + header panels) ──
+function renderFilesList() {
+  const wrap = document.getElementById('files-list-wrap');
+  wrap.innerHTML = filesData.map((fd, i) => {
     const shHtml = perFileSheetHtml(fd.wb, i);
-    const hdrHtml = headerRowSelectorHtml(fd.allRows, fd.headerRowIdx || 0, i);
-    return `<div class="file-chip ${mismatch ? 'warn' : ''}" style="flex-direction:column;align-items:stretch;gap:4px;padding:10px 12px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="fc-icon">📄</span>
-        <span class="fc-name" title="${fd.name}">${fd.name}</span>
-        <span class="fc-rows">${fd.rawData.length.toLocaleString('he')} שורות · ${fd.headers.length} עמודות</span>
-        ${mismatch ? '<span class="fc-warn">⚠️ מבנה שונה</span>' : ''}
-        <button class="fc-remove" onclick="removeFile(${i})" title="הסר קובץ">✕</button>
-      </div>
-      <div>${shHtml}${hdrHtml}</div>
+    const hdrHtml = headerRowSelectorHtml(fd.allRows, fd.headerRowIdx || 0, i, fd.emptyLeadRows || 0);
+    if (!shHtml && !hdrHtml) return '';
+    return `<div class="file-chip" style="flex-direction:column;align-items:stretch;gap:4px;padding:10px 12px;margin-top:.4rem">
+      <div style="font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:4px">📄 ${fd.name}</div>
+      ${shHtml}${hdrHtml}
     </div>`;
   }).join('');
   // חיבור אירועי שינוי גיליון לכל קובץ (אחרי הרינדור)

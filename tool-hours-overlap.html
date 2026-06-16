@@ -45,11 +45,14 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .ub-icon{font-size:2rem;margin-bottom:6px}
 .ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.files-list{margin-top:1rem;display:flex;flex-direction:column;gap:6px}
+.files-list{margin-top:.4rem;display:flex;flex-direction:column;gap:6px}
 .file-chip{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:0.82rem}
 .file-chip .fc-name{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .file-chip .fc-rows{color:var(--muted);font-size:0.76rem;flex-shrink:0}
 .file-chip .fc-warn{color:var(--orange);font-size:0.76rem;flex-shrink:0}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 .prefs-banner{background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:12px 16px;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .prefs-banner .pb-text{flex:1;font-size:0.85rem;font-weight:600;color:var(--navy)}
 .prefs-banner .pb-date{font-size:0.78rem;color:var(--muted);font-weight:400}
@@ -141,6 +144,7 @@ tr:hover td{background:var(--bg)}
     <div class="ub-sub">xlsx / xls / csv · ניתן לבחור מספר קבצים בו-זמנית</div>
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
+  <div class="file-chips" id="chips"></div>
   <div class="files-list hidden" id="files-list"></div>
 </div>
 
@@ -369,17 +373,34 @@ function refreshFromSheets(fi){
   renderFileChips();
   rebuildColSelects();
 }
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWb(wb, sheetNames){
   if(!sheetNames) sheetNames=[wb.SheetNames[0]];
   if(!Array.isArray(sheetNames)) sheetNames=[sheetNames];
   if(sheetNames[0]==='__ALL__') sheetNames=wb.SheetNames;
   if(sheetNames.length===1){
-    return XLSX.utils.sheet_to_json(wb.Sheets[sheetNames[0]]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+    return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetNames[0]]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
   }
   let all=[];
   sheetNames.forEach((n,i)=>{
     const ws=wb.Sheets[n]; if(!ws)return;
-    const r=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
     if(i===0) all.push(...r);
     else all.push(...r.slice(1));
   });
@@ -463,11 +484,21 @@ function changeFileHeaderRow(fi, idx){
   rebuildColSelects();
 }
 
+function renderChips(){
+  const chips=document.getElementById('chips');
+  chips.innerHTML=filesData.map((fd,fi)=>{
+    const missing=!fd.rawData.length;
+    return `<div class="chip">${missing?'⚠️':'📄'} ${fd.name.replace(/</g,'&lt;')} <span class="x" data-fi="${fi}">✕</span></div>`;
+  }).join('');
+  chips.querySelectorAll('.x').forEach(btn=>{
+    btn.addEventListener('click',e=>{ e.stopPropagation(); removeOverlapFile(parseInt(btn.dataset.fi)); });
+  });
+}
 function renderFileChips(){
+  renderChips();
   const fl=document.getElementById('files-list');
   fl.classList.remove('hidden');
   fl.innerHTML=filesData.map((fd,fi)=>{
-    const missing=!fd.rawData.length;
     // בחירת גיליון — מוצגת לכל קובץ (גיליון קובץ 0 מופץ אוטומטית לשאר)
     const sheetSel=sheetSelectorHtml(fd.wb,fi);
     // שורת כותרת — מוצגת לכל קובץ; קובץ 0 מגדיר ברירת מחדל לאחרים
@@ -475,36 +506,25 @@ function renderFileChips(){
       ?'<div style="font-size:0.72rem;color:#6b7a99;margin-top:-4px;margin-bottom:6px">הבחירה תוחל כברירת מחדל על שאר הקבצים (עם זיהוי אוטומטי)</div>'
       :'<div style="font-size:0.72rem;color:#6b7a99;margin-top:-4px;margin-bottom:6px">זוהה אוטומטית לפי הקובץ הראשון — ניתן לשנות ידנית</div>';
     const hdrSel=(fd.allRows&&fd.allRows.length>1)?hdrHint+headerRowSelectorHtml(fd.allRows,`overlap-hdr-${fi}`,null,fd.headerRowIdx||0):'';
+    if(!sheetSel&&!hdrSel) return '';
     return `<div class="file-chip" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span>📄</span>
-        <span class="fc-name">${fd.name}</span>
-        <span class="fc-rows">${missing?'':fd.rawData.length+' שורות'}</span>
-        ${missing?'<span class="fc-warn">⚠️ ריק</span>':''}
-        <button class="chip-remove-btn" data-fi="${fi}" title="הסר קובץ">✕ הסר</button>
-      </div>
+      <div style="font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:4px">📄 ${fd.name}</div>
       <div id="overlap-selwrap-${fi}">${sheetSel}${hdrSel}</div>
     </div>`;
   }).join('');
   // חיבור אירועים אחרי הרינדור
   filesData.forEach((fd,fi)=>{
     wireSheetCbs(fi);
-    // חיבור בחירת שורת כותרת לכל קובץ
     const hSel=document.getElementById(`overlap-hdr-${fi}`);
     if(hSel){ const idx=fi; hSel.onchange=function(){changeFileHeaderRow(idx,+this.value);}; }
-  });
-  // כפתורי הסרה — addEventListener במקום onclick מוטבע
-  fl.querySelectorAll('.chip-remove-btn').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      removeOverlapFile(parseInt(btn.dataset.fi));
-    });
   });
 }
 
 function removeOverlapFile(idx){
   filesData.splice(idx,1);
   if(!filesData.length){
+    document.getElementById('chips').innerHTML='';
+    document.getElementById('files-list').innerHTML='';
     document.getElementById('files-list').classList.add('hidden');
     document.getElementById('config-card').classList.add('hidden');
     document.getElementById('checks-card').classList.add('hidden');

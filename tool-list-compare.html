@@ -52,6 +52,9 @@ main{max-width:1000px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .ub-icon{font-size:1.8rem;margin-bottom:6px}
 .ub-text{font-weight:700;font-size:0.88rem}
 @keyframes spin{to{transform:rotate(360deg)}}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 .ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
 
 .form-group{margin-bottom:1rem}
@@ -140,6 +143,7 @@ tr:hover td{background:var(--bg)}
         <div class="ub-sub">xlsx / xls / csv</div>
       </div>
       <input type="file" id="fi-a" accept=".xlsx,.xls,.csv" hidden/>
+      <div class="file-chips" id="cmp-a-chip"></div>
       <div id="cmp-a-sheet-sel-wrap"></div>
       <div class="form-group" style="margin-top:0.8rem">
         <label>עמודה להשוואה:</label>
@@ -154,6 +158,7 @@ tr:hover td{background:var(--bg)}
         <div class="ub-sub">xlsx / xls / csv</div>
       </div>
       <input type="file" id="fi-b" accept=".xlsx,.xls,.csv" hidden/>
+      <div class="file-chips" id="cmp-b-chip"></div>
       <div id="cmp-b-sheet-sel-wrap"></div>
       <div class="form-group" style="margin-top:0.8rem">
         <label>עמודה להשוואה:</label>
@@ -281,17 +286,34 @@ function sheetSelectorHtml(wb, selId, onchangeFn){
     <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
   </div>`;
 }
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWb(wb, sheetName){
   if(sheetName==='__ALL__'){
     let all=[];
     wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      const r=XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
       if(i===0) all.push(...r);
       else all.push(...r.slice(1));
     });
     return all;
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
 }
 function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
   if(!allRows||allRows.length<=1) return '';
@@ -352,7 +374,7 @@ function changeCmpBHdr(idx){
   checkReady();
 }
 
-function loadFile(inputId, dzId, colSelId, dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange) {
+function loadFile(inputId, dzId, colSelId, dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange, chipId, clearFn) {
   const input = document.getElementById(inputId);
   input.addEventListener('change', e=>{
     const file = e.target.files[0];
@@ -369,6 +391,11 @@ function loadFile(inputId, dzId, colSelId, dataObj, wrapId, shSelId, shOnchange,
       const wrap = document.getElementById(wrapId);
       if(wrap) wrap.innerHTML = sheetSelectorHtml(wb,shSelId,shOnchange) + headerRowSelectorHtml(dataObj.allRows,hdrSelId,hdrOnchange,0);
 
+      if(chipId){
+        const chipWrap=document.getElementById(chipId);
+        if(chipWrap) chipWrap.innerHTML=`<div class="chip">📄 ${file.name.replace(/</g,'&lt;')} <span class="x" onclick="${clearFn}()">✕</span></div>`;
+      }
+
       refreshColSel(colSelId, dataObj.headers);
 
       dz.classList.add('loaded');
@@ -381,8 +408,31 @@ function loadFile(inputId, dzId, colSelId, dataObj, wrapId, shSelId, shOnchange,
   });
 }
 
-loadFile('fi-a','dz-a','col-a',dataA,'cmp-a-sheet-sel-wrap','cmp-sh-a','changeCmpASheet','cmp-hdr-a','changeCmpAHdr');
-loadFile('fi-b','dz-b','col-b',dataB,'cmp-b-sheet-sel-wrap','cmp-sh-b','changeCmpBSheet','cmp-hdr-b','changeCmpBHdr');
+function clearCmpA(){
+  dataA={};
+  document.getElementById('cmp-a-chip').innerHTML='';
+  document.getElementById('cmp-a-sheet-sel-wrap').innerHTML='';
+  const dz=document.getElementById('dz-a');
+  dz.classList.remove('loaded');
+  dz.querySelector('.ub-icon').textContent='📋';
+  dz.querySelector('.ub-text').textContent='העלה רשימה ראשונה';
+  document.getElementById('col-a').innerHTML='<option>— טען קובץ —</option>';
+  checkReady();
+}
+function clearCmpB(){
+  dataB={};
+  document.getElementById('cmp-b-chip').innerHTML='';
+  document.getElementById('cmp-b-sheet-sel-wrap').innerHTML='';
+  const dz=document.getElementById('dz-b');
+  dz.classList.remove('loaded');
+  dz.querySelector('.ub-icon').textContent='📋';
+  dz.querySelector('.ub-text').textContent='העלה רשימה שנייה';
+  document.getElementById('col-b').innerHTML='<option>— טען קובץ —</option>';
+  checkReady();
+}
+
+loadFile('fi-a','dz-a','col-a',dataA,'cmp-a-sheet-sel-wrap','cmp-sh-a','changeCmpASheet','cmp-hdr-a','changeCmpAHdr','cmp-a-chip','clearCmpA');
+loadFile('fi-b','dz-b','col-b',dataB,'cmp-b-sheet-sel-wrap','cmp-sh-b','changeCmpBSheet','cmp-hdr-b','changeCmpBHdr','cmp-b-chip','clearCmpB');
 document.getElementById('dz-a').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dz-a').classList.add('drag')});
 document.getElementById('dz-b').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dz-b').classList.add('drag')});
 

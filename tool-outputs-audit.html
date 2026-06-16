@@ -91,6 +91,9 @@ tr.row-issue:hover td{background:#fde8e8}
 .svc-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:240px;overflow-y:auto;margin-top:0.8rem}
 .files-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .file-item{background:var(--green-bg);border:1px solid #b2ddd0;border-radius:7px;padding:5px 12px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 .fi-remove{color:var(--red);cursor:pointer;font-weight:900;font-size:0.85rem;background:none;border:none;font-family:inherit;padding:0}
 .month-chart{display:flex;align-items:flex-end;gap:6px;height:130px;padding-bottom:8px;border-bottom:2px solid var(--border);margin-bottom:0.8rem;overflow-x:auto}
 .month-bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px}
@@ -189,7 +192,7 @@ tr.row-issue:hover td{background:#fde8e8}
         <div class="ub-sub">xlsx / xls / csv · ניתן להעלות מספר קבצים</div>
       </div>
       <input type="file" id="fi-act" accept=".xlsx,.xls,.csv" multiple hidden/>
-      <div class="files-list" id="act-files-list"></div>
+      <div class="file-chips" id="act-chips"></div>
     </div>
     <div>
       <div style="font-weight:700;margin-bottom:6px;color:var(--blue);font-size:0.87rem">💵 חשבון הספק (חובה)</div>
@@ -444,8 +447,8 @@ document.getElementById('fi-act').addEventListener('change',async e=>{
   renderActList(); checkStep3();
 });
 function renderActList(){
-  const wrap=document.getElementById('act-files-list');
-  wrap.innerHTML=actFilesList.map((f,i)=>`<div class="file-item"><span>📊 ${escHtml(f.name)} (${f.data.rows.length} שורות)</span><button class="fi-remove" onclick="removeAct(${i})">✕</button></div>`).join('');
+  const chips=document.getElementById('act-chips');
+  chips.innerHTML=actFilesList.map((f,i)=>`<div class="chip">📊 ${escHtml(f.name)} <span class="x" onclick="removeAct(${i})">✕</span></div>`).join('');
   if(actFilesList.length)setDZLoaded('dz-act','✅',`${actFilesList.length} קובץ/קבצים נטענו`);
   else resetDZ('dz-act','📊','העלה דוח/דוחות ביצועים');
 }
@@ -887,22 +890,39 @@ function _fmtCell(v){
 }
 function _fmtRow(row){return row.map(_fmtCell);}
 
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWbOut(wb,sheetName){
-  if(sheetName==='__ALL__'){let all=[];wb.SheetNames.forEach((n,i)=>{const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!=='')).map(_fmtRow);if(i===0)all.push(...r);else all.push(...r.slice(1));});return all;}
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!=='')).map(_fmtRow);
+  if(sheetName==='__ALL__'){let all=[];wb.SheetNames.forEach((n,i)=>{const r=XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).map(_fmtRow);if(i===0)all.push(...r);else all.push(...r.slice(1));});return all;}
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).map(_fmtRow);
 }
 
-function changeSvcSheet(sheetName){if(!svcFileData.wb)return;const allRows=getRowsFromWbOut(svcFileData.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();svcFileData.allRows=allRows;svcFileData.selectedSheet=sheetName;applyHeaderRow(svcFileData,0);const wrap=document.getElementById('svc-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet');buildSvcColMap();}
-function changeActSheet(sheetName){const first=actFilesList[0];if(!first||!first.data.wb)return;const allRows=getRowsFromWbOut(first.data.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();first.data.allRows=allRows;first.data.selectedSheet=sheetName;applyHeaderRow(first.data,0);const wrap=document.getElementById('act-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(first.data.wb,'act-sh-sel','changeActSheet');buildActColSelects();}
-function changeOutInvSheet(sheetName){if(!invFileData.wb||invFileData.isPdf)return;const allRows=getRowsFromWbOut(invFileData.wb,sheetName);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();invFileData.allRows=allRows;invFileData.selectedSheet=sheetName;applyHeaderRow(invFileData,0);['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet');});buildInvColSelects();}
+function changeSvcSheet(sheetName){if(!svcFileData.wb)return;const allRows=getRowsFromWbOut(svcFileData.wb,sheetName);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}svcFileData.allRows=allRows;svcFileData.emptyLeadRows=_el;svcFileData.selectedSheet=sheetName;applyHeaderRow(svcFileData,0);const wrap=document.getElementById('svc-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet');buildSvcColMap();}
+function changeActSheet(sheetName){const first=actFilesList[0];if(!first||!first.data.wb)return;const allRows=getRowsFromWbOut(first.data.wb,sheetName);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}first.data.allRows=allRows;first.data.emptyLeadRows=_el;first.data.selectedSheet=sheetName;applyHeaderRow(first.data,0);const wrap=document.getElementById('act-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(first.data.wb,'act-sh-sel','changeActSheet');buildActColSelects();}
+function changeOutInvSheet(sheetName){if(!invFileData.wb||invFileData.isPdf)return;const allRows=getRowsFromWbOut(invFileData.wb,sheetName);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}invFileData.allRows=allRows;invFileData.emptyLeadRows=_el;invFileData.selectedSheet=sheetName;applyHeaderRow(invFileData,0);['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet');});buildInvColSelects();}
 
-function loadExcel(file,obj,cb){const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});obj.wb=wb;obj.selectedSheet=wb.SheetNames[0];const allRows=getRowsFromWbOut(wb,wb.SheetNames[0]);while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();obj.allRows=allRows;applyHeaderRow(obj,0);cb();};r.readAsArrayBuffer(file);}
+function loadExcel(file,obj,cb){const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});obj.wb=wb;obj.selectedSheet=wb.SheetNames[0];const allRows=getRowsFromWbOut(wb,wb.SheetNames[0]);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}obj.allRows=allRows;obj.emptyLeadRows=_el;applyHeaderRow(obj,0);cb();};r.readAsArrayBuffer(file);}
 function loadExcelAsync(file,obj){return new Promise(res=>loadExcel(file,obj,res));}
 function applyHeaderRow(obj,idx){idx=+idx;obj.headerRowIdx=idx;obj.headers=(obj.allRows[idx]||[]).map(c=>String(c||''));obj.rows=obj.allRows.slice(idx+1).filter(r=>r.some(c=>c!==''));}
 function headerRowSelectorHtml(obj,selId,onchangeFn){
   if(!obj||!obj.allRows||obj.allRows.length<=1)return '';
   const n=Math.min(obj.allRows.length,8);
-  const opts=Array.from({length:n},(_,i)=>{const preview=(obj.allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');const cur=(obj.headerRowIdx||0)===i?'selected':'';return`<option value="${i}" ${cur}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${escHtml(preview)}</option>`;});
+  const opts=Array.from({length:n},(_,i)=>{const rowCells=obj.allRows[i]||[];const preview=rowCells.slice(0,5).map(c=>String(c||'').slice(0,20)).filter(Boolean).join(' | ');const isEmpty=!rowCells.some(c=>c!=='');const rowNum=(obj.emptyLeadRows||0)+i+1;const cur=(obj.headerRowIdx||0)===i?'selected':'';return`<option value="${i}" ${cur}>שורה ${rowNum}${isEmpty?' (ריקה)':''}: ${escHtml(preview)}</option>`;});
   return`<div style="background:var(--orange-bg);border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-bottom:0.9rem;font-size:0.82rem"><div style="font-weight:700;color:var(--orange);margin-bottom:5px">⚠️ שורת הכותרות בקובץ:</div><select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 10px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select><div style="font-size:0.74rem;color:var(--muted);margin-top:4px">אם יש כותרות או שורות ריקות מעל הטבלה — בחר את השורה עם שמות העמודות</div></div>`;
 }
 function showTab(name,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('show'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+name).classList.add('show');btn.classList.add('active');}

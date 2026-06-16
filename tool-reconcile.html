@@ -49,6 +49,9 @@ main{max-width:1100px;margin:0 auto;padding:2.5rem 5vw 4rem}
 .upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
 .ub-icon{font-size:1.8rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
 @keyframes spin{to{transform:rotate(360deg)}}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 .form-group{margin-bottom:0.9rem}
 .form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
 .form-group select,.form-group input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none;background:var(--white)}
@@ -148,6 +151,7 @@ tr:last-child td{border-bottom:none}
         <div class="ub-sub">xlsx / xls / csv — השורות המפורטות שעברו בדיקה</div>
       </div>
       <input type="file" id="fi-detail" accept=".xlsx,.xls,.csv" hidden/>
+      <div class="file-chips" id="rec-detail-chip"></div>
       <div id="rec-detail-sheet-sel-wrap"></div>
     </div>
     <div>
@@ -158,6 +162,7 @@ tr:last-child td{border-bottom:none}
         <div class="ub-sub">xlsx / xls / csv — החשבון/סיכום שהתקבל מהספק</div>
       </div>
       <input type="file" id="fi-summary" accept=".xlsx,.xls,.csv" hidden/>
+      <div class="file-chips" id="rec-summary-chip"></div>
       <div id="rec-summary-sheet-sel-wrap"></div>
     </div>
   </div>
@@ -267,17 +272,34 @@ function sheetSelectorHtml(wb, selId, onchangeFn){
     <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
   </div>`;
 }
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWb(wb, sheetName){
   if(sheetName==='__ALL__'){
     let all=[];
     wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      const r=XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
       if(i===0) all.push(...r);
       else all.push(...r.slice(1));
     });
     return all;
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
 }
 function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
   if(!allRows||allRows.length<=1) return '';
@@ -327,7 +349,7 @@ function changeSummaryHdr(idx){
 }
 
 // ── LOAD FILES ──
-function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange, callback){
+function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId, hdrOnchange, callback, chipId, clearFn){
   document.getElementById(inputId).addEventListener('change', e=>{
     const file=e.target.files[0]; if(!file) return;
     const dz=document.getElementById(dzId);
@@ -345,6 +367,7 @@ function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId,
       dataObj.rows=allRows.slice(1).filter(r=>r.some(c=>c!==''));
       const wrap=document.getElementById(wrapId);
       if(wrap) wrap.innerHTML=sheetSelectorHtml(wb,shSelId,shOnchange)+headerRowSelectorHtml(allRows,hdrSelId,hdrOnchange,0);
+      if(chipId){ const cw=document.getElementById(chipId); if(cw) cw.innerHTML=`<div class="chip">📄 ${file.name.replace(/</g,'&lt;')} <span class="x" onclick="${clearFn}()">✕</span></div>`; }
       dz.classList.add('loaded');
       dz.querySelector('.ub-icon').textContent='✅';
       dz.querySelector('.ub-text').textContent=file.name+' ('+dataObj.rows.length.toLocaleString('he')+' שורות)';
@@ -354,8 +377,29 @@ function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId,
   });
 }
 
-loadFile('fi-detail','dz-detail',detailData,'rec-detail-sheet-sel-wrap','rec-sh-detail','changeDetailSheet','rec-hdr-detail','changeDetailHdr',checkReady);
-loadFile('fi-summary','dz-summary',summaryData,'rec-summary-sheet-sel-wrap','rec-sh-summary','changeSummarySheet','rec-hdr-summary','changeSummaryHdr',checkReady);
+function clearRecDetail(){
+  detailData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
+  document.getElementById('rec-detail-chip').innerHTML='';
+  document.getElementById('rec-detail-sheet-sel-wrap').innerHTML='';
+  const dz=document.getElementById('dz-detail');
+  dz.classList.remove('loaded');
+  dz.querySelector('.ub-icon').textContent='📋';
+  dz.querySelector('.ub-text').textContent='העלה טבלת פירוט';
+  document.getElementById('config-card').classList.add('hidden');
+}
+function clearRecSummary(){
+  summaryData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
+  document.getElementById('rec-summary-chip').innerHTML='';
+  document.getElementById('rec-summary-sheet-sel-wrap').innerHTML='';
+  const dz=document.getElementById('dz-summary');
+  dz.classList.remove('loaded');
+  dz.querySelector('.ub-icon').textContent='📄';
+  dz.querySelector('.ub-text').textContent='העלה טבלת סיכום';
+  document.getElementById('config-card').classList.add('hidden');
+}
+
+loadFile('fi-detail','dz-detail',detailData,'rec-detail-sheet-sel-wrap','rec-sh-detail','changeDetailSheet','rec-hdr-detail','changeDetailHdr',checkReady,'rec-detail-chip','clearRecDetail');
+loadFile('fi-summary','dz-summary',summaryData,'rec-summary-sheet-sel-wrap','rec-sh-summary','changeSummarySheet','rec-hdr-summary','changeSummaryHdr',checkReady,'rec-summary-chip','clearRecSummary');
 
 function checkReady(){
   if(!detailData.headers.length||!summaryData.headers.length) return;

@@ -79,6 +79,9 @@ main{max-width:960px;margin:0 auto;padding:2.5rem 5vw 4rem;}
 .fi-remove{margin-right:auto;flex-shrink:0;background:none;border:1px solid #fca5a5;color:var(--red);border-radius:6px;padding:3px 9px;font-size:0.76rem;cursor:pointer;font-family:inherit;}
 .fi-remove:hover{background:#fef2f2;}
 .multi-badge{display:inline-flex;align-items:center;gap:6px;background:#eef3fb;border:1px solid #c8d9f2;border-radius:20px;padding:5px 14px;font-size:0.82rem;font-weight:700;color:var(--blue);margin-top:0.8rem;}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 /* source group header in results */
 .source-group-hdr{grid-column:1/-1;font-size:0.82rem;font-weight:700;color:var(--muted);padding:4px 0 6px;border-bottom:1px solid var(--border);margin-bottom:2px;}
 
@@ -214,6 +217,7 @@ tr:hover td{background:var(--bg);}
         <div class="drop-sub">ניתן לבחור מספר קבצים במבנה אחיד · .xlsx / .xls / .csv · עד 100MB לקובץ</div>
       </div>
       <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple />
+      <div class="file-chips" id="chips"></div>
       <div class="files-list" id="files-list"></div>
     </div>
 
@@ -491,21 +495,16 @@ async function handleFiles(fileList) {
   document.getElementById('btn-next1').disabled = false;
 }
 
-// ── הצגת רשימת קבצים ──
+// ── הצגת קבצים: chips + פאנל גיליונות ──
 function renderFilesList() {
+  const chips = document.getElementById('chips');
   const container = document.getElementById('files-list');
-  if (uploadedFiles.length === 0) { container.innerHTML = ''; return; }
-  container.innerHTML = uploadedFiles.map((uf, i) => `
-    <div class="file-item ${i > 0 ? 'extra' : ''}">
-      <span class="fi-icon">${i === 0 ? '✅' : '📄'}</span>
-      <div style="flex:1;min-width:0">
-        <div class="fi-name" style="color:${i===0?'var(--green)':'var(--blue)'}">${uf.name}</div>
-        <div class="fi-size">${formatSize(uf.size)}</div>
-      </div>
-      ${i === 0 ? '<span class="fi-label">בסיס מבנה</span>' : ''}
-      <button class="fi-remove" onclick="removeFile(${i})">✕ הסר</button>
-    </div>`).join('') +
-    (uploadedFiles.length > 1 ? `<div class="multi-badge">📂 ${uploadedFiles.length} קבצים — יעובדו עם אותן הגדרות</div>` : '');
+  if (uploadedFiles.length === 0) { chips.innerHTML = ''; container.innerHTML = ''; return; }
+  chips.innerHTML = uploadedFiles.map((uf, i) =>
+    `<div class="chip">📄 ${uf.name.replace(/</g,'&lt;')} <span class="x" onclick="removeFile(${i})">✕</span></div>`
+  ).join('');
+  // פאנל גיליון — רק אם יש קובץ בודד עם כמה גיליונות (הגיליון נבחר דרך sheet-select-wrap)
+  container.innerHTML = '';
 }
 
 // ── הסרת קובץ מהרשימה ──
@@ -524,12 +523,29 @@ function removeFile(idx) {
 
 // ── SHEET & HEADER ROW HELPERS ──
 let _splitterAllRows = null, _splitterHdrIdx = 0;
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWb(wbObj, sheetNamesArg){
   const names = Array.isArray(sheetNamesArg) ? sheetNamesArg : [sheetNamesArg];
   let all=[];
   names.forEach((n,i)=>{
     const ws2=wbObj.Sheets[n]||wbObj.Sheets[wbObj.SheetNames[0]];
-    const r=XLSX.utils.sheet_to_json(ws2,{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''));
+    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws2),{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''));
     if(i===0) all.push(...r);
     else all.push(...r.slice(1));
   });
@@ -1495,6 +1511,7 @@ function reset() {
   dz.classList.remove('loaded','drag');
   dz.querySelector('.drop-icon').textContent='📊';
   dz.querySelector('.drop-text').textContent='לחץ לבחירת קבצים או גרור לכאן';
+  document.getElementById('chips').innerHTML='';
   document.getElementById('files-list').innerHTML='';
   document.getElementById('file-stats-card').classList.remove('show');
   document.getElementById('btn-next1').disabled=true;

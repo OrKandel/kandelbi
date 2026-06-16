@@ -71,6 +71,9 @@ tr.row-fast:hover td{background:#ffe8e8}
 .time-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:3px;max-width:120px}
 .time-fill{height:100%;border-radius:3px;background:var(--blue)}
 .hidden{display:none}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
 </style>
 </head>
 <body>
@@ -107,6 +110,7 @@ tr.row-fast:hover td{background:#ffe8e8}
     <div class="ub-sub">xlsx / xls / csv</div>
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+  <div class="file-chips" id="tb-chip"></div>
   <div id="tb-sheet-sel-wrap"></div>
 </div>
 
@@ -178,17 +182,34 @@ function sheetSelectorHtml(wb, selId, onchangeFn){
     <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
   </div>`;
 }
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r: m.s.r, c: m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r; r <= m.e.r; r++)
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r) continue;
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) {
+          out[addr] = {...src};
+        }
+      }
+  });
+  return out;
+}
 function getRowsFromWb(wb, sheetName){
   if(sheetName==='__ALL__'){
     let all=[];
     wb.SheetNames.forEach((n,i)=>{
-      const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      const r=XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
       if(i===0) all.push(...r);
       else all.push(...r.slice(1));
     });
     return all;
   }
-  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
 }
 function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
   if(!allRows||allRows.length<=1) return '';
@@ -248,6 +269,7 @@ function loadFile(file){
     dz.classList.add('loaded');
     dz.querySelector('.ub-icon').textContent='✅';
     dz.querySelector('.ub-text').textContent=file.name+' ('+rawData.length+' שורות)';
+    document.getElementById('tb-chip').innerHTML=`<div class="chip">📄 ${file.name.replace(/</g,'&lt;')} <span class="x" onclick="clearTbFile()">✕</span></div>`;
     const wrap=document.getElementById('tb-sheet-sel-wrap');
     if(wrap) wrap.innerHTML=sheetSelectorHtml(wb,'tb-sh','changeTbSheet')+headerRowSelectorHtml(allRows,'tb-hdr','changeTbHeaderRow',0);
     const opts=headers.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
@@ -256,6 +278,17 @@ function loadFile(file){
     document.getElementById('config-card').classList.remove('hidden');
   };
   reader.readAsArrayBuffer(file);
+}
+
+function clearTbFile(){
+  _tbWb=null; _tbAllRows=null; _tbHdrIdx=0; rawData=[]; headers=[];
+  document.getElementById('tb-chip').innerHTML='';
+  document.getElementById('tb-sheet-sel-wrap').innerHTML='';
+  const dz=document.getElementById('dz');
+  dz.classList.remove('loaded');
+  dz.querySelector('.ub-icon').textContent='📋';
+  dz.querySelector('.ub-text').textContent='לחץ לבחירת קובץ או גרור לכאן';
+  document.getElementById('config-card').classList.add('hidden');
 }
 
 function autoGuess(){
