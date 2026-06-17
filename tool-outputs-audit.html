@@ -221,16 +221,16 @@ tr.row-issue:hover td{background:#fde8e8}
   <div class="grid2">
     <div class="form-group">
       <label>סוג שירות / קוד <span id="act-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label>
-      <select id="col-act-svc" onchange="updateManualSvcSelects()"></select>
+      <select id="col-act-svc" onchange="updateManualSvcSelects();saveColMapping()"></select>
       <div id="manual-act-svc-wrap" class="hidden" style="margin-top:6px">
         <label style="font-size:0.78rem;color:var(--orange);font-weight:600">⚡ בחר ידנית את סוג התפוקה לכל שורות הקובץ:</label>
-        <select id="manual-act-svc" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;margin-top:3px"></select>
+        <select id="manual-act-svc" onchange="saveColMapping()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;margin-top:3px"></select>
       </div>
     </div>
-    <div class="form-group"><label>תאריך (אופציונלי):</label><select id="col-act-date"></select></div>
-    <div class="form-group"><label>כמות לשורה (אופציונלי — ריק = כל שורה=1):</label><select id="col-act-qty"></select></div>
-    <div class="form-group"><label>מבצע / ספק (אופציונלי):</label><select id="col-act-provider"></select></div>
-    <div class="form-group"><label>מספר אסמכתא / מזהה (לאיתור כפילויות):</label><select id="col-act-ref"></select></div>
+    <div class="form-group"><label>תאריך (אופציונלי):</label><select id="col-act-date" onchange="saveColMapping()"></select></div>
+    <div class="form-group"><label>כמות לשורה (אופציונלי — ריק = כל שורה=1):</label><select id="col-act-qty" onchange="saveColMapping()"></select></div>
+    <div class="form-group"><label>מבצע / ספק (אופציונלי):</label><select id="col-act-provider" onchange="saveColMapping()"></select></div>
+    <div class="form-group"><label>מספר אסמכתא / מזהה (לאיתור כפילויות):</label><select id="col-act-ref" onchange="saveColMapping()"></select></div>
   </div>
   <div style="font-weight:700;font-size:0.87rem;color:var(--navy);margin:0.8rem 0 0.7rem">💵 עמודות בחשבון:</div>
   <div id="out-inv-sheet-sel-wrap-step4"></div>
@@ -239,16 +239,16 @@ tr.row-issue:hover td{background:#fde8e8}
   <div class="grid2">
     <div class="form-group">
       <label>סוג שירות / קוד <span id="inv-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label>
-      <select id="col-inv-svc" onchange="updateManualSvcSelects()"></select>
+      <select id="col-inv-svc" onchange="updateManualSvcSelects();saveColMapping()"></select>
       <div id="manual-inv-svc-wrap" class="hidden" style="margin-top:6px">
         <label style="font-size:0.78rem;color:var(--orange);font-weight:600">⚡ בחר ידנית את סוג התפוקה לכל שורות הקובץ:</label>
-        <select id="manual-inv-svc" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;margin-top:3px"></select>
+        <select id="manual-inv-svc" onchange="saveColMapping()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;margin-top:3px"></select>
       </div>
     </div>
-    <div class="form-group"><label>מבצע / ספק בחשבון (אופציונלי):</label><select id="col-inv-provider"></select></div>
-    <div class="form-group"><label>כמות יחידות <span style="color:var(--red);font-weight:700">(חובה)</span>:</label><select id="col-inv-qty"></select></div>
-    <div class="form-group"><label>מחיר ליחידה <span style="color:var(--red);font-weight:700">(חובה)</span>:</label><select id="col-inv-rate"></select></div>
-    <div class="form-group"><label>סה"כ לשורה (אופציונלי):</label><select id="col-inv-total"></select></div>
+    <div class="form-group"><label>מבצע / ספק בחשבון (אופציונלי):</label><select id="col-inv-provider" onchange="saveColMapping()"></select></div>
+    <div class="form-group"><label>כמות יחידות <span style="color:var(--red);font-weight:700">(חובה)</span>:</label><select id="col-inv-qty" onchange="saveColMapping()"></select></div>
+    <div class="form-group"><label>מחיר ליחידה <span style="color:var(--red);font-weight:700">(חובה)</span>:</label><select id="col-inv-rate" onchange="saveColMapping()"></select></div>
+    <div class="form-group"><label>סה"כ לשורה (אופציונלי):</label><select id="col-inv-total" onchange="saveColMapping()"></select></div>
   </div>
   <button class="btn-primary" onclick="runFullAudit()">🔍 הרץ בדיקה מלאה</button>
 </div>
@@ -448,7 +448,7 @@ function saveSvcList(){
   const services=svcFileData.rows.map(r=>({id:String(r[idCol]||'').trim(),rate:parseFloat(r[rtCol])||0,maxQty:mqCol>=0?(parseFloat(r[mqCol])||null):null})).filter(s=>s.id);
   if(!services.length){alert('לא נמצאו שירותים — בדוק את מיפוי העמודות');return;}
   currentTender.services=services;
-  const t=loadTenders(); t[currentTender.name]={name:currentTender.name,services,updated:new Date().toLocaleDateString('he-IL')}; saveTenders(t); renderTenderList();
+  const t=loadTenders(); t[currentTender.name]={...(t[currentTender.name]||{}),name:currentTender.name,services,updated:new Date().toLocaleDateString('he-IL')}; saveTenders(t); renderTenderList();
   showStep2Existing();
   if(isNewTender)openModal('modal-threshold'); else goToStep3();
 }
@@ -826,98 +826,126 @@ function buildMonthlyChart(){
 
 // ── EXPORT ──
 async function exportAll(){
-  const tName=currentTender?.name||'', services=currentTender?.services||[];
-  const isvc=+document.getElementById('col-inv-svc').value, iqty=+document.getElementById('col-inv-qty').value, irate=+document.getElementById('col-inv-rate').value;
-  const C={navy:'FF0D1F3C',blue:'FF1E6ABF',green:'FF27AE60',red:'FFC0392B',redBg:'FFFDECEA',greenBg:'FFF0FDF4',altBg:'FFF5F7FA',white:'FFFFFFFF',border:'FFDCE3EF',gray:'FF9AA5BB'};
-  const wb=new ExcelJS.Workbook(); wb.creator='קנדל BI'; wb.created=new Date();
-  function hStyle(cell,bg=C.navy){cell.font={bold:true,color:{argb:C.white},size:10,name:'Arial'};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};cell.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};cell.border={bottom:{style:'medium',color:{argb:bg}},right:{style:'hair',color:{argb:C.border}}};}
-  function dStyle(cell,o={}){cell.font={size:10,name:'Arial',bold:!!o.bold,...(o.color?{color:{argb:o.color}}:{})};cell.alignment={horizontal:o.align||'right',vertical:'top',wrapText:o.wrap!==false,readingOrder:'rtl'};if(o.bg)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.bg}};cell.border={bottom:{style:'hair',color:{argb:C.border}},right:{style:'hair',color:{argb:C.border}}};if(o.fmt)cell.numFmt=o.fmt;}
-  function addTitle(ws,text,cols){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:13,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.navy}};c.alignment={horizontal:'center',vertical:'middle',readingOrder:'rtl'};r.height=28;}
-  function addSec(ws,text,cols,bg=C.blue){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:11,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};c.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};r.height=22;}
-  function addHdr(ws,headers,bg=C.navy){const r=ws.addRow(headers);r.height=18;headers.forEach((_,i)=>hStyle(r.getCell(i+1),bg));}
-  function mxLen(arr,def=8){if(!arr.length)return def;return Math.max(def,...arr.map(v=>String(v||'').length));}
-  function uniq(arr){return[...new Set(arr.filter(Boolean))];}
-  function asNum(v){if(v===null||v===undefined||v==='')return v;const n=parseFloat(String(v).replace(/,/g,''));return!isNaN(n)?n:v;}
+  if(window._exporting)return;
+  window._exporting=true;
+  const btns=[...document.querySelectorAll('button[onclick*="exportAll"]')];
+  const origLabels=btns.map(b=>b.innerHTML);
+  btns.forEach(b=>{b.disabled=true;b.innerHTML='⏳ מכין קובץ...';});
+  await new Promise(r=>setTimeout(r,30)); // yield so browser renders loading state
 
-  // Sheet 1
-  const N1=6, ws1=wb.addWorksheet('גיליון מרכז',{views:[{rightToLeft:true}]});
-  addTitle(ws1,`דוח בדיקת חשבון תפוקות — ${tName} — ${todayStr()}`,N1); ws1.addRow([]);
-  addSec(ws1,'▼ ממצאים בחשבון — כל שורות החשבון',N1);
-  addHdr(ws1,['שירות','כמות בחשבון','מחיר ליחידה (₪)','מחיר מאושר (₪)','סטטוס','ממצאים']);
-  auditInvoiceRows.forEach((r,ri)=>{
-    if(r._skip){const row=ws1.addRow([r._orig.join(' | '),'','','','שורת סיכום','']);row.height=14;[1,2,3,4,5,6].forEach(i=>dStyle(row.getCell(i),{color:C.gray,wrap:i===6}));return;}
-    const isIssue=r._status==='issue', bg=isIssue?C.redBg:(ri%2===0?C.white:C.altBg);
-    const row=ws1.addRow([r._svc||'',r._qty!=null?r._qty:0,r._rate!=null?r._rate:0,r._approvedRate||0,isIssue?'✗':'✓',r._issues.join('; ')]);
-    row.height=18;
-    dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(5),{bg,bold:true,color:isIssue?C.red:C.green,align:'center'});dStyle(row.getCell(6),{bg,wrap:true});
-  });
-  ws1.addRow([]);
-  addSec(ws1,'▼ ממצאים בדוח הביצועים',N1);
-  addHdr(ws1,['מהות הממצא','כמות מופעים','כמות יחידות','שירותים מעורבים','הסבר','']);
-  const aFinds=[];
-  const uI=auditInvoiceRows.filter(r=>!r._skip&&r.svcIssue), rateR=auditInvoiceRows.filter(r=>!r._skip&&r.rateIssue), qtyR=auditInvoiceRows.filter(r=>!r._skip&&r.qtyIssue);
-  const unauth2=auditActRows.filter(r=>r._types.includes('unauth'));
-  if(duplicateResults.length)aFinds.push(['כפילויות בדוח הביצועים',duplicateResults.reduce((s,d)=>s+d.count,0),'',uniq(duplicateResults.map(d=>d.svc)).join(', '),'כניסות עם אסמכתא או תאריך+שירות זהים']);
-  if(unauth2.length){const acsvc=+document.getElementById('col-act-svc').value;aFinds.push(['שירותים לא מאושרים — דוח',unauth2.length,'',uniq(unauth2.map(r=>String(r._orig[acsvc]||''))).join(', '),'שירותים בדוח שאינם ברשימה המאושרת']);}
-  if(uI.length)aFinds.push(['שירותים לא מאושרים — חשבון',uI.length,+uI.reduce((s,r)=>s+(r._qty||0),0).toFixed(2),uniq(uI.map(r=>r._svc)).join(', '),'שירותים בחשבון שאינם ברשימה המאושרת']);
-  if(rateR.length)aFinds.push(['אי-התאמת מחיר',rateR.length,'',uniq(rateR.map(r=>r._svc)).join(', '),'שורות חשבון שבהן המחיר ליחידה שונה מהמאושר']);
-  if(qtyR.length)aFinds.push(['אי-התאמת כמות',qtyR.length,'',uniq(qtyR.map(r=>r._svc)).join(', '),'שורות חשבון שבהן הכמות שחויבה שונה מדוח הביצועים']);
-  if(expectedTotal>0||actualInvTotal>0){const d=actualInvTotal-expectedTotal;aFinds.push(['השוואת סה"כ',d!==0?1:0,actualInvTotal,'',`ציפייה לפי ביצועים: ${expectedTotal.toFixed(2)} ₪ | הפרש: ${d>=0?'+':''}${d.toFixed(2)} ₪`]);}
-  if(!aFinds.length)aFinds.push(['לא נמצאו ממצאים',0,'','','הבדיקה עברה ללא ממצאים']);
-  aFinds.forEach((v,ri)=>{
-    const[name,cnt,qty,svcs,expl]=v, hasIssue=typeof cnt==='number'&&cnt>0, bg=hasIssue?C.redBg:(ri%2===0?C.white:C.altBg);
-    const row=ws1.addRow([name,cnt,qty,svcs,expl,'']); row.height=20;
-    dStyle(row.getCell(1),{bg,bold:hasIssue,color:hasIssue?C.red:undefined});dStyle(row.getCell(2),{bg,fmt:typeof cnt==='number'?'#,##0':undefined,align:'center'});dStyle(row.getCell(3),{bg,fmt:typeof qty==='number'?'#,##0.##':undefined,align:'center'});dStyle(row.getCell(4),{bg,wrap:true});dStyle(row.getCell(5),{bg,wrap:true});dStyle(row.getCell(6),{bg});
-  });
-  ws1.addRow([]);
-  addSec(ws1,'▼ רשימת שירותים מאושרים',N1);
-  addHdr(ws1,['קוד / שם שירות','מחיר מאושר (₪)','כמות מקס\'','כמות בדוח ביצועים','בחשבון','הערה']);
-  if(services.length){services.forEach((s,ri)=>{const sk=nSvc(s.id),qty=actQtyBySvc[sk]||0,zero=qty===0,maxEx=s.maxQty!=null&&qty>s.maxQty,bg=zero||maxEx?C.redBg:(ri%2===0?C.white:C.altBg),note=zero?'לא נמצאו ביצועים':maxEx?`חריגה מתקרה (${s.maxQty})`:'';const row=ws1.addRow([s.id||'',s.rate||0,s.maxQty??'',+qty.toFixed(2),'✅',note]);row.height=16;dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.##',align:'center',bold:zero||maxEx,color:zero||maxEx?C.red:undefined});dStyle(row.getCell(5),{bg,align:'center'});dStyle(row.getCell(6),{bg,wrap:true});});}
-  else ws1.addRow(['אין שירותים ברשימה','','','','','']);
-  ws1.getColumn(1).width=Math.min(50,Math.max(28,mxLen(services.map(s=>s.id||'').concat(aFinds.map(f=>f[0])))));
-  ws1.getColumn(2).width=14;ws1.getColumn(3).width=14;ws1.getColumn(4).width=24;
-  ws1.getColumn(5).width=Math.min(50,Math.max(14,mxLen(aFinds.map(f=>String(f[4]||'')))+2));
-  ws1.getColumn(6).width=Math.min(50,Math.max(14,mxLen(auditInvoiceRows.filter(r=>!r._skip).map(r=>r._issues.join('; ')))+2));
+  try{
+    const tName=currentTender?.name||'', services=currentTender?.services||[];
+    const isvc=+document.getElementById('col-inv-svc').value, iqty=+document.getElementById('col-inv-qty').value, irate=+document.getElementById('col-inv-rate').value;
+    const C={navy:'FF0D1F3C',blue:'FF1E6ABF',green:'FF27AE60',red:'FFC0392B',redBg:'FFFDECEA',greenBg:'FFF0FDF4',altBg:'FFF5F7FA',white:'FFFFFFFF',border:'FFDCE3EF',gray:'FF9AA5BB'};
+    const wb=new ExcelJS.Workbook(); wb.creator='קנדל BI'; wb.created=new Date();
+    function hStyle(cell,bg=C.navy){cell.font={bold:true,color:{argb:C.white},size:10,name:'Arial'};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};cell.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};cell.border={bottom:{style:'medium',color:{argb:bg}},right:{style:'hair',color:{argb:C.border}}};}
+    function dStyle(cell,o={}){cell.font={size:10,name:'Arial',bold:!!o.bold,...(o.color?{color:{argb:o.color}}:{})};cell.alignment={horizontal:o.align||'right',vertical:'top',wrapText:o.wrap!==false,readingOrder:'rtl'};if(o.bg)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.bg}};cell.border={bottom:{style:'hair',color:{argb:C.border}},right:{style:'hair',color:{argb:C.border}}};if(o.fmt)cell.numFmt=o.fmt;}
+    function addTitle(ws,text,cols){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:13,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.navy}};c.alignment={horizontal:'center',vertical:'middle',readingOrder:'rtl'};r.height=28;}
+    function addSec(ws,text,cols,bg=C.blue){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:11,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};c.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};r.height=22;}
+    function addHdr(ws,headers,bg=C.navy){const r=ws.addRow(headers);r.height=18;headers.forEach((_,i)=>hStyle(r.getCell(i+1),bg));}
+    function mxLen(arr,def=8){if(!arr.length)return def;return Math.max(def,...arr.map(v=>String(v||'').length));}
+    function uniq(arr){return[...new Set(arr.filter(Boolean))];}
+    function asNum(v){if(v===null||v===undefined||v==='')return v;const n=parseFloat(String(v).replace(/,/g,''));return!isNaN(n)?n:v;}
+    const CHUNK=150; // yield every N rows to keep browser responsive
 
-  // Sheet 2: Invoice
-  const ih=invFileData.headers, N2=ih.length+2, ws2=wb.addWorksheet('חשבון',{views:[{rightToLeft:true}]});
-  addTitle(ws2,`חשבון — ${tName} — ${todayStr()}`,N2); ws2.addRow([]); addHdr(ws2,[...ih,'סטטוס','ממצאים']);
-  const inv2Strs=auditInvoiceRows.map(r=>[...r._orig.map(v=>String(v||'')),'',r._issues.join('; ')]);
-  auditInvoiceRows.forEach((r,ri)=>{
-    const isIssue=!r._skip&&r._status==='issue', bg=r._skip?null:isIssue?C.redBg:(ri%2===0?C.white:C.altBg);
-    const vals=[...r._orig.map(v=>asNum(v)),r._skip?'':isIssue?'✗':'✓',r._issues.join('; ')];
-    const row=ws2.addRow(vals); row.height=18;
-    vals.forEach((v,ci)=>{const cell=row.getCell(ci+1),isStatus=ci===vals.length-2,isNotes=ci===vals.length-1;dStyle(cell,{bg:r._skip?null:bg,color:r._skip?C.gray:isStatus?(isIssue?C.red:C.green):undefined,bold:isStatus&&!r._skip,fmt:typeof v==='number'&&!isStatus?'#,##0.##':undefined,wrap:isNotes,align:typeof v==='number'?'center':isStatus?'center':'right'});});
-  });
-  ih.forEach((_,i)=>{ws2.getColumn(i+1).width=Math.min(30,Math.max(8,mxLen(inv2Strs.map(r=>r[i]||''))+2));});
-  ws2.getColumn(N2-1).width=8; ws2.getColumn(N2).width=Math.min(50,Math.max(10,mxLen(auditInvoiceRows.map(r=>r._issues.join('; ')))+2));
+    // Sheet 1
+    const N1=6, ws1=wb.addWorksheet('גיליון מרכז',{views:[{rightToLeft:true}]});
+    addTitle(ws1,`דוח בדיקת חשבון תפוקות — ${tName} — ${todayStr()}`,N1); ws1.addRow([]);
+    addSec(ws1,'▼ ממצאים בחשבון — כל שורות החשבון',N1);
+    addHdr(ws1,['שירות','כמות בחשבון','מחיר ליחידה (₪)','מחיר מאושר (₪)','סטטוס','ממצאים']);
+    for(let ri=0;ri<auditInvoiceRows.length;ri++){
+      if(ri>0&&ri%CHUNK===0)await new Promise(r=>setTimeout(r,0));
+      const r=auditInvoiceRows[ri];
+      if(r._skip){const row=ws1.addRow([r._orig.join(' | '),'','','','שורת סיכום','']);row.height=14;[1,2,3,4,5,6].forEach(i=>dStyle(row.getCell(i),{color:C.gray,wrap:i===6}));continue;}
+      const isIssue=r._status==='issue', bg=isIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+      const row=ws1.addRow([r._svc||'',r._qty!=null?r._qty:0,r._rate!=null?r._rate:0,r._approvedRate||0,isIssue?'✗':'✓',r._issues.join('; ')]);
+      row.height=18;
+      dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(5),{bg,bold:true,color:isIssue?C.red:C.green,align:'center'});dStyle(row.getCell(6),{bg,wrap:true});
+    }
+    ws1.addRow([]);
+    addSec(ws1,'▼ ממצאים בדוח הביצועים',N1);
+    addHdr(ws1,['מהות הממצא','כמות מופעים','כמות יחידות','שירותים מעורבים','הסבר','']);
+    const aFinds=[];
+    const uI=auditInvoiceRows.filter(r=>!r._skip&&r.svcIssue), rateR=auditInvoiceRows.filter(r=>!r._skip&&r.rateIssue), qtyR=auditInvoiceRows.filter(r=>!r._skip&&r.qtyIssue);
+    const unauth2=auditActRows.filter(r=>r._types.includes('unauth'));
+    if(duplicateResults.length)aFinds.push(['כפילויות בדוח הביצועים',duplicateResults.reduce((s,d)=>s+d.count,0),'',uniq(duplicateResults.map(d=>d.svc)).join(', '),'כניסות עם אסמכתא או תאריך+שירות זהים']);
+    if(unauth2.length){const acsvc=+document.getElementById('col-act-svc').value;aFinds.push(['שירותים לא מאושרים — דוח',unauth2.length,'',uniq(unauth2.map(r=>String(r._orig[acsvc]||''))).join(', '),'שירותים בדוח שאינם ברשימה המאושרת']);}
+    if(uI.length)aFinds.push(['שירותים לא מאושרים — חשבון',uI.length,+uI.reduce((s,r)=>s+(r._qty||0),0).toFixed(2),uniq(uI.map(r=>r._svc)).join(', '),'שירותים בחשבון שאינם ברשימה המאושרת']);
+    if(rateR.length)aFinds.push(['אי-התאמת מחיר',rateR.length,'',uniq(rateR.map(r=>r._svc)).join(', '),'שורות חשבון שבהן המחיר ליחידה שונה מהמאושר']);
+    if(qtyR.length)aFinds.push(['אי-התאמת כמות',qtyR.length,'',uniq(qtyR.map(r=>r._svc)).join(', '),'שורות חשבון שבהן הכמות שחויבה שונה מדוח הביצועים']);
+    if(expectedTotal>0||actualInvTotal>0){const d=actualInvTotal-expectedTotal;aFinds.push(['השוואת סה"כ',d!==0?1:0,actualInvTotal,'',`ציפייה לפי ביצועים: ${expectedTotal.toFixed(2)} ₪ | הפרש: ${d>=0?'+':''}${d.toFixed(2)} ₪`]);}
+    if(!aFinds.length)aFinds.push(['לא נמצאו ממצאים',0,'','','הבדיקה עברה ללא ממצאים']);
+    aFinds.forEach((v,ri)=>{
+      const[name,cnt,qty,svcs,expl]=v, hasIssue=typeof cnt==='number'&&cnt>0, bg=hasIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+      const row=ws1.addRow([name,cnt,qty,svcs,expl,'']); row.height=20;
+      dStyle(row.getCell(1),{bg,bold:hasIssue,color:hasIssue?C.red:undefined});dStyle(row.getCell(2),{bg,fmt:typeof cnt==='number'?'#,##0':undefined,align:'center'});dStyle(row.getCell(3),{bg,fmt:typeof qty==='number'?'#,##0.##':undefined,align:'center'});dStyle(row.getCell(4),{bg,wrap:true});dStyle(row.getCell(5),{bg,wrap:true});dStyle(row.getCell(6),{bg});
+    });
+    ws1.addRow([]);
+    addSec(ws1,'▼ רשימת שירותים מאושרים',N1);
+    addHdr(ws1,['קוד / שם שירות','מחיר מאושר (₪)','כמות מקס\'','כמות בדוח ביצועים','בחשבון','הערה']);
+    if(services.length){services.forEach((s,ri)=>{const sk=nSvc(s.id),qty=actQtyBySvc[sk]||0,zero=qty===0,maxEx=s.maxQty!=null&&qty>s.maxQty,bg=zero||maxEx?C.redBg:(ri%2===0?C.white:C.altBg),note=zero?'לא נמצאו ביצועים':maxEx?`חריגה מתקרה (${s.maxQty})`:'';const row=ws1.addRow([s.id||'',s.rate||0,s.maxQty??'',+qty.toFixed(2),'✅',note]);row.height=16;dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.##',align:'center',bold:zero||maxEx,color:zero||maxEx?C.red:undefined});dStyle(row.getCell(5),{bg,align:'center'});dStyle(row.getCell(6),{bg,wrap:true});});}
+    else ws1.addRow(['אין שירותים ברשימה','','','','','']);
+    ws1.getColumn(1).width=Math.min(50,Math.max(28,mxLen(services.map(s=>s.id||'').concat(aFinds.map(f=>f[0])))));
+    ws1.getColumn(2).width=14;ws1.getColumn(3).width=14;ws1.getColumn(4).width=24;
+    ws1.getColumn(5).width=Math.min(50,Math.max(14,mxLen(aFinds.map(f=>String(f[4]||'')))+2));
+    ws1.getColumn(6).width=Math.min(50,Math.max(14,mxLen(auditInvoiceRows.filter(r=>!r._skip).map(r=>r._issues.join('; ')))+2));
 
-  // Sheet 3: Activity
-  const ah=actFilesList[0]?.data.headers||[], N3=3+ah.length, ws3=wb.addWorksheet('דוח ביצועים',{views:[{rightToLeft:true}]});
-  addTitle(ws3,`דוח ביצועים — ${tName} — ${todayStr()}`,N3); ws3.addRow([]); addHdr(ws3,['סטטוס','ממצאים','מקור קובץ',...ah]);
-  const att3Strs=auditActRows.map(r=>[r._hasIssue?'✗':'✓',r._issues.join('; '),r._src||'',...ah.map((_,i)=>String(r._orig[i]||''))]);
-  auditActRows.forEach((r,ri)=>{
-    const bg=r._hasIssue?C.redBg:(ri%2===0?C.white:C.altBg);
-    const vals=[r._hasIssue?'✗':'✓',r._issues.join('; '),r._src||'',...ah.map((_,i)=>asNum(r._orig[i]))];
-    const row=ws3.addRow(vals); row.height=18;
-    vals.forEach((v,ci)=>{const cell=row.getCell(ci+1);dStyle(cell,{bg,bold:ci===0&&r._hasIssue,color:r._hasIssue&&ci<=1?C.red:undefined,fmt:ci>=3&&typeof v==='number'?'#,##0.##':undefined,wrap:ci===1,align:ci===0?'center':ci>=3&&typeof v==='number'?'center':'right'});});
-  });
-  ws3.getColumn(1).width=8; ws3.getColumn(2).width=Math.min(50,Math.max(10,mxLen(att3Strs.map(r=>r[1]))+2)); ws3.getColumn(3).width=Math.min(30,Math.max(10,mxLen(att3Strs.map(r=>r[2]))+2));
-  ah.forEach((_,i)=>{ws3.getColumn(4+i).width=Math.min(25,Math.max(8,mxLen(att3Strs.map(r=>r[3+i]||''))+2));});
+    // Sheet 2: Invoice
+    btns.forEach(b=>b.innerHTML='⏳ גיליון חשבון...');
+    await new Promise(r=>setTimeout(r,0));
+    const ih=invFileData.headers, N2=ih.length+2, ws2=wb.addWorksheet('חשבון',{views:[{rightToLeft:true}]});
+    addTitle(ws2,`חשבון — ${tName} — ${todayStr()}`,N2); ws2.addRow([]); addHdr(ws2,[...ih,'סטטוס','ממצאים']);
+    const inv2Strs=auditInvoiceRows.map(r=>[...r._orig.map(v=>String(v||'')),'',r._issues.join('; ')]);
+    for(let ri=0;ri<auditInvoiceRows.length;ri++){
+      if(ri>0&&ri%CHUNK===0)await new Promise(r=>setTimeout(r,0));
+      const r=auditInvoiceRows[ri];
+      const isIssue=!r._skip&&r._status==='issue', bg=r._skip?null:isIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+      const vals=[...r._orig.map(v=>asNum(v)),r._skip?'':isIssue?'✗':'✓',r._issues.join('; ')];
+      const row=ws2.addRow(vals); row.height=18;
+      vals.forEach((v,ci)=>{const cell=row.getCell(ci+1),isStatus=ci===vals.length-2,isNotes=ci===vals.length-1;dStyle(cell,{bg:r._skip?null:bg,color:r._skip?C.gray:isStatus?(isIssue?C.red:C.green):undefined,bold:isStatus&&!r._skip,fmt:typeof v==='number'&&!isStatus?'#,##0.##':undefined,wrap:isNotes,align:typeof v==='number'?'center':isStatus?'center':'right'});});
+    }
+    ih.forEach((_,i)=>{ws2.getColumn(i+1).width=Math.min(30,Math.max(8,mxLen(inv2Strs.map(r=>r[i]||''))+2));});
+    ws2.getColumn(N2-1).width=8; ws2.getColumn(N2).width=Math.min(50,Math.max(10,mxLen(auditInvoiceRows.map(r=>r._issues.join('; ')))+2));
 
-  // Sheet 4: Services
-  const ws4=wb.addWorksheet('רשימת שירותים',{views:[{rightToLeft:true}]});
-  addTitle(ws4,`רשימת שירותים — ${tName} — ${todayStr()}`,5); ws4.addRow([]); addHdr(ws4,['קוד / שם שירות','מחיר מאושר (₪)','כמות מקס\'','כמות בדוח ביצועים','הערה']);
-  const svc4S=services.map(s=>{const q=actQtyBySvc[nSvc(s.id)]||0;return[String(s.id||''),String(s.rate||0),String(s.maxQty??''),q.toFixed(2),q===0?'לא נמצאו ביצועים':''];});
-  if(services.length){services.forEach((s,ri)=>{const qty=actQtyBySvc[nSvc(s.id)]||0,zero=qty===0,bg=zero?C.redBg:(ri%2===0?C.white:C.altBg);const row=ws4.addRow([s.id||'',s.rate||0,s.maxQty??'',+qty.toFixed(2),zero?'לא נמצאו ביצועים':'']);row.height=16;dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.##',align:'center',bold:zero,color:zero?C.red:undefined});dStyle(row.getCell(5),{bg,wrap:true});});}
-  else ws4.addRow(['אין שירותים ברשימה','','','','']);
-  ws4.getColumn(1).width=Math.min(40,Math.max(14,mxLen(svc4S.map(r=>r[0]))+2)); ws4.getColumn(2).width=16; ws4.getColumn(3).width=14; ws4.getColumn(4).width=16; ws4.getColumn(5).width=Math.min(35,Math.max(8,mxLen(svc4S.map(r=>r[4]))+2));
+    // Sheet 3: Activity
+    btns.forEach(b=>b.innerHTML='⏳ גיליון ביצועים...');
+    await new Promise(r=>setTimeout(r,0));
+    const ah=actFilesList[0]?.data.headers||[], N3=3+ah.length, ws3=wb.addWorksheet('דוח ביצועים',{views:[{rightToLeft:true}]});
+    addTitle(ws3,`דוח ביצועים — ${tName} — ${todayStr()}`,N3); ws3.addRow([]); addHdr(ws3,['סטטוס','ממצאים','מקור קובץ',...ah]);
+    const att3Strs=auditActRows.map(r=>[r._hasIssue?'✗':'✓',r._issues.join('; '),r._src||'',...ah.map((_,i)=>String(r._orig[i]||''))]);
+    for(let ri=0;ri<auditActRows.length;ri++){
+      if(ri>0&&ri%CHUNK===0)await new Promise(r=>setTimeout(r,0));
+      const r=auditActRows[ri];
+      const bg=r._hasIssue?C.redBg:(ri%2===0?C.white:C.altBg);
+      const vals=[r._hasIssue?'✗':'✓',r._issues.join('; '),r._src||'',...ah.map((_,i)=>asNum(r._orig[i]))];
+      const row=ws3.addRow(vals); row.height=18;
+      vals.forEach((v,ci)=>{const cell=row.getCell(ci+1);dStyle(cell,{bg,bold:ci===0&&r._hasIssue,color:r._hasIssue&&ci<=1?C.red:undefined,fmt:ci>=3&&typeof v==='number'?'#,##0.##':undefined,wrap:ci===1,align:ci===0?'center':ci>=3&&typeof v==='number'?'center':'right'});});
+    }
+    ws3.getColumn(1).width=8; ws3.getColumn(2).width=Math.min(50,Math.max(10,mxLen(att3Strs.map(r=>r[1]))+2)); ws3.getColumn(3).width=Math.min(30,Math.max(10,mxLen(att3Strs.map(r=>r[2]))+2));
+    ah.forEach((_,i)=>{ws3.getColumn(4+i).width=Math.min(25,Math.max(8,mxLen(att3Strs.map(r=>r[3+i]||''))+2));});
 
-  const buf=await wb.xlsx.writeBuffer();
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob), a=document.createElement('a');
-  a.href=url; a.download=`בדיקת_תפוקות_${tName.replace(/[\/\\:*?"<>|]/g,'-')}_${todayStr()}.xlsx`;
-  document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+    // Sheet 4: Services
+    const ws4=wb.addWorksheet('רשימת שירותים',{views:[{rightToLeft:true}]});
+    addTitle(ws4,`רשימת שירותים — ${tName} — ${todayStr()}`,5); ws4.addRow([]); addHdr(ws4,['קוד / שם שירות','מחיר מאושר (₪)','כמות מקס\'','כמות בדוח ביצועים','הערה']);
+    const svc4S=services.map(s=>{const q=actQtyBySvc[nSvc(s.id)]||0;return[String(s.id||''),String(s.rate||0),String(s.maxQty??''),q.toFixed(2),q===0?'לא נמצאו ביצועים':''];});
+    if(services.length){services.forEach((s,ri)=>{const qty=actQtyBySvc[nSvc(s.id)]||0,zero=qty===0,bg=zero?C.redBg:(ri%2===0?C.white:C.altBg);const row=ws4.addRow([s.id||'',s.rate||0,s.maxQty??'',+qty.toFixed(2),zero?'לא נמצאו ביצועים':'']);row.height=16;dStyle(row.getCell(1),{bg});dStyle(row.getCell(2),{bg,fmt:'#,##0.00',align:'center'});dStyle(row.getCell(3),{bg,fmt:'#,##0.##',align:'center'});dStyle(row.getCell(4),{bg,fmt:'#,##0.##',align:'center',bold:zero,color:zero?C.red:undefined});dStyle(row.getCell(5),{bg,wrap:true});});}
+    else ws4.addRow(['אין שירותים ברשימה','','','','']);
+    ws4.getColumn(1).width=Math.min(40,Math.max(14,mxLen(svc4S.map(r=>r[0]))+2)); ws4.getColumn(2).width=16; ws4.getColumn(3).width=14; ws4.getColumn(4).width=16; ws4.getColumn(5).width=Math.min(35,Math.max(8,mxLen(svc4S.map(r=>r[4]))+2));
+
+    btns.forEach(b=>b.innerHTML='⏳ שומר קובץ...');
+    await new Promise(r=>setTimeout(r,0));
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=`בדיקת_תפוקות_${tName.replace(/[\/\\:*?"<>|]/g,'-')}_${todayStr()}.xlsx`;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+  }catch(e){
+    console.error('Export error:',e);
+    alert('שגיאה בייצוא: '+e.message);
+  }finally{
+    window._exporting=false;
+    btns.forEach((b,i)=>{b.disabled=false;b.innerHTML=origLabels[i];});
+  }
 }
 
 // ── HELPERS ──
