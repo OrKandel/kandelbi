@@ -91,7 +91,20 @@ tr.row-issue:hover td{background:#fde8e8}
 .badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:0.7rem;font-weight:700}
 .b-full{background:var(--red-bg);color:var(--red)}.b-partial{background:var(--orange-bg);color:var(--orange)}
 .b-shabbat{background:#f3e8ff;color:#7c3aed}.b-high{background:var(--red-bg);color:var(--red)}.b-ok{background:var(--green-bg);color:var(--green)}
-.b-holiday{background:#fff3cd;color:#856404}.b-dupe{background:#ffe2e2;color:#b91c1c}.b-nocturnal{background:#e0e7ff;color:#3730a3}.b-future{background:#fef3c7;color:#92400e}.b-missing-time{background:#fde8d8;color:#c2410c}.b-concurrent{background:#fce7f3;color:#9d174d}
+.b-holiday{background:#fff3cd;color:#856404}.b-dupe{background:#ffe2e2;color:#b91c1c}.b-nocturnal{background:#e0e7ff;color:#3730a3}.b-future{background:#fef3c7;color:#92400e}.b-missing-time{background:#fde8d8;color:#c2410c}.b-concurrent{background:#fce7f3;color:#9d174d}.b-service{background:#d1fae5;color:#065f46}
+.checks-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;margin-bottom:1.1rem}
+@media(max-width:640px){.checks-grid{grid-template-columns:1fr}}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);transition:border-color 0.15s}
+.check-item:has(input:checked){border-color:var(--blue);background:#f0f6ff}
+.check-item input[type=checkbox]{margin-top:3px;accent-color:var(--blue);width:16px;height:16px;flex-shrink:0;cursor:pointer}
+.check-label{font-size:0.85rem;font-weight:700;color:var(--text)}
+.check-desc{font-size:0.75rem;color:var(--muted);margin-top:2px;line-height:1.4}
+.check-param{display:flex;align-items:center;gap:6px;margin-top:6px}
+.check-param label{font-size:0.78rem;color:var(--muted);white-space:nowrap}
+.check-param input[type=number],.check-param input[type=text]{width:72px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.85rem;text-align:center;outline:none}
+.sw-day-btn{background:var(--bg);border:1.5px solid var(--border);padding:4px 9px;border-radius:6px;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;line-height:1.2}
+.sw-day-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.svc-window{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;background:var(--white)}
 .filter-tabs{display:flex;gap:5px;margin-bottom:0.8rem;flex-wrap:wrap}
 .ftab{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:var(--white);font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
 .ftab:hover{border-color:var(--blue);color:var(--blue)}.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -288,14 +301,68 @@ tr.row-issue:hover td{background:#fde8e8}
     <div class="form-group"><label>סה"כ לשורה:</label><select id="col-inv-total"></select></div>
   </div>
 
-  <div style="background:var(--bg);border-radius:9px;padding:1rem;border:1px solid var(--border);margin-bottom:1rem">
-    <div style="font-weight:700;font-size:0.84rem;margin-bottom:0.6rem">🚩 ספי חריגות נוכחות:</div>
-    <div class="grid2">
-      <div class="form-group"><label>שעות מקסימום ליום:</label><input type="number" id="max-hours" value="12" min="8" max="24"/></div>
-      <div class="form-group"><label>שעות גבוהות (אזהרה):</label><input type="number" id="warn-hours" value="10" min="6" max="20"/></div>
-      <div class="form-group"><label>מכסה חודשית לעובד (שעות):</label><input type="number" id="monthly-cap" value="240" min="40" max="744"/></div>
-      <div class="form-group"><label>מקסימום עובדים בו-זמנית:</label><input type="number" id="max-workers" value="1" min="1" max="200" title="לבדיקת ריבוי עובדים בו-זמנית — השאר 1 אם אמור לעבוד עובד אחד בכל עת"/></div>
-    </div>
+  <div style="font-weight:700;font-size:0.88rem;color:var(--navy);margin-bottom:0.8rem">✅ בדיקות לביצוע:</div>
+  <div class="checks-grid">
+    <div class="check-item"><input type="checkbox" id="chk-overlaps" checked/><div>
+      <div class="check-label">⚠️ חפיפות שעות</div>
+      <div class="check-desc">שתי שורות של אותו עובד באותו יום עם שעות חופפות</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-longday" checked/><div>
+      <div class="check-label">🕐 שעות חריגות/גבוהות ביום</div>
+      <div class="check-desc">סך שעות עבודה של עובד ביום אחד עולה על הסף</div>
+      <div class="check-param"><label>מקסימום שעות:</label><input type="number" id="max-hours" value="12" min="1" max="24"/></div>
+      <div class="check-param"><label>אזהרה (שעות):</label><input type="number" id="warn-hours" value="10" min="1" max="20"/></div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-rounded" checked/><div>
+      <div class="check-label">🔄 שעות עגולות לרבע שעה</div>
+      <div class="check-desc">אם 90%+ מהחתמות עגולות לרבעי שעה — מחשיד</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-offmonth" checked/><div>
+      <div class="check-label">📅 דיווח מחוץ לחודש הדוח</div>
+      <div class="check-desc">שורות בחודש שונה ממרבית הדוח (כשיש חודש דומיננטי)</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-future" checked/><div>
+      <div class="check-label">🔮 תאריכים עתידיים</div>
+      <div class="check-desc">דיווחים עם תאריך אחרי היום</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-nocturnal" checked/><div>
+      <div class="check-label">🌙 שעות לילה (00:00–05:00)</div>
+      <div class="check-desc">החתמות בין חצות לשעה 5:00 בבוקר</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-monthly" checked/><div>
+      <div class="check-label">📊 מכסת שעות חודשית</div>
+      <div class="check-desc">סך שעות של עובד בחודש עולה על המכסה המוגדרת</div>
+      <div class="check-param"><label>מכסה (שע'):</label><input type="number" id="monthly-cap" value="240" min="1"/></div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-shabbat" checked/><div>
+      <div class="check-label">✡️ דיווח בשבת</div>
+      <div class="check-desc">שורות שתאריכן חל ביום שבת</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-holiday" checked/><div>
+      <div class="check-label">🎉 חג, מועד, יום בחירות</div>
+      <div class="check-desc">דיווח בחגי ישראל ויומי בחירות (2020–2026)</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-dupes" checked/><div>
+      <div class="check-label">📋 שורות כפולות</div>
+      <div class="check-desc">שתי שורות זהות לחלוטין — עובד, תאריך, שעות</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-missing-time" checked/><div>
+      <div class="check-label">⏱️ שעת כניסה/יציאה חסרה</div>
+      <div class="check-desc">שורה עם תאריך אך חסרה שעת כניסה או יציאה</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-concurrent"/><div>
+      <div class="check-label">👥 ריבוי עובדים בו-זמנית</div>
+      <div class="check-desc">מספר עובדים שעבדו בו-זמנית מעל למותר — רלוונטי לספקי שמירה/ניקיון עם צוות קבוע</div>
+      <div class="check-param"><label>מקסימום בו-זמנית:</label><input type="number" id="max-workers" value="1" min="1" max="200"/></div>
+    </div></div>
+    <div class="check-item" style="grid-column:1/-1"><input type="checkbox" id="chk-servicehours"/><div style="flex:1">
+      <div class="check-label">🕰️ שעות/ימי שירות מותרים</div>
+      <div class="check-desc">דיווחים מחוץ לימים ושעות שהוגדרו בהסכם — מאפשר לזהות עבודה בלתי מורשית</div>
+      <div style="margin-top:10px">
+        <div id="svc-windows-list"></div>
+        <button type="button" onclick="addSvcWindow()" style="margin-top:4px;width:100%;font-size:0.8rem;background:none;border:1.5px dashed var(--border);border-radius:7px;padding:5px 14px;cursor:pointer;color:var(--blue)">+ הוסף טווח שעות לימים נוספים</button>
+      </div>
+    </div></div>
   </div>
 
   <button class="btn-primary" onclick="runFullAudit()">🔍 הרץ בדיקה מלאה</button>
@@ -349,6 +416,7 @@ tr.row-issue:hover td{background:#fde8e8}
       <button class="ftab" onclick="filterAtt('offmonth',this)">חוץ-חודש</button>
       <button class="ftab" onclick="filterAtt('missing-time',this)">שעה חסרה</button>
       <button class="ftab" onclick="filterAtt('concurrent',this)">במקביל</button>
+      <button class="ftab" onclick="filterAtt('service',this)">חריגת שירות</button>
     </div>
     <div class="result-table-wrap" id="att-table-wrap"></div>
     <div style="margin-top:0.8rem"><button class="btn-green" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
@@ -446,6 +514,7 @@ let monthlyData = {};
 let roundHoursResult = { daily: null, entry: null, exit: null };
 let offMonthRows = [], monthlyCapRows = [], roundedTimesResult = null, domMonth = null;
 let concurrentResults = [];
+let serviceHoursResults = [];
 let attHrById = {}, attHrByName = {}, attHrByRole = {};
 let expectedTotal = 0, actualInvTotal = 0;
 let pendingAliasQueue = [], currentAlias = null;
@@ -919,6 +988,18 @@ function saveColMapping() {
     attHdrRow: attFilesList[0]?.data.headerRowIdx || 0,
     invHdrRow: invFileData.headerRowIdx || 0,
     attSnm:    !!document.getElementById('att-sheet-name-mode')?.checked,
+    checks: ['chk-overlaps','chk-longday','chk-rounded','chk-offmonth','chk-future','chk-nocturnal',
+             'chk-monthly','chk-shabbat','chk-holiday','chk-dupes','chk-missing-time',
+             'chk-concurrent','chk-servicehours'].reduce((o,id)=>{
+               const el=document.getElementById(id); if(el) o[id]=el.checked; return o;
+             }, {}),
+    checkParams: {
+      'max-hours':   document.getElementById('max-hours')?.value,
+      'warn-hours':  document.getElementById('warn-hours')?.value,
+      'monthly-cap': document.getElementById('monthly-cap')?.value,
+      'max-workers': document.getElementById('max-workers')?.value,
+    },
+    svcWindows: getSvcWindowsFromDOM().map(w=>({ days:[...w.days], from:w.from, to:w.to })),
   };
   saveTenders(t);
 }
@@ -971,6 +1052,19 @@ function buildAttColSelects() {
     if (mapping.attSnm != null) {
       const snmCb = document.getElementById('att-sheet-name-mode');
       if (snmCb) { snmCb.checked = !!mapping.attSnm; toggleSheetNameMode(); }
+    }
+    if (mapping.checks) {
+      Object.entries(mapping.checks).forEach(([id, val]) => {
+        const el = document.getElementById(id); if (el) el.checked = !!val;
+      });
+    }
+    if (mapping.checkParams) {
+      Object.entries(mapping.checkParams).forEach(([id, val]) => {
+        const el = document.getElementById(id); if (el && val != null) el.value = val;
+      });
+    }
+    if (mapping.svcWindows?.length) {
+      renderSvcWindows(mapping.svcWindows.map(w => ({ ...w, days: new Set(w.days) })));
     }
   }
 }
@@ -1036,6 +1130,92 @@ function toggleSheetNameMode() {
   sel.style.opacity = on ? '0.35' : '';
   document.getElementById('att-sheet-name-note').style.display = on ? 'block' : 'none';
 }
+// ── SERVICE HOURS WINDOWS ──
+const SVC_DAY_LABELS=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
+function svcWindowHtml(w){
+  const days=w.days||[];
+  const dayBtns=SVC_DAY_LABELS.map((lbl,d)=>`<button type="button" class="sw-day-btn${days.includes(d)?' on':''}" data-day="${d}" onclick="toggleSvcDay(this)">${lbl}</button>`).join('');
+  return `<div class="svc-window">
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <div style="font-size:0.77rem;font-weight:700;color:var(--muted);margin-bottom:5px">ימי שירות (לחץ לבחירה):</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">${dayBtns}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="check-param"><label>משעה:</label><input type="text" class="svc-win-from" value="${w.from||'08:00'}" placeholder="HH:MM" style="width:72px"/></div>
+        <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'17:00'}" placeholder="HH:MM" style="width:72px"/></div>
+      </div>
+      <button type="button" class="svc-win-remove" onclick="removeSvcWindow(this)" title="הסר טווח" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;padding:2px 6px;align-self:center;visibility:hidden">✕</button>
+    </div>
+  </div>`;
+}
+function renderSvcWindows(windows){
+  const c=document.getElementById('svc-windows-list'); if(!c)return;
+  c.innerHTML=windows.map(w=>svcWindowHtml(w)).join('');
+  updateSvcRemoveBtns();
+}
+function toggleSvcDay(btn){ btn.classList.toggle('on'); }
+function addSvcWindow(){
+  const c=document.getElementById('svc-windows-list');
+  const tmp=document.createElement('div');
+  tmp.innerHTML=svcWindowHtml({days:[],from:'08:00',to:'17:00'});
+  c.appendChild(tmp.firstElementChild);
+  updateSvcRemoveBtns();
+}
+function removeSvcWindow(btn){
+  const c=document.getElementById('svc-windows-list');
+  if(c.children.length<=1)return;
+  btn.closest('.svc-window').remove();
+  updateSvcRemoveBtns();
+}
+function updateSvcRemoveBtns(){
+  const c=document.getElementById('svc-windows-list'); if(!c)return;
+  const btns=c.querySelectorAll('.svc-win-remove');
+  btns.forEach(b=>b.style.visibility=btns.length>1?'visible':'hidden');
+}
+function getSvcWindowsFromDOM(){
+  const c=document.getElementById('svc-windows-list'); if(!c)return[];
+  return Array.from(c.querySelectorAll('.svc-window')).map(el=>{
+    const days=new Set(Array.from(el.querySelectorAll('.sw-day-btn.on')).map(b=>parseInt(b.dataset.day)));
+    const from=el.querySelector('.svc-win-from').value.trim();
+    const to=el.querySelector('.svc-win-to').value.trim();
+    const fromMin=toMin(from)>=0?toMin(from):480;
+    const toMin_=toMin(to)>=0?toMin(to):1020;
+    return{days,from,to,fromMin,toMin:toMin_};
+  });
+}
+function checkServiceHoursRows(allAtt, aDate, aStart, aEnd, svcWindows){
+  if(!svcWindows||!svcWindows.length)return new Set();
+  const DAY_HE=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
+  const allDays=new Set(svcWindows.flatMap(w=>[...w.days]));
+  const svcIdxs=new Set();
+  const details={};
+  allAtt.forEach((row,idx)=>{
+    try{
+      const d=excelDate(row[aDate]); if(isNaN(d))return;
+      const dow=d.getUTCDay();
+      const s=toMin(row[aStart]);
+      if(s<0)return;
+      const e_=toMin(row[aEnd]);
+      const eAdj=(e_>=0&&e_<s)?e_+1440:e_;
+      const endCheck=eAdj>=0?eAdj:s;
+      if(!allDays.has(dow)){ svcIdxs.add(idx); details[idx]=`יום ${DAY_HE[dow]} — לא ביום שירות`; return; }
+      let ok=false;
+      for(const w of svcWindows){
+        if(!w.days.has(dow))continue;
+        const toAdj_=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
+        if(s>=w.fromMin&&endCheck<=toAdj_){ok=true;break;}
+      }
+      if(!ok){
+        const win=svcWindows.find(w=>w.days.has(dow));
+        details[idx]=`שעות חריגות — מחוץ לחלון השירות${win?` (${win.from}–${win.to})`:''}`;
+        svcIdxs.add(idx);
+      }
+    }catch{}
+  });
+  return{svcIdxs,details};
+}
+
 /* בונה את כל שורות הנוכחות:
    במצב רגיל — מהגיליון הנבחר בכל קובץ.
    במצב "שם גיליון" — מכל גיליון בכל קובץ, כאשר _sheetEmp = שם הגיליון. */
@@ -1093,6 +1273,21 @@ function runFullAudit() {
   const warnH     = parseFloat(document.getElementById('warn-hours').value) || 10;
   const monthlyCap = parseFloat(document.getElementById('monthly-cap').value) || 240;
 
+  // Check enable/disable flags (default true for pre-checked boxes, false for opt-in)
+  const chkOverlaps    = document.getElementById('chk-overlaps')?.checked !== false;
+  const chkLongday     = document.getElementById('chk-longday')?.checked !== false;
+  const chkRounded     = document.getElementById('chk-rounded')?.checked !== false;
+  const chkOffmonth    = document.getElementById('chk-offmonth')?.checked !== false;
+  const chkFuture      = document.getElementById('chk-future')?.checked !== false;
+  const chkNocturnal   = document.getElementById('chk-nocturnal')?.checked !== false;
+  const chkMonthly     = document.getElementById('chk-monthly')?.checked !== false;
+  const chkShabbat     = document.getElementById('chk-shabbat')?.checked !== false;
+  const chkHoliday     = document.getElementById('chk-holiday')?.checked !== false;
+  const chkDupes       = document.getElementById('chk-dupes')?.checked !== false;
+  const chkMissingTime = document.getElementById('chk-missing-time')?.checked !== false;
+  const chkConcurrent  = !!document.getElementById('chk-concurrent')?.checked;
+  const chkServiceHrs  = !!document.getElementById('chk-servicehours')?.checked;
+
   // Validation: must have at least emp or role column
   if (iEmp < 0 && iRole < 0) {
     alert('יש לבחור לפחות עמודת שם עובד או עמודת תפקיד מהחשבון.');
@@ -1113,31 +1308,32 @@ function runFullAudit() {
 
   // ── 1. Overlaps ──
   overlapResults = [];
-  const grp = {};
-  allAtt.forEach((row, idx) => {
-    const k = `${row[aEmp]}||${dateKey(row[aDate])}`;
-    if (!grp[k]) grp[k] = [];
-    grp[k].push({ row, idx, s: toMin(row[aStart]), e: toMin(row[aEnd]) });
-  });
-  Object.values(grp).forEach(entries => {
-    if (entries.length < 2) return;
-    // Adjust for cross-midnight shifts (end < start)
-    entries.forEach(x => { x.eAdj = (x.e>=0 && x.s>=0 && x.e < x.s) ? x.e + 1440 : x.e; });
-    for (let i = 0; i < entries.length - 1; i++) {
-      for (let j = i + 1; j < entries.length; j++) {
-        const a = entries[i], b = entries[j];
-        if (a.s<0||a.eAdj<=0||b.s<0||b.eAdj<=0) continue;
-        const os = Math.max(a.s,b.s), oe = Math.min(a.eAdj,b.eAdj);
-        if (oe > os) {
-          const full = (b.s>=a.s&&b.eAdj<=a.eAdj)||(a.s>=b.s&&a.eAdj<=b.eAdj);
-          overlapResults.push({ emp:a.row[aEmp], date:dateKey(a.row[aDate]),
-            s1:fmtMin(a.s)+'-'+fmtMin(a.e), s2:fmtMin(b.s)+'-'+fmtMin(b.e),
-            overlap:Math.round(oe-os), type:full?'full':'partial',
-            ia:a.idx, ib:b.idx });
+  if (chkOverlaps) {
+    const grp = {};
+    allAtt.forEach((row, idx) => {
+      const k = `${row[aEmp]}||${dateKey(row[aDate])}`;
+      if (!grp[k]) grp[k] = [];
+      grp[k].push({ row, idx, s: toMin(row[aStart]), e: toMin(row[aEnd]) });
+    });
+    Object.values(grp).forEach(entries => {
+      if (entries.length < 2) return;
+      entries.forEach(x => { x.eAdj = (x.e>=0 && x.s>=0 && x.e < x.s) ? x.e + 1440 : x.e; });
+      for (let i = 0; i < entries.length - 1; i++) {
+        for (let j = i + 1; j < entries.length; j++) {
+          const a = entries[i], b = entries[j];
+          if (a.s<0||a.eAdj<=0||b.s<0||b.eAdj<=0) continue;
+          const os = Math.max(a.s,b.s), oe = Math.min(a.eAdj,b.eAdj);
+          if (oe > os) {
+            const full = (b.s>=a.s&&b.eAdj<=a.eAdj)||(a.s>=b.s&&a.eAdj<=b.eAdj);
+            overlapResults.push({ emp:a.row[aEmp], date:dateKey(a.row[aDate]),
+              s1:fmtMin(a.s)+'-'+fmtMin(a.e), s2:fmtMin(b.s)+'-'+fmtMin(b.e),
+              overlap:Math.round(oe-os), type:full?'full':'partial',
+              ia:a.idx, ib:b.idx });
+          }
         }
       }
-    }
-  });
+    });
+  }
   const overlapIdxs = new Set(overlapResults.flatMap(o => [o.ia, o.ib]));
 
   // ── 2. Daily hours / reasonableness ──
@@ -1151,17 +1347,19 @@ function runFullAudit() {
     daily[k].idxs.push(idx);
   });
   const reasonIdxs = new Set();
-  Object.values(daily).forEach(d => {
-    const issues = [];
-    let type = '';
-    if (isShabbat(d.date))   { issues.push('עבודה בשבת'); type='shabbat'; }
-    if (d.total > maxH)      { issues.push(`שעות חריגות (${d.total.toFixed(1)})`); type=type||'high'; }
-    else if (d.total > warnH){ issues.push(`שעות גבוהות (${d.total.toFixed(1)})`); type=type||'warn'; }
-    if (issues.length) {
-      reasonResults.push({ emp:d.emp, date:dateKey(d.date), total:d.total, issue:issues.join(' + '), type });
-      d.idxs.forEach(i => reasonIdxs.add(i));
-    }
-  });
+  if (chkLongday || chkShabbat) {
+    Object.values(daily).forEach(d => {
+      const issues = [];
+      let type = '';
+      if (chkShabbat && isShabbat(d.date)) { issues.push('עבודה בשבת'); type='shabbat'; }
+      if (chkLongday && d.total > maxH)    { issues.push(`שעות חריגות (${d.total.toFixed(1)})`); type=type||'high'; }
+      else if (chkLongday && d.total > warnH){ issues.push(`שעות גבוהות (${d.total.toFixed(1)})`); type=type||'warn'; }
+      if (issues.length) {
+        reasonResults.push({ emp:d.emp, date:dateKey(d.date), total:d.total, issue:issues.join(' + '), type });
+        d.idxs.forEach(i => reasonIdxs.add(i));
+      }
+    });
+  }
 
   // ── 3. Hours per employee (for invoice comparison) ──
   attHrById = {}; attHrByName = {};
@@ -1240,7 +1438,7 @@ function runFullAudit() {
   const maxWorkers = parseInt(document.getElementById('max-workers').value) || 1;
   concurrentResults = [];
   const _concurrentIdxs = new Set();
-  if (maxWorkers >= 1) {
+  if (chkConcurrent) {
     const _byDate = {};
     allAtt.forEach((row, idx) => {
       const s = toMin(row[aStart]), e = toMin(row[aEnd]);
@@ -1270,83 +1468,124 @@ function runFullAudit() {
     });
   }
 
+  // ── 2c. Service hours ──
+  serviceHoursResults = [];
+  const _svcIdxs = new Set();
+  const _svcDetails = {};
+  if (chkServiceHrs) {
+    const svcWindows = getSvcWindowsFromDOM();
+    if (svcWindows.length) {
+      const { svcIdxs, details } = checkServiceHoursRows(allAtt, aDate, aStart, aEnd, svcWindows);
+      svcIdxs.forEach(i => _svcIdxs.add(i));
+      Object.assign(_svcDetails, details);
+      // Group violations by date for summary
+      const _byDate2 = {};
+      svcIdxs.forEach(i => {
+        const row = allAtt[i];
+        const dk = dateKey(row[aDate]);
+        if (!_byDate2[dk]) _byDate2[dk] = { date: dk, emps: new Set(), count: 0, detail: details[i]||'' };
+        _byDate2[dk].emps.add(String(row[aEmp]||'').trim());
+        _byDate2[dk].count++;
+      });
+      Object.values(_byDate2).forEach(d => serviceHoursResults.push({ date: d.date, count: d.count, emps: [...d.emps].join(', '), detail: d.detail }));
+    }
+  }
+
   auditAttRows = allAtt.map((row, idx) => {
     const issues = [], types = [];
-    if (overlapIdxs.has(idx)) { issues.push('חפיפת שעות עם שורה אחרת'); types.push('overlap'); }
+    // Overlap
+    if (chkOverlaps && overlapIdxs.has(idx)) { issues.push('חפיפת שעות עם שורה אחרת'); types.push('overlap'); }
+    // Daily hours & shabbat (pre-computed in reasonIdxs)
     if (reasonIdxs.has(idx)) {
       const d = daily[`${row[aEmp]}||${dateKey(row[aDate])}`];
       if (d) {
-        if (isShabbat(row[aDate]))   { issues.push('עבודה בשבת'); types.push('shabbat'); }
-        if (d.total > maxH)          { issues.push(`שעות חריגות (${d.total.toFixed(1)} ביום)`); types.push('high'); }
-        else if (d.total > warnH)    { issues.push(`שעות גבוהות (${d.total.toFixed(1)} ביום)`); types.push('warn'); }
+        if (chkShabbat && isShabbat(row[aDate]))   { issues.push('עבודה בשבת'); types.push('shabbat'); }
+        if (chkLongday && d.total > maxH)           { issues.push(`שעות חריגות (${d.total.toFixed(1)} ביום)`); types.push('high'); }
+        else if (chkLongday && d.total > warnH)     { issues.push(`שעות גבוהות (${d.total.toFixed(1)} ביום)`); types.push('warn'); }
       }
     }
+    // Unauthorized employee
     if (employees.length > 0) {
       const raw = String(row[aEmp]||'').trim();
       const id = nId(raw), nm = nName(raw);
       if (!empById[id] && !empByName[nm] && !aliases[raw]) { issues.push('עובד אינו ברשימה המאושרת'); types.push('unauth'); }
     }
-    // Validate total-hours column vs start/end computation (when both exist)
+    // Total-hours column mismatch
     if (aTotalCol >= 0 && aStart >= 0 && aEnd >= 0) {
-      const totalH  = parseHoursStr(row[aTotalCol]);
-      const compH   = rowComputedHours(row, aStart, aEnd);
+      const totalH = parseHoursStr(row[aTotalCol]);
+      const compH  = rowComputedHours(row, aStart, aEnd);
       if (compH >= 0 && totalH > 0 && Math.abs(totalH - compH) > 0.1) {
         const isCrossMidnight = toMin(row[aEnd]) < toMin(row[aStart]);
         issues.push(`אי-התאמה: סה"כ שעות (${totalH.toFixed(2)}) ≠ יציאה פחות כניסה (${compH.toFixed(2)})${isCrossMidnight ? ' — משמרת לילה חוצת-תאריך' : ''}`);
         types.push('hours-mismatch');
       }
     }
-    // ── New checks ──
     // Holiday / election day
-    if (isHoliday(row[aDate]))   { issues.push('עבודה בחג / מועד'); types.push('holiday'); }
-    if (isElection(row[aDate]))  { issues.push('עבודה ביום בחירות'); types.push('election'); }
+    if (chkHoliday && isHoliday(row[aDate]))  { issues.push('עבודה בחג / מועד'); types.push('holiday'); }
+    if (chkHoliday && isElection(row[aDate])) { issues.push('עבודה ביום בחירות'); types.push('election'); }
     // Future date
-    if (isFutureDate(row[aDate])) { issues.push('תאריך עתידי'); types.push('future'); }
-    // Nocturnal hours (entry or exit between 00:00–04:59)
-    if (aStart >= 0 && isNocturnal(row[aStart])) { issues.push(`כניסה בשעות לילה (${fmtMin(toMin(row[aStart]))})`); types.push('nocturnal'); }
-    if (aEnd   >= 0 && isNocturnal(row[aEnd]))   { issues.push(`יציאה בשעות לילה (${fmtMin(toMin(row[aEnd]))})`); types.push('nocturnal'); }
-    // Missing entry or exit time (row has a date but one punch is absent)
-    if (aStart >= 0 && aEnd >= 0 && dateKey(row[aDate])) {
+    if (chkFuture && isFutureDate(row[aDate])) { issues.push('תאריך עתידי'); types.push('future'); }
+    // Nocturnal hours
+    if (chkNocturnal && aStart >= 0 && isNocturnal(row[aStart])) { issues.push(`כניסה בשעות לילה (${fmtMin(toMin(row[aStart]))})`); types.push('nocturnal'); }
+    if (chkNocturnal && aEnd   >= 0 && isNocturnal(row[aEnd]))   { issues.push(`יציאה בשעות לילה (${fmtMin(toMin(row[aEnd]))})`); types.push('nocturnal'); }
+    // Missing entry or exit time
+    if (chkMissingTime && aStart >= 0 && aEnd >= 0 && dateKey(row[aDate])) {
       const _ms = toMin(row[aStart]), _me = toMin(row[aEnd]);
       if (_ms >= 0 && _me < 0) { issues.push('שעת יציאה חסרה'); types.push('missing-time'); }
       else if (_me >= 0 && _ms < 0) { issues.push('שעת כניסה חסרה'); types.push('missing-time'); }
     }
     // Duplicate row
-    if (_dupeIdxs.has(idx)) { issues.push('שורה כפולה (עובד + תאריך + שעות זהים)'); types.push('dupe'); }
+    if (chkDupes && _dupeIdxs.has(idx)) { issues.push('שורה כפולה (עובד + תאריך + שעות זהים)'); types.push('dupe'); }
     // Concurrent workers
-    if (_concurrentIdxs.has(idx)) { issues.push(`ריבוי עובדים בו-זמנית (${concurrentResults.find(r=>r.idxs.includes(idx))?.count||'?'} ב-${concurrentResults.find(r=>r.idxs.includes(idx))?.time||''})`); types.push('concurrent'); }
-    // Off-month (row's month != dominant month)
-    if (_predomMonth) { try{ const _d=excelDate(row[aDate]); if(!isNaN(_d)&&((_d.getUTCMonth()+1)+'/'+_d.getUTCFullYear())!==_predomMonth){ issues.push(`תאריך מחוץ לחודש הדוח (${_predomMonth})`); types.push('offmonth'); } }catch{} }
+    if (chkConcurrent && _concurrentIdxs.has(idx)) {
+      const cr = concurrentResults.find(r => r.idxs.includes(idx));
+      issues.push(`ריבוי עובדים בו-זמנית (${cr?.count||'?'} ב-${cr?.time||''})`);
+      types.push('concurrent');
+    }
+    // Service hours
+    if (chkServiceHrs && _svcIdxs.has(idx)) {
+      issues.push(_svcDetails[idx] || 'חריגת שעות שירות');
+      types.push('service');
+    }
+    // Off-month
+    if (chkOffmonth && _predomMonth) {
+      try { const _d=excelDate(row[aDate]); if(!isNaN(_d)&&((_d.getUTCMonth()+1)+'/'+_d.getUTCFullYear())!==_predomMonth){ issues.push(`תאריך מחוץ לחודש הדוח (${_predomMonth})`); types.push('offmonth'); } } catch{}
+    }
     return { _orig:row, _src:row._src, _issues:issues, _types:types, _hasIssue:issues.length>0 };
   });
 
   // ── 4b. Off-month detection ──
   domMonth = _predomMonth;
-  offMonthRows = auditAttRows.filter(r => r._types.includes('offmonth'));
+  offMonthRows = chkOffmonth ? auditAttRows.filter(r => r._types.includes('offmonth')) : [];
 
   // ── 4c. Monthly cap per employee ──
   monthlyCapRows = [];
-  const _monthlySums = {};
-  allAtt.forEach(row => {
-    try{
-      const d = excelDate(row[aDate]);
-      if (isNaN(d)) return;
-      const mk = String(row[aEmp]||'').trim() + '||' + (d.getUTCMonth()+1) + '/' + d.getUTCFullYear();
-      const h = rowAttHours(row, aStart, aEnd, aTotalCol);
-      if (!_monthlySums[mk]) _monthlySums[mk] = { emp:String(row[aEmp]||'').trim(), month:(d.getUTCMonth()+1)+'/'+d.getUTCFullYear(), total:0 };
-      _monthlySums[mk].total += h;
-    }catch{}
-  });
-  Object.values(_monthlySums).forEach(e => { if (e.total > monthlyCap) monthlyCapRows.push(e); });
+  if (chkMonthly) {
+    const _monthlySums = {};
+    allAtt.forEach(row => {
+      try{
+        const d = excelDate(row[aDate]);
+        if (isNaN(d)) return;
+        const mk = String(row[aEmp]||'').trim() + '||' + (d.getUTCMonth()+1) + '/' + d.getUTCFullYear();
+        const h = rowAttHours(row, aStart, aEnd, aTotalCol);
+        if (!_monthlySums[mk]) _monthlySums[mk] = { emp:String(row[aEmp]||'').trim(), month:(d.getUTCMonth()+1)+'/'+d.getUTCFullYear(), total:0 };
+        _monthlySums[mk].total += h;
+      }catch{}
+    });
+    Object.values(_monthlySums).forEach(e => { if (e.total > monthlyCap) monthlyCapRows.push(e); });
+  }
 
   // ── 4d. 15-minute interval rounding check ──
-  const _allTimes = [];
-  if (aStart >= 0) allAtt.forEach(r => { const m=toMin(r[aStart]); if(m>=0) _allTimes.push(m); });
-  if (aEnd   >= 0) allAtt.forEach(r => { const m=toMin(r[aEnd]);   if(m>=0) _allTimes.push(m); });
-  const _15rounded = _allTimes.filter(t => t % 15 === 0).length;
-  roundedTimesResult = (_allTimes.length > 0 && _15rounded / _allTimes.length >= 0.9)
-    ? { pct: Math.round(_15rounded/_allTimes.length*100), rounded:_15rounded, total:_allTimes.length }
-    : null;
+  roundedTimesResult = null;
+  if (chkRounded) {
+    const _allTimes = [];
+    if (aStart >= 0) allAtt.forEach(r => { const m=toMin(r[aStart]); if(m>=0) _allTimes.push(m); });
+    if (aEnd   >= 0) allAtt.forEach(r => { const m=toMin(r[aEnd]);   if(m>=0) _allTimes.push(m); });
+    const _15rounded = _allTimes.filter(t => t % 15 === 0).length;
+    roundedTimesResult = (_allTimes.length > 0 && _15rounded / _allTimes.length >= 0.9)
+      ? { pct: Math.round(_15rounded/_allTimes.length*100), rounded:_15rounded, total:_allTimes.length }
+      : null;
+  }
 
   // ── 5. Invoice audit ──
   // Build per-employee attendance issues map
@@ -1584,6 +1823,7 @@ function renderAllResults() {
   const _missingTimeCnt = auditAttRows.filter(r=>r._types.includes('missing-time')).length;
   if (_missingTimeCnt>0) s += `<div class="alert-danger">🔴 ${_missingTimeCnt} שורות עם שעת כניסה או יציאה חסרה</div>`;
   if (concurrentResults.length>0) s += `<div class="alert-danger">🔴 ${concurrentResults.length} מקרים של ריבוי עובדים בו-זמנית (מעל ${concurrentResults[0]?.max||1} מורשים)</div>`;
+  if (serviceHoursResults.length>0) s += `<div class="alert-danger" style="background:#d1fae5;color:#065f46;border-color:#6ee7b7">🟢 ${auditAttRows.filter(r=>r._types.includes('service')).length} שורות עם חריגת שעות שירות (${serviceHoursResults.length} ימים)</div>`;
   s += '</div>';
   document.getElementById('summary-content').innerHTML = s;
 
@@ -1931,6 +2171,8 @@ async function exportAll() {
   const _missingTimeRows = auditAttRows.filter(r=>r._types.includes('missing-time'));
   if (_missingTimeRows.length) aFinds.push(['שעת כניסה/יציאה חסרה', _missingTimeRows.length, '', uniq(_missingTimeRows.map(_empOf)).join(', '), 'שורה עם תאריך אך ללא שעת כניסה או יציאה — חיתוך חלקי']);
   if (concurrentResults.length) aFinds.push(['ריבוי עובדים בו-זמנית', concurrentResults.length, '', uniq(concurrentResults.flatMap(r=>r.emps.split(', '))).join(', '), `מקסימום מורשה: ${concurrentResults[0]?.max||1} — ${concurrentResults.map(r=>`${r.date} ${r.time}: ${r.count} עובדים`).join('; ')}`]);
+  const _svcRows = auditAttRows.filter(r=>r._types.includes('service'));
+  if (_svcRows.length) aFinds.push(['חריגת שעות שירות', _svcRows.length, '', uniq(_svcRows.map(_empOf)).join(', '), serviceHoursResults.map(r=>`${r.date}: ${r.detail||r.count+' שורות'}`).join('; ')]);
   if (offMonthRows.length) aFinds.push(['שורות מחוץ לחודש הדוח',   offMonthRows.length, +offMonthRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),   uniq(offMonthRows.map(_empOf)).join(', '), `חודש הדוח: ${domMonth||'?'} — שורות מחודש אחר`]);
   if (monthlyCapRows.length) aFinds.push(['חריגת מכסה חודשית',      monthlyCapRows.length,'',                                                                                         monthlyCapRows.map(e=>`${e.emp} (${e.month}: ${e.total.toFixed(1)}ש')`).join('; '), `מכסה: ${monthlyCap} שעות/חודש לעובד`]);
   if (uI.length)    aFinds.push(['עובדים לא מאושרים — חשבון',    uI.length,   +uI.reduce((s,r)=>s+(r._hours||0),0).toFixed(2),   uniq(uI.map(r=>r._emp)).join(', '),   'שורות חשבון עם עובד שאינו ברשימה המאושרת']);
@@ -2473,6 +2715,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 
 // ── INIT ──
 renderTenderList();
+renderSvcWindows([{ days: new Set([0,1,2,3,4]), from: '08:00', to: '17:00' }]);
 </script>
 </body>
 </html>
