@@ -2700,6 +2700,8 @@ function setDZLoading(dzId){
 }
 
 // ── DnD ──
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
 [['dz-emp','fi-emp'],['dz-att','fi-att'],['dz-inv','fi-inv']].forEach(([dzId,fiId])=>{
   const el = document.getElementById(dzId);
   el.addEventListener('dragover',e=>e.preventDefault());

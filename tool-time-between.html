@@ -252,6 +252,8 @@ function applyTbHeaderRow(idx){
   autoGuess();
 }
 
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
 document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
 const dz=document.getElementById('dz');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});

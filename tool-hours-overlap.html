@@ -286,7 +286,7 @@ function colIdxByName(headers,name){
 // ── טעינת קבצים ──
 // מניעת ברירת המחדל של הדפדפן (פתיחה/הורדה) בכל גרירה לדף
 document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer?.files;if(f?.length)loadFiles(f);});
+document.addEventListener('drop',e=>e.preventDefault());
 
 document.getElementById('fi').addEventListener('change',e=>loadFiles(e.target.files));
 const dz=document.getElementById('dz');

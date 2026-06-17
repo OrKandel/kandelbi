@@ -286,6 +286,8 @@ function reloadFileRows(fd, idx) {
 }
 
 // ── Upload ──
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
 document.getElementById('fi').addEventListener('change', e => loadFiles(e.target.files));
 const dz = document.getElementById('dz');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });

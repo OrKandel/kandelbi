@@ -1021,6 +1021,8 @@ function setDZLoaded(dzId,icon,text){const dz=document.getElementById(dzId);dz.c
 function resetDZ(dzId,icon,text){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').textContent=icon;dz.querySelector('.ub-text').textContent=text;}
 function setDZLoading(dzId){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:24px;height:24px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';dz.querySelector('.ub-text').textContent='טוען קובץ...';}
 
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
 [['dz-svc','fi-svc'],['dz-act','fi-act'],['dz-inv','fi-inv']].forEach(([dzId,fiId])=>{
   const el=document.getElementById(dzId);
   el.addEventListener('dragover',e=>e.preventDefault());

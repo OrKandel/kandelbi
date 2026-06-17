@@ -438,6 +438,8 @@ function clearCmpB(){
 
 loadFile('fi-a','dz-a','col-a',dataA,'cmp-a-sheet-sel-wrap','cmp-sh-a','changeCmpASheet','cmp-hdr-a','changeCmpAHdr','cmp-a-chip','clearCmpA');
 loadFile('fi-b','dz-b','col-b',dataB,'cmp-b-sheet-sel-wrap','cmp-sh-b','changeCmpBSheet','cmp-hdr-b','changeCmpBHdr','cmp-b-chip','clearCmpB');
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
 document.getElementById('dz-a').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dz-a').classList.add('drag')});
 document.getElementById('dz-b').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dz-b').classList.add('drag')});
 

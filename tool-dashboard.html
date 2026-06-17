@@ -188,6 +188,8 @@ tr:last-child td{border-bottom:none;font-weight:700;background:#f8fafc}
 let rawData=[],headers=[],pivotData=[],sortAsc=false;
 const COLORS=['#1e6abf','#0a7c5e','#e67e22','#8e44ad','#d93025','#2980b9','#27ae60','#f39c12'];
 
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
 document.getElementById('fi').addEventListener('change',e=>loadFile(e.target.files[0]));
 const dz=document.getElementById('dz');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
