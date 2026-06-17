@@ -323,7 +323,7 @@ tr.row-issue:hover td{background:#fde8e8}
     </div></div>
     <div class="check-item"><input type="checkbox" id="chk-future" checked/><div>
       <div class="check-label">🔮 תאריכים עתידיים</div>
-      <div class="check-desc">דיווחים עם תאריך אחרי היום</div>
+      <div class="check-desc" id="future-date-desc">דיווחים עם תאריך אחרי <script>document.currentScript.parentElement.insertAdjacentText('beforeend',(()=>{const n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+n.getFullYear();})())</script></div>
     </div></div>
     <div class="check-item"><input type="checkbox" id="chk-nocturnal" checked/><div>
       <div class="check-label">🌙 שעות לילה (00:00–05:00)</div>
@@ -482,7 +482,7 @@ tr.row-issue:hover td{background:#fde8e8}
 </div>
 
 <div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 0;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
-  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong>כלי שתפור למקרה שלך — תעריפים, כללי SLA ובדיקות מותאמות להתקשרות הספציפית שלך?</strong> בחודש הבא כבר תוכל להשתמש בו, במחיר שאפילו לא מצריך קבלת הצעות מחיר. &nbsp;<a href="contact.html" style="color:var(--blue);font-weight:700;">צור קשר ←</a></span>
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong>כלי שתפור למקרה שלך — תעריפים, כללי SLA ובדיקות מותאמות להתקשרות הספציפית שלך?</strong> בחודש הבא כבר תוכל להשתמש בו. &nbsp;<a href="contact.html" style="color:var(--blue);font-weight:700;">צור קשר ←</a></span>
   <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות</span>
 </div>
 </main>
@@ -1221,15 +1221,15 @@ function checkServiceHoursRows(allAtt, aDate, aStart, aEnd, svcWindows){
    במצב "שם גיליון" — מכל גיליון בכל קובץ, כאשר _sheetEmp = שם הגיליון. */
 function buildAllAttRows(sheetNameMode) {
   if (!sheetNameMode) {
-    return attFilesList.flatMap(f => f.data.rows.map(r => ({...r, _src: f.name})));
+    return attFilesList.flatMap(f => f.data.rows.map(r => ({...r, _src: f.name, _sheet: f.data.selectedSheet || ''})));
   }
   return attFilesList.flatMap(f => {
-    if (!f.data.wb) return f.data.rows.map(r => ({...r, _sheetEmp: f.name, _src: f.name}));
+    if (!f.data.wb) return f.data.rows.map(r => ({...r, _sheetEmp: f.name, _src: f.name, _sheet: f.data.selectedSheet || ''}));
     const hdrIdx = f.data.headerRowIdx || 0;
     return f.data.wb.SheetNames.flatMap(sheetName => {
       const allRows = getRowsFromWbAudit(f.data.wb, sheetName);
       return allRows.slice(hdrIdx + 1).filter(r => r.some(c => c !== ''))
-        .map(r => ({...r, _sheetEmp: sheetName, _src: f.name}));
+        .map(r => ({...r, _sheetEmp: sheetName, _src: f.name, _sheet: sheetName}));
     });
   });
 }
@@ -1428,7 +1428,7 @@ function runFullAudit() {
   allAtt.forEach((row, idx) => {
     const s = toMin(row[aStart]), e = toMin(row[aEnd]);
     const dk = dateKey(row[aDate]);
-    if (!dk && s < 0 && e < 0) return;
+    if (s < 0 || e < 0) return;
     const k = `${String(row[aEmp]||'').trim()}||${dk}||${s}||${e}`;
     if (_dupeSeen.has(k)) { _dupeIdxs.add(idx); _dupeIdxs.add(_dupeSeen.get(k)); }
     else _dupeSeen.set(k, idx);
@@ -2278,23 +2278,23 @@ async function exportAll() {
   const _snm3 = getSheetNameMode();
   const ah = attFilesList[0]?.data.headers || [];
   const _snmHdrs = _snm3 ? ['שם גיליון (עובד)'] : [];
-  const N3 = 3 + _snmHdrs.length + ah.length;
+  const N3 = 4 + _snmHdrs.length + ah.length;
   const ws3 = wb.addWorksheet('דוחות נוכחות', {views:[{rightToLeft:true}]});
   addTitle(ws3, `דוחות נוכחות — ${tName} — ${todayStr()}`, N3);
   ws3.addRow([]);
-  // Findings FIRST (cols 1-3[+snm]), then source data
-  addHdr(ws3, ['סטטוס','ממצאים','מקור קובץ', ..._snmHdrs, ...ah]);
+  // Findings FIRST (cols 1-4[+snm]), then source data
+  addHdr(ws3, ['סטטוס','ממצאים','מקור קובץ','גיליון', ..._snmHdrs, ...ah]);
 
   const att3Strs = auditAttRows.map(r=>[
-    r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'',
+    r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'', r._orig._sheet||'',
     ...(_snm3 ? [String(r._orig._sheetEmp||'')] : []),
     ...ah.map((_,i)=>String(r._orig[i]||''))
   ]);
   auditAttRows.forEach((r, ri) => {
     const bg = r._hasIssue ? C.redBg : (ri%2===0 ? C.white : C.altBg);
     const snmVal = _snm3 ? [r._orig._sheetEmp||''] : [];
-    const dataOff = 3 + snmVal.length; // column index where att data starts (0-based)
-    const vals = [r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'', ...snmVal, ...ah.map((_,i)=>asNum(r._orig[i]))];
+    const dataOff = 4 + snmVal.length; // column index where att data starts (0-based)
+    const vals = [r._hasIssue?'✗':'✓', r._issues.join('; '), r._src||'', r._orig._sheet||'', ...snmVal, ...ah.map((_,i)=>asNum(r._orig[i]))];
     const row = ws3.addRow(vals);
     row.height = 18;
     vals.forEach((v,ci) => {
@@ -2313,10 +2313,11 @@ async function exportAll() {
   ws3.getColumn(1).width = 8;
   ws3.getColumn(2).width = Math.min(50, Math.max(10, mxLen(att3Strs.map(r=>r[1]))+2));
   ws3.getColumn(3).width = Math.min(30, Math.max(10, mxLen(att3Strs.map(r=>r[2]))+2));
-  if (_snm3) ws3.getColumn(4).width = Math.min(40, Math.max(14, mxLen(auditAttRows.map(r=>String(r._orig._sheetEmp||'')), 14)+2));
-  const _3off = 3 + (_snm3 ? 1 : 0); // 0-based index where att data starts in att3Strs rows
-  const all3 = [['סטטוס','ממצאים','מקור קובץ',..._snmHdrs,...ah.map(h=>String(h||''))], ...att3Strs];
-  // Excel column for att col i = _3off+1+i (1-indexed: 3 fixed cols + optional snm col + 1-index)
+  ws3.getColumn(4).width = Math.min(25, Math.max(8, mxLen(auditAttRows.map(r=>String(r._orig._sheet||'')), 8)+2));
+  if (_snm3) ws3.getColumn(5).width = Math.min(40, Math.max(14, mxLen(auditAttRows.map(r=>String(r._orig._sheetEmp||'')), 14)+2));
+  const _3off = 4 + (_snm3 ? 1 : 0); // 0-based index where att data starts in att3Strs rows
+  const all3 = [['סטטוס','ממצאים','מקור קובץ','גיליון',..._snmHdrs,...ah.map(h=>String(h||''))], ...att3Strs];
+  // Excel column for att col i = _3off+1+i (1-indexed: 4 fixed cols + optional snm col + 1-index)
   ah.forEach((_,i) => { ws3.getColumn(_3off+1+i).width = Math.min(25, Math.max(8, mxLen(all3.map(r=>r[_3off+i]||''))+2)); });
 
   // ═══════════════════════════════════════════════

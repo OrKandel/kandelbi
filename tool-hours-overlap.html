@@ -187,7 +187,7 @@ tr:hover td{background:var(--bg)}
     </div></div>
     <div class="check-item"><input type="checkbox" id="chk-future" checked/><div>
       <div class="check-label">🔮 תאריכים עתידיים</div>
-      <div class="check-desc">דיווחים עם תאריך אחרי היום</div>
+      <div class="check-desc" id="future-date-desc">דיווחים עם תאריך אחרי <script>document.currentScript.parentElement.insertAdjacentText('beforeend',(()=>{const n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+n.getFullYear();})())</script></div>
     </div></div>
     <div class="check-item"><input type="checkbox" id="chk-nocturnal" checked/><div>
       <div class="check-label">🌙 שעות חריגות (00:00–05:00)</div>
@@ -240,7 +240,7 @@ tr:hover td{background:var(--bg)}
 </div>
 
 <div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
-  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור להתקשרות הספציפית שלך</strong>? בחודש הבא כבר תוכל להשתמש בו, במחיר שאפילו לא מצריך קבלת הצעות מחיר. &nbsp;<a href="contact.html" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור להתקשרות הספציפית שלך</strong>? בחודש הבא כבר תוכל להשתמש בו. &nbsp;<a href="contact.html" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
   <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות | חל איסור על העתקת הכלים</span>
 </div>
 </main>
@@ -410,6 +410,30 @@ function getRowsFromWb(wb, sheetNames){
     else all.push(...r.slice(1));
   });
   return all;
+}
+
+// בונה מפה מקבילה ל-rawData: לכל שורה — שם הגיליון שממנה נלקחה
+function getSheetMapForRawData(wb, selectedSheets, headerRowIdx){
+  if(!wb||!selectedSheets||!selectedSheets.length) return [];
+  if(selectedSheets[0]==='__ALL__') selectedSheets=wb.SheetNames;
+  const map=[];
+  selectedSheets.forEach((n,i)=>{
+    const ws=wb.Sheets[n]; if(!ws) return;
+    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:false})
+               .filter(row=>row.some(c=>c!==''));
+    const count=i===0?r.length:Math.max(0,r.length-1);
+    for(let j=0;j<count;j++) map.push(n);
+  });
+  return map.slice((headerRowIdx||0)+1);
+}
+
+// מחזיר שם הגיליון עבור ממצא נתון לפי אינדקס השורה
+function getSheetForFinding(f, sheetMap){
+  if(!sheetMap||!sheetMap.length) return '';
+  if(f.idx!=null) return sheetMap[f.idx]||'';
+  if(f.idxA!=null) return sheetMap[f.idxA]||'';
+  if(f.indices&&f.indices.length) return sheetMap[f.indices[0]]||'';
+  return '';
 }
 function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx){
   if(!allRows||allRows.length<=1) return '';
@@ -900,6 +924,7 @@ function checkHoliday(parsed){
 function checkDupes(parsed){
   const seen=new Map(),res=[];
   parsed.forEach(p=>{
+    if(p.startMin===null||p.endMin===null) return; // רק שורות עם שעת כניסה ויציאה אמיתיות
     const k=p.emp+'||'+p.dateStr+'||'+p.startMin+'||'+p.endMin;
     if(seen.has(k))res.push({emp:p.emp,date:p.dateStr,detail:'שורה '+(seen.get(k)+2)+' ושורה '+(p.idx+2),idx:p.idx});
     else seen.set(k,p.idx);
@@ -931,11 +956,12 @@ function runAnalysis(){
   const maxWorkers=parseInt(document.getElementById('param-maxworkers').value)||1;
 
   filesResults=filesData.map(fd=>{
+    const sheetMap=getSheetMapForRawData(fd.wb,fd.selectedSheets,fd.headerRowIdx||0);
     const{ci,cd,cs,ce}=getColIndices(fd.headers);
     const parsed=parseData(fd.rawData,ci,cd,cs,ce);
     const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers);
     const rowFlags=buildRowFlags(findings);
-    return{name:fd.name,headers:fd.headers,rawData:fd.rawData,parsed,findings,rowFlags};
+    return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags};
   });
 
   renderResults();
@@ -946,50 +972,50 @@ function runAnalysis(){
 // ── מטא בדיקות ──
 const META={
   overlaps:{label:'חפיפות שעות',icon:'⚠️',
-    cols:['קובץ','עובד','תאריך','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td><td><span class="badge '+(f.full?'b-full':'b-partial')+'">'+(f.full?'מלאה':'חלקית')+'</span></td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'מלאה':'חלקית']},
+    cols:['קובץ','גיליון','עובד','תאריך','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td><td><span class="badge '+(f.full?'b-full':'b-partial')+'">'+(f.full?'מלאה':'חלקית')+'</span></td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'מלאה':'חלקית']},
   longday:{label:'שעות ארוכות ביממה',icon:'🕐',
-    cols:['קובץ','עובד','תאריך',"סה\"כ שעות"],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך',"סה\"כ שעות"],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   rounded:{label:'שעות עגולות',icon:'🔄',info:true},
   offmonth:{label:'חודש חריג',icon:'📅',
-    cols:['קובץ','עובד','תאריך','הערה'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','הערה'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   future:{label:'תאריך עתידי',icon:'🔮',
-    cols:['קובץ','עובד','תאריך','הערה'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','הערה'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   nocturnal:{label:'שעות חריגות',icon:'🌙',
-    cols:['קובץ','עובד','תאריך','פירוט'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   monthly:{label:'מכסה חודשית',icon:'📊',
-    cols:['קובץ','עובד','חודש','פירוט'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.month+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.month,f.detail]},
+    cols:['קובץ','גיליון','עובד','חודש','פירוט'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.month+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.month,f.detail]},
   shabbat:{label:'דיווח בשבת',icon:'✡️',
-    cols:['קובץ','עובד','תאריך','הערה'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','הערה'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   holiday:{label:'חג / בחירות',icon:'🎉',
-    cols:['קובץ','עובד','תאריך','סוג'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','סוג'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   dupes:{label:'שורות כפולות',icon:'📋',
-    cols:['קובץ','עובד','תאריך','פירוט'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   servicehours:{label:'שעות/ימי שירות',icon:'🕰️',
-    cols:['קובץ','עובד','תאריך','פירוט'],
-    row:(f,fn)=>'<td>'+fn+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
-    exportRow:(f,fn)=>[fn,f.emp,f.date,f.detail]},
+    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   concurrent:{label:'ריבוי עובדים בו-זמנית',icon:'👥',
-    cols:['קובץ','תאריך','שעה','עובדים','כמות','מותר'],
-    row:(f,fn)=>'<td>'+fn+'</td><td>'+f.date+'</td><td>'+f.time+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
-    exportRow:(f,fn)=>[fn,f.date,f.time,f.emps,f.count,f.max]}
+    cols:['קובץ','גיליון','תאריך','שעה','עובדים','כמות','מותר'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td>'+f.date+'</td><td>'+f.time+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.date,f.time,f.emps,f.count,f.max]}
 };
 
 // ── תצוגת תוצאות ──
@@ -1003,7 +1029,7 @@ function renderResults(){
   ALL_CHECKS.forEach(k=>{merged[k]=[];});
   filesResults.forEach(fr=>{
     ALL_CHECKS.forEach(k=>{
-      if(fr.findings[k])merged[k]=[...merged[k],...fr.findings[k].map(f=>({...f,_file:fr.name}))];
+      if(fr.findings[k])merged[k]=[...merged[k],...fr.findings[k].map(f=>({...f,_file:fr.name,_sheet:getSheetForFinding(f,fr.sheetMap)}))];
     });
   });
 
@@ -1067,7 +1093,7 @@ function renderResults(){
     } else if(!v.length){
       panel.innerHTML='<div class="no-findings">✅ לא נמצאו ממצאים בבדיקה זו</div>';
     } else {
-      panel.innerHTML='<div class="result-table-wrap"><table><thead><tr>'+m.cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+v.map(f=>'<tr>'+m.row(f,f._file)+'</tr>').join('')+'</tbody></table></div>';
+      panel.innerHTML='<div class="result-table-wrap"><table><thead><tr>'+m.cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+v.map(f=>'<tr>'+m.row(f,f._file,f._sheet||'')+'</tr>').join('')+'</tbody></table></div>';
     }
     panelsEl.appendChild(panel);
   });
@@ -1174,7 +1200,10 @@ function exportFindings(){
       return;
     }
     const combined=[];
-    filesResults.forEach(fr=>{(fr.findings[k]||[]).forEach(f=>combined.push(m.exportRow(f,fr.name)));});
+    filesResults.forEach(fr=>{
+      const sm=fr.sheetMap||[];
+      (fr.findings[k]||[]).forEach(f=>combined.push(m.exportRow(f,fr.name,getSheetForFinding(f,sm))));
+    });
     if(!combined.length)return;
     XLSX.utils.book_append_sheet(wb,_xlsSheet(
       m.cols,combined,
@@ -1213,24 +1242,27 @@ function exportAnnotated(){
     const trimHdrs=fr.headers.slice(0,ncols);
 
     // בנה גיליון מעוצב
-    const allHeaders=[...trimHdrs,'ממצאים (מרוכז)',...flagHeaders];
+    const allHeaders=['גיליון',...trimHdrs,'ממצאים (מרוכז)',...flagHeaders];
     const dataRows=fr.rawData.map((row,idx)=>{
+      const sheetName=(fr.sheetMap&&fr.sheetMap[idx])||'';
       const rf=flags[idx]||{};
       const allMatching=activeFlags.filter(k=>rf[k]);
       const consolidated=allMatching.map(k=>FLAG_LABELS[k]+': '+rf[k]).join(' | ');
-      return[...row.slice(0,ncols), consolidated, ...activeFlags.map(k=>rf[k]||'')];
+      return[sheetName,...row.slice(0,ncols), consolidated, ...activeFlags.map(k=>rf[k]||'')];
     });
 
     const ws=_xlsSheet(allHeaders,dataRows,{
       hFill:'1F3864',
-      colWidths:[..._xlsAutoW(trimHdrs,fr.rawData.map(r=>r.slice(0,ncols))),
-                 Math.min(Math.max(...dataRows.map(r=>String(r[ncols]||'').length),20)+2,60),
+      colWidths:[12,..._xlsAutoW(trimHdrs,fr.rawData.map(r=>r.slice(0,ncols))),
+                 Math.min(Math.max(...dataRows.map(r=>String(r[ncols+1]||'').length),20)+2,60),
                  ...activeFlags.map(k=>Math.max(FLAG_LABELS[k].length+2,10))],
       getStyle:(val,ri,ci)=>{
-        const isDataCol=ci<ncols;
-        const isConsolidated=ci===ncols;
-        const isFlagCol=ci>ncols;
+        const isSheetCol=ci===0;
+        const isDataCol=ci>=1&&ci<=ncols;
+        const isConsolidated=ci===ncols+1;
+        const isFlagCol=ci>ncols+1;
         const hasFlag=flags[ri];
+        if(isSheetCol) return{bg:'EFF3FF',tc:'1F3864'};
         if(isDataCol){
           if(hasFlag) return{bg:ri%2===0?'FFF5F5':'FFECEC'};  // שורה עם ממצא — אדמדם
           return ri%2===0?null:{bg:'F7F9FC'};                  // שורה תקינה — לבן/אפרפר
