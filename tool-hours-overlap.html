@@ -285,8 +285,8 @@ function colIdxByName(headers,name){
 
 // ── טעינת קבצים ──
 // מניעת ברירת המחדל של הדפדפן (פתיחה/הורדה) בכל גרירה לדף
-document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>e.preventDefault());
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>e.preventDefault());
 
 document.getElementById('fi').addEventListener('change',e=>loadFiles(e.target.files));
 const dz=document.getElementById('dz');
@@ -878,7 +878,7 @@ function checkConcurrentWorkers(parsed, maxWorkers, minMinutes=0){
       const empSet=[...new Set(peakEmps.map(q=>q.emp))];
       const fromMin=Math.max(...peakEmps.map(q=>q.startMin));
       const toMin=Math.min(...peakEmps.map(q=>q.endMinAdj));
-      if(minMinutes>0&&(toMin-fromMin)<minMinutes)continue;
+      if(minMinutes>0&&(toMin-fromMin)<minMinutes)return;
       findings.push({date,time:fmtMin(peakTime),fromTime:fmtMin(fromMin),toTime:fmtMin(toMin),
         count:peakCount,max:maxWorkers,
         emps:empSet.join(', '),

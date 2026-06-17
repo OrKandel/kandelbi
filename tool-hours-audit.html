@@ -1029,7 +1029,7 @@ function buildAttColSelects() {
     attFilesList.forEach(f => applyHeaderRow(f.data, mapping.attHdrRow));
   }
   const attShWrap=document.getElementById('att-sheet-sel-wrap');
-  if(attShWrap) attShWrap.innerHTML=attData?.wb ? sheetSelectorHtml(attData.wb,'att-sh-sel','changeAttSheet') : '';
+  if(attShWrap) attShWrap.innerHTML=''; // sheet selection handled in step 3 via att-global-sheet-wrap
   document.getElementById('att-hdr-sel-wrap').innerHTML = headerRowSelectorHtml(attData,'att-hdr-row','changeAttHeaderRow');
   const ah = attData?.headers || [];
   const attOpts = ah.map((h, i) => `<option value="${i}">${escHtml(String(h||'')) || '(עמודה '+(i+1)+')'}</option>`).join('');
@@ -1134,7 +1134,7 @@ function toggleSheetNameMode() {
 const SVC_DAY_LABELS=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
 function svcWindowHtml(w){
   const days=w.days||[];
-  const dayBtns=SVC_DAY_LABELS.map((lbl,d)=>`<button type="button" class="sw-day-btn${days.includes(d)?' on':''}" data-day="${d}" onclick="toggleSvcDay(this)">${lbl}</button>`).join('');
+  const dayBtns=SVC_DAY_LABELS.map((lbl,d)=>`<button type="button" class="sw-day-btn${(days.has?days.has(d):days.includes(d))?' on':''}" data-day="${d}" onclick="toggleSvcDay(this)">${lbl}</button>`).join('');
   return `<div class="svc-window">
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:220px">
@@ -2700,8 +2700,8 @@ function setDZLoading(dzId){
 }
 
 // ── DnD ──
-document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>e.preventDefault());
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>e.preventDefault());
 [['dz-emp','fi-emp'],['dz-att','fi-att'],['dz-inv','fi-inv']].forEach(([dzId,fiId])=>{
   const el = document.getElementById(dzId);
   el.addEventListener('dragover',e=>e.preventDefault());
