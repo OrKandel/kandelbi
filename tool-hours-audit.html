@@ -1856,17 +1856,19 @@ async function exportAll() {
   if (roundHoursResult.exit)  aFinds.push([`שעות יציאה עגולות (${roundHoursResult.exit.pct}%)`,    roundHoursResult.exit.count,   +rxHrs.toFixed(2), rxEmps.join(', '), 'חשד לדיווח ידני — מעל 50% משעות היציאה על השעה בדיוק']);
   if (roundedTimesResult) aFinds.push([`עיגול ל-15 דקות (${roundedTimesResult.pct}%)`, roundedTimesResult.rounded, '', '', `${roundedTimesResult.pct}% מהחותמות על גבול 15 דקות — חשד לדיווח ידני`]);
   // New checks
+  const _snmKey = sheetNameMode ? '_sheetEmp' : aEmpCol;
+  const _empOf = r => String(r._orig[_snmKey]||'');
   const _dupeRows = auditAttRows.filter(r=>r._types.includes('dupe'));
   const _futureRows = auditAttRows.filter(r=>r._types.includes('future'));
   const _holidayRows = auditAttRows.filter(r=>r._types.includes('holiday'));
   const _electionRows = auditAttRows.filter(r=>r._types.includes('election'));
   const _nocturnalRows = auditAttRows.filter(r=>r._types.includes('nocturnal'));
-  if (_dupeRows.length)    aFinds.push(['שורות כפולות',             _dupeRows.length,    '', uniq(_dupeRows.map(r=>String(r._orig[aEmpCol]||r._orig['_sheetEmp']||''))).join(', '), 'עובד + תאריך + שעות זהים — שורה מופיעה יותר מפעם אחת']);
-  if (_futureRows.length)  aFinds.push(['תאריכים עתידיים',          _futureRows.length,  '', uniq(_futureRows.map(r=>String(r._orig[aEmpCol]||r._orig['_sheetEmp']||''))).join(', '), 'דיווחי נוכחות עם תאריך בעתיד']);
-  if (_holidayRows.length) aFinds.push(['עבודה בחג / מועד',         _holidayRows.length, +_holidayRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2), uniq(_holidayRows.map(r=>String(r._orig[aEmpCol]||r._orig['_sheetEmp']||''))).join(', '), 'עבודה בחגים ומועדים יהודיים']);
-  if (_electionRows.length) aFinds.push(['עבודה ביום בחירות',       _electionRows.length,+_electionRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2), uniq(_electionRows.map(r=>String(r._orig[aEmpCol]||r._orig['_sheetEmp']||''))).join(', '), 'עבודה ביום בחירות']);
-  if (_nocturnalRows.length) aFinds.push(['שעות לילה (00:00–04:59)',_nocturnalRows.length,+_nocturnalRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),uniq(_nocturnalRows.map(r=>String(r._orig[aEmpCol]||r._orig['_sheetEmp']||''))).join(', '), 'כניסה או יציאה בין חצות ל-05:00']);
-  if (offMonthRows.length) aFinds.push(['שורות מחוץ לחודש הדוח',   offMonthRows.length, +offMonthRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),   uniq(offMonthRows.map(r=>String(r._orig[aEmpCol]||r._orig['_sheetEmp']||''))).join(', '), `חודש הדוח: ${domMonth||'?'} — שורות מחודש אחר`]);
+  if (_dupeRows.length)    aFinds.push(['שורות כפולות',             _dupeRows.length,    '', uniq(_dupeRows.map(_empOf)).join(', '), 'עובד + תאריך + שעות זהים — שורה מופיעה יותר מפעם אחת']);
+  if (_futureRows.length)  aFinds.push(['תאריכים עתידיים',          _futureRows.length,  '', uniq(_futureRows.map(_empOf)).join(', '), 'דיווחי נוכחות עם תאריך בעתיד']);
+  if (_holidayRows.length) aFinds.push(['עבודה בחג / מועד',         _holidayRows.length, +_holidayRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2), uniq(_holidayRows.map(_empOf)).join(', '), 'עבודה בחגים ומועדים יהודיים']);
+  if (_electionRows.length) aFinds.push(['עבודה ביום בחירות',       _electionRows.length,+_electionRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2), uniq(_electionRows.map(_empOf)).join(', '), 'עבודה ביום בחירות']);
+  if (_nocturnalRows.length) aFinds.push(['שעות לילה (00:00–04:59)',_nocturnalRows.length,+_nocturnalRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),uniq(_nocturnalRows.map(_empOf)).join(', '), 'כניסה או יציאה בין חצות ל-05:00']);
+  if (offMonthRows.length) aFinds.push(['שורות מחוץ לחודש הדוח',   offMonthRows.length, +offMonthRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),   uniq(offMonthRows.map(_empOf)).join(', '), `חודש הדוח: ${domMonth||'?'} — שורות מחודש אחר`]);
   if (monthlyCapRows.length) aFinds.push(['חריגת מכסה חודשית',      monthlyCapRows.length,'',                                                                                         monthlyCapRows.map(e=>`${e.emp} (${e.month}: ${e.total.toFixed(1)}ש')`).join('; '), `מכסה: ${monthlyCap} שעות/חודש לעובד`]);
   if (uI.length)    aFinds.push(['עובדים לא מאושרים — חשבון',    uI.length,   +uI.reduce((s,r)=>s+(r._hours||0),0).toFixed(2),   uniq(uI.map(r=>r._emp)).join(', '),   'שורות חשבון עם עובד שאינו ברשימה המאושרת']);
   if (rateR.length) aFinds.push(['אי-התאמת תעריף',                rateR.length,+rateR.reduce((s,r)=>s+(r._hours||0),0).toFixed(2), uniq(rateR.map(r=>r._emp)).join(', '), 'שורות חשבון שבהן התעריף שחויב שונה מהתעריף המאושר']);
