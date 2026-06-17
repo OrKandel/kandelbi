@@ -158,13 +158,6 @@ tr:hover td{background:var(--bg);}
 .alert-warn{background:#fff8ed;border:1px solid #f5d48a;color:#b87400;}
 .alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue);}
 
-/* PREFS BANNER */
-.prefs-banner{background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:10px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.prefs-banner.hidden{display:none;}
-.pb-text{flex:1;font-size:0.85rem;font-weight:600;color:var(--navy);}
-.pb-date{font-size:0.78rem;color:var(--muted);font-weight:400;}
-.pb-apply{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:7px;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer;}
-.pb-clear{background:none;border:1px solid var(--border);padding:6px 12px;border-radius:7px;font-family:inherit;font-size:0.82rem;color:var(--muted);cursor:pointer;}
 
 /* STAT BAR */
 .stat-bar{display:flex;gap:1.5rem;flex-wrap:wrap;padding:1rem 1.2rem;background:var(--bg);border-radius:10px;margin-bottom:1.2rem;}
@@ -219,6 +212,14 @@ tr:hover td{background:var(--bg);}
       <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple />
       <div class="file-chips" id="chips"></div>
       <div class="files-list" id="files-list"></div>
+      <div id="preset-load-wrap" style="display:none;margin-top:1rem;background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:0.8rem 1.2rem">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:0.6rem">📂 יש לך הגדרות שמורות — רוצה לטעון אותן?</div>
+        <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
+          <select id="preset-select" style="flex:1;min-width:200px;padding:7px 10px;border:1.5px solid var(--blue);border-radius:7px;font-family:inherit;font-size:0.85rem"></select>
+          <button class="btn-sm" onclick="applyPresetFromSelector()">החל הגדרות</button>
+          <button class="btn-sm del" onclick="deletePresetFromSelector()">מחק</button>
+        </div>
+      </div>
     </div>
 
     <div class="card section" id="file-stats-card">
@@ -252,11 +253,6 @@ tr:hover td{background:var(--bg);}
   <div class="section" id="sec2">
     <div class="card">
       <div class="card-title">🗂️ בחירת עמודות לשמירה</div>
-      <div class="prefs-banner hidden" id="prefs-banner">
-        <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
-        <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
-        <button class="pb-clear" onclick="clearPrefs()">מחק</button>
-      </div>
       <div class="alert alert-info show">סמן את העמודות שתרצה לכלול בקובץ הפלט. עמודות לא מסומנות — יימחקו.</div>
       <div class="cols-header">
         <span style="font-size:0.85rem;color:var(--muted);">נמצאו <strong id="col-count">0</strong> עמודות</span>
@@ -316,6 +312,8 @@ tr:hover td{background:var(--bg);}
               <option value="split-col">פיצול לפי עמודה (קובץ לכל ערך)</option>
               <option value="split-date">פיצול לפי תאריך (חודש/רבעון/שנה)</option>
               <option value="split-rows">פיצול לפי מספר שורות</option>
+              <option value="split-sheet">פיצול לפי גיליון (קובץ לכל גיליון)</option>
+              <option value="split-file">פיצול לפי שם קובץ מקור</option>
             </select>
           </div>
           <div class="form-group" id="split-by-col-wrap" style="display:none">
@@ -360,6 +358,14 @@ tr:hover td{background:var(--bg);}
       <div class="card-title">✅ הקבצים מוכנים להורדה</div>
       <div class="alert alert-info show" id="result-summary"></div>
       <div class="results-grid" id="results-grid"></div>
+      <div id="save-preset-wrap" style="margin-top:1.2rem;background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:1rem 1.2rem">
+        <div style="font-weight:700;font-size:0.88rem;color:var(--navy);margin-bottom:0.4rem">💾 שמור הגדרות לשימוש עתידי</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem">הגדרות כוללות: עמודות שנבחרו, אופן הפלט והגדרות הפיצול — לשימוש נוח על קבצים עתידיים</div>
+        <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
+          <input type="text" id="preset-name-input" placeholder="שם להגדרות (למשל: דוח נוכחות חודשי)" style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem"/>
+          <button class="btn-sm" onclick="saveCurrentPreset()" style="background:var(--blue);color:#fff;border-color:var(--blue)">💾 שמור הגדרות</button>
+        </div>
+      </div>
     </div>
     <div class="btn-row">
       <button class="btn-accent" onclick="downloadAll()">⬇ הורד את כל הקבצים</button>
@@ -379,47 +385,79 @@ let wb, ws, allData, headers, selectedCols, splitMode='none', outputFiles=[];
 let uploadedFiles = []; // { file, wb, name, size }
 let selectedSheets = [];
 let _dateColCache = null, _timeColCache = null, _valCountCache = null, _previewTimer = null, _cascadeTimer = null;
-let _pendingOutputPrefs = null;
+// ── הגדרות שמורות (מרובות + עם שם) ──
+const SPLITTER_PRESETS_KEY = 'kandelbi_splitter_presets_v2';
 
-// ── הגדרות שמורות ──
-const SPLITTER_PREFS_KEY = 'kandelbi_splitter_prefs_v1';
+function loadAllPresets() {
+  try { return JSON.parse(localStorage.getItem(SPLITTER_PRESETS_KEY)) || []; } catch { return []; }
+}
 
-function saveSplitterPrefs() {
-  const selColNames = [...selectedCols].map(i => String(headers[i]||'')).filter(Boolean);
-  const outputMode = document.getElementById('output-mode').value;
+function saveNamedPreset(name, prefs) {
+  const all = loadAllPresets();
+  const idx = all.findIndex(p => p.name === name);
+  if (idx >= 0) all[idx] = { name, ...prefs };
+  else all.push({ name, ...prefs });
+  localStorage.setItem(SPLITTER_PRESETS_KEY, JSON.stringify(all));
+}
+
+function deleteNamedPreset(name) {
+  const all = loadAllPresets().filter(p => p.name !== name);
+  localStorage.setItem(SPLITTER_PRESETS_KEY, JSON.stringify(all));
+}
+
+function escP(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function renderPresetSelector() {
+  const all = loadAllPresets();
+  const wrap = document.getElementById('preset-load-wrap');
+  if (!wrap) return;
+  if (!all.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const sel = document.getElementById('preset-select');
+  sel.innerHTML = '<option value="">— בחר הגדרות שמורות —</option>' +
+    all.map(p => `<option value="${escP(p.name)}">${escP(p.name)}${p.savedAt ? ' (' + escP(p.savedAt) + ')' : ''}</option>`).join('');
+}
+
+function applyPresetFromSelector() {
+  const name = document.getElementById('preset-select')?.value;
+  if (!name) return;
+  const p = loadAllPresets().find(x => x.name === name);
+  if (!p) return;
+  if (p.selectedColNames) {
+    const nameSet = new Set(p.selectedColNames);
+    const newSel = new Set(headers.map((h,i) => nameSet.has(String(h||'')) ? i : -1).filter(i => i >= 0));
+    if (newSel.size) selectedCols = newSel;
+    buildColumnsUI();
+  }
+  window._pendingPreset = p;
+  goStep(2);
+}
+
+function deletePresetFromSelector() {
+  const name = document.getElementById('preset-select')?.value;
+  if (!name || !confirm('למחוק את ההגדרות "' + name + '"?')) return;
+  deleteNamedPreset(name);
+  renderPresetSelector();
+}
+
+function saveCurrentPreset() {
+  const name = document.getElementById('preset-name-input')?.value.trim();
+  if (!name) { alert('יש להזין שם להגדרות.'); return; }
   const sbcEl = document.getElementById('split-by-col');
   const sbdEl = document.getElementById('split-by-date-col');
   const prefs = {
-    selectedColNames: selColNames,
-    outputMode,
-    splitByColName: sbcEl.options[sbcEl.selectedIndex]?.text || '',
-    splitByDateColName: sbdEl.options[sbdEl.selectedIndex]?.text || '',
+    selectedColNames: [...selectedCols].map(i => String(headers[i]||'')).filter(Boolean),
+    outputMode: document.getElementById('output-mode').value,
+    splitByColName: sbcEl?.options[sbcEl.selectedIndex]?.text || '',
+    splitByDateColName: sbdEl?.options[sbdEl.selectedIndex]?.text || '',
     splitByPeriod: document.getElementById('split-by-period').value,
     rowsPerFile: document.getElementById('rows-per-file').value,
     savedAt: new Date().toLocaleDateString('he-IL')
   };
-  localStorage.setItem(SPLITTER_PREFS_KEY, JSON.stringify(prefs));
+  saveNamedPreset(name, prefs);
+  document.getElementById('preset-name-input').value = '';
+  alert('ההגדרות "' + name + '" נשמרו. בפעם הבאה תוכל לטעון אותן בשלב 1.');
 }
-
-function loadSplitterPrefs() { try { return JSON.parse(localStorage.getItem(SPLITTER_PREFS_KEY)); } catch { return null; } }
-
-function showPrefsBanner() {
-  const p = loadSplitterPrefs();
-  const banner = document.getElementById('prefs-banner');
-  if (p) { document.getElementById('prefs-date').textContent = '(' + p.savedAt + ')'; banner.classList.remove('hidden'); }
-  else banner.classList.add('hidden');
-}
-
-function applyPrefs() {
-  const p = loadSplitterPrefs(); if (!p) return;
-  const nameSet = new Set(p.selectedColNames);
-  const newSel = new Set(headers.map((h,i) => nameSet.has(String(h||'')) ? i : -1).filter(i => i >= 0));
-  if (newSel.size) selectedCols = newSel;
-  buildColumnsUI();
-  _pendingOutputPrefs = p;
-}
-
-function clearPrefs() { localStorage.removeItem(SPLITTER_PREFS_KEY); document.getElementById('prefs-banner').classList.add('hidden'); }
 
 // ══ DRAG & DROP ══
 const dz = document.getElementById('drop-zone');
@@ -474,10 +512,15 @@ async function handleFiles(fileList) {
   document.getElementById('st-size').textContent =
     formatSize(uploadedFiles.reduce((s,u)=>s+u.size, 0)) + (uploadedFiles.length > 1 ? ` (${uploadedFiles.length} קבצים)` : '');
 
-  // הצג בחירת גיליונות רק כשיש קובץ אחד ויש כמה גיליונות
-  if (sheets.length > 1 && uploadedFiles.length === 1) {
+  // אסוף שמות גיליונות ייחודיים מכל הקבצים
+  const allSheetNames = [];
+  uploadedFiles.forEach(uf => {
+    uf.wb.SheetNames.forEach(s => { if (!allSheetNames.includes(s)) allSheetNames.push(s); });
+  });
+  const anyMultiSheet = uploadedFiles.some(uf => uf.wb.SheetNames.length > 1);
+  if (anyMultiSheet) {
     document.getElementById('sheet-select-wrap').style.display = '';
-    renderSheetCbs(sheets);
+    renderSheetCbs(allSheetNames, uploadedFiles);
   } else {
     document.getElementById('sheet-select-wrap').style.display = 'none';
     selectedSheets = [sheets[0]];
@@ -493,6 +536,7 @@ async function handleFiles(fileList) {
   renderFilesList();
   document.getElementById('file-stats-card').classList.add('show');
   document.getElementById('btn-next1').disabled = false;
+  renderPresetSelector();
 }
 
 // ── הצגת קבצים: chips + פאנל גיליונות ──
@@ -628,16 +672,23 @@ function loadSheet() {
 }
 
 // ── בחירת גיליונות ──
-function renderSheetCbs(sheets) {
+function renderSheetCbs(sheets, allFiles) {
   const wrap = document.getElementById('sheet-cbs-wrap');
+  const files = allFiles || uploadedFiles;
   wrap.innerHTML = sheets.map((s, i) => {
-    const ws2 = wb.Sheets[s];
-    const ref = ws2['!ref'] || 'A1';
-    const range = XLSX.utils.decode_range(ref);
-    const rc = range.e.r - range.s.r;
+    let rc = 0;
+    files.forEach(uf => {
+      const ws2 = uf.wb.Sheets[s];
+      if (ws2 && ws2['!ref']) {
+        const range = XLSX.utils.decode_range(ws2['!ref']);
+        rc += range.e.r - range.s.r;
+      }
+    });
+    const filesWithSheet = files.filter(uf => uf.wb.Sheets[s]).length;
+    const filesBadge = files.length > 1 ? ` · ${filesWithSheet} קבצים` : '';
     return `<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);font-size:0.84rem;font-weight:600;transition:all 0.2s">
       <input type="checkbox" data-sheet="${s.replace(/"/g,'&quot;')}" ${i===0?'checked':''} onchange="onSheetCbChange()" style="cursor:pointer"/>
-      ${s} <span style="color:var(--muted);font-weight:400;font-size:0.75rem">(${rc.toLocaleString('he')} שורות)</span>
+      ${s} <span style="color:var(--muted);font-weight:400;font-size:0.75rem">(${rc.toLocaleString('he')} שורות${filesBadge})</span>
     </label>`;
   }).join('');
   selectedSheets = [sheets[0]];
@@ -733,7 +784,6 @@ function buildColumnsUI() {
   }).join('');
 
   buildPreview();
-  showPrefsBanner();
 }
 
 // ── זיהוי עמודות שעות ──
@@ -870,9 +920,9 @@ function buildSplitUI() {
   rowsInput.replaceWith(rowsInput.cloneNode(true));
   document.getElementById('rows-per-file').addEventListener('input', updateEstRows);
 
-  // החל הגדרות שמורות לפלט (אם הוחלו מ-applyPrefs)
-  if (_pendingOutputPrefs) {
-    const p = _pendingOutputPrefs;
+  // החל הגדרות preset אם נבחרו
+  if (window._pendingPreset) {
+    const p = window._pendingPreset;
     document.getElementById('output-mode').value = p.outputMode || 'one';
     toggleSplitBy();
     if (p.outputMode === 'split-col' && p.splitByColName) {
@@ -889,7 +939,7 @@ function buildSplitUI() {
     if (p.outputMode === 'split-rows' && p.rowsPerFile) {
       document.getElementById('rows-per-file').value = p.rowsPerFile;
     }
-    _pendingOutputPrefs = null;
+    window._pendingPreset = null;
   }
 
   // הצג/הסתר שאלת פורמט גיליונות
@@ -1204,6 +1254,9 @@ function toggleSplitBy() {
   document.getElementById('split-by-date-wrap').style.display = mode==='split-date' ? '' : 'none';
   document.getElementById('split-by-date-col-wrap').style.display = mode==='split-date' ? '' : 'none';
   document.getElementById('split-rows-wrap').style.display = mode==='split-rows' ? '' : 'none';
+  // במצב פיצול לפי גיליון — שאלת "מה לעשות עם גיליונות" לא רלוונטית
+  const sow = document.getElementById('sheets-out-wrap');
+  if (sow) sow.style.display = (selectedSheets.length > 1 && mode !== 'split-sheet') ? '' : 'none';
   updateEstRows();
 }
 
@@ -1217,7 +1270,6 @@ function updateEstRows() {
 
 // ══ PROCESS ══
 async function processFile() {
-  saveSplitterPrefs();
   outputFiles = [];
 
   const cols = [...selectedCols].sort((a,b)=>a-b);
@@ -1282,8 +1334,11 @@ async function processFile() {
     setProgress(pctBase + 5, `(${fi+1}/${totalFiles}) קורא: ${uf.name}...`);
     await new Promise(r=>setTimeout(r,30));
 
-    // טען נתוני הקובץ הנוכחי
-    const sheetsToProcess = fi === 0 ? (selectedSheets.length ? selectedSheets : [uf.wb.SheetNames[0]]) : [uf.wb.SheetNames[0]];
+    // טען נתוני הקובץ הנוכחי — בחר גיליונות לפי שם (fallback לגיליון ראשון)
+    let sheetsToProcess = selectedSheets.length
+      ? selectedSheets.filter(s => uf.wb.Sheets[s])
+      : [];
+    if (!sheetsToProcess.length) sheetsToProcess = [uf.wb.SheetNames[0]];
     const prefix = totalFiles > 1 ? sanitize(uf.name.replace(/\.[^.]+$/,'')) + '_' : '';
     const src = uf.name;
 
@@ -1428,6 +1483,47 @@ async function processFile() {
         });
         Object.entries(groups).sort().forEach(([k,rows])=>outputFiles.push({name:prefix+k, data:[filteredHeaders,...rows], srcWs, srcIdx:gIdx[k]||null, colMap, wsHdrRowIdx, sourceFile:src}));
       }
+
+    } else if (outputMode === 'split-sheet') {
+      // קובץ נפרד לכל גיליון
+      for (const sName of sheetsToProcess) {
+        const shWs = uf.wb.Sheets[sName];
+        if (!shWs) continue;
+        const riS = getRowsWithActualIndices(shWs);
+        let rd = riS.rows, rdIdx = riS.indices;
+        while (rd.length && rd[0].every(c=>c===''||c===null||c===undefined)) { rd.shift(); rdIdx.shift(); }
+        const hIdx = fi === 0 ? (_splitterHdrIdx||0) : 0;
+        const wsHdrRIdx = rdIdx[hIdx] ?? hIdx;
+        const fh = rd[hIdx] || [];
+        const rawAfterS = rd.slice(hIdx+1), idxAfterS = rdIdx.slice(hIdx+1);
+        const shDataRows = [], shActIdx = [];
+        rawAfterS.forEach((r,i) => { if(r.some(c=>c!==''&&c!==null&&c!==undefined)) { shDataRows.push(r); shActIdx.push(idxAfterS[i]); } });
+        const cm = cols.map(origIdx => {
+          const hName = String(headers[origIdx]||'');
+          const found = fh.findIndex(h=>String(h||'')===hName);
+          return found >= 0 ? found : origIdx;
+        });
+        const toLocalSh = origIdx => { const p = cols.indexOf(origIdx); return p < 0 ? -1 : p; };
+        let shRes = shDataRows.map(r => cm.map(i=>r[i]));
+        let shResIdx = [...shActIdx];
+        const filtSh = pred => {
+          const nr=[], ni=[];
+          shRes.forEach((r,i) => { if(pred(r)) { nr.push(r); ni.push(shResIdx[i]); } });
+          shRes=nr; shResIdx=ni;
+        };
+        filterDefs.forEach(fd => {
+          if(fd.type==='col'){ const li=toLocalSh(fd.origColIdx); if(li<0)return; filtSh(r=>{const raw=r[li];const v=(raw!==undefined&&raw!==''&&raw!==null)?fmtPreviewCell(raw):'(ריק)';return fd.selected.has(v);}); }
+          else if(fd.type==='date'){ const li=toLocalSh(fd.origColIdx); if(li<0)return; filtSh(r=>{const d=parseFlexDate(String(r[li]||''));return d&&d>=fd.from&&d<=fd.to;}); }
+          else if(fd.type==='time'){ const li=toLocalSh(fd.origColIdx); if(li<0)return; filtSh(r=>{const m=getTimeMinutes(r[li]);return m!==null&&m>=fd.fromM&&m<=fd.toM;}); }
+          else if(fd.type==='num'){ const li=toLocalSh(fd.origColIdx); if(li<0)return; filtSh(r=>{const v=parseFloat(r[li]);if(isNaN(v))return false;if(fd.numType==='num-between')return v>=fd.numFrom&&v<=fd.numTo;if(fd.numType==='num-lt')return v<fd.numVal;if(fd.numType==='num-gt')return v>fd.numVal;if(fd.numType==='num-eq')return v===fd.numVal;if(fd.numType==='num-ne')return v!==fd.numVal;return true;}); }
+        });
+        outputFiles.push({name: prefix+sanitize(sName), data:[filteredHeaders,...shRes], srcWs:shWs, srcIdx:shResIdx, colMap:cm, wsHdrRowIdx:wsHdrRIdx, sourceFile:src});
+      }
+
+    } else if (outputMode === 'split-file') {
+      // קובץ אחד לכל קובץ מקור — שם ברור ללא סיומת "מסונן"
+      const fileName = sanitize(uf.name.replace(/\.[^.]+$/,''));
+      outputFiles.push({name: fileName, data:[filteredHeaders,...result], srcWs, srcIdx, colMap, wsHdrRowIdx, sourceFile:src});
     }
   }
 
