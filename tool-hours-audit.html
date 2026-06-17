@@ -91,7 +91,7 @@ tr.row-issue:hover td{background:#fde8e8}
 .badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:0.7rem;font-weight:700}
 .b-full{background:var(--red-bg);color:var(--red)}.b-partial{background:var(--orange-bg);color:var(--orange)}
 .b-shabbat{background:#f3e8ff;color:#7c3aed}.b-high{background:var(--red-bg);color:var(--red)}.b-ok{background:var(--green-bg);color:var(--green)}
-.b-holiday{background:#fff3cd;color:#856404}.b-dupe{background:#ffe2e2;color:#b91c1c}.b-nocturnal{background:#e0e7ff;color:#3730a3}.b-future{background:#fef3c7;color:#92400e}
+.b-holiday{background:#fff3cd;color:#856404}.b-dupe{background:#ffe2e2;color:#b91c1c}.b-nocturnal{background:#e0e7ff;color:#3730a3}.b-future{background:#fef3c7;color:#92400e}.b-missing-time{background:#fde8d8;color:#c2410c}.b-concurrent{background:#fce7f3;color:#9d174d}
 .filter-tabs{display:flex;gap:5px;margin-bottom:0.8rem;flex-wrap:wrap}
 .ftab{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:var(--white);font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
 .ftab:hover{border-color:var(--blue);color:var(--blue)}.ftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -294,6 +294,7 @@ tr.row-issue:hover td{background:#fde8e8}
       <div class="form-group"><label>שעות מקסימום ליום:</label><input type="number" id="max-hours" value="12" min="8" max="24"/></div>
       <div class="form-group"><label>שעות גבוהות (אזהרה):</label><input type="number" id="warn-hours" value="10" min="6" max="20"/></div>
       <div class="form-group"><label>מכסה חודשית לעובד (שעות):</label><input type="number" id="monthly-cap" value="240" min="40" max="744"/></div>
+      <div class="form-group"><label>מקסימום עובדים בו-זמנית:</label><input type="number" id="max-workers" value="1" min="1" max="200" title="לבדיקת ריבוי עובדים בו-זמנית — השאר 1 אם אמור לעבוד עובד אחד בכל עת"/></div>
     </div>
   </div>
 
@@ -346,6 +347,8 @@ tr.row-issue:hover td{background:#fde8e8}
       <button class="ftab" onclick="filterAtt('nocturnal',this)">לילה</button>
       <button class="ftab" onclick="filterAtt('future',this)">עתידי</button>
       <button class="ftab" onclick="filterAtt('offmonth',this)">חוץ-חודש</button>
+      <button class="ftab" onclick="filterAtt('missing-time',this)">שעה חסרה</button>
+      <button class="ftab" onclick="filterAtt('concurrent',this)">במקביל</button>
     </div>
     <div class="result-table-wrap" id="att-table-wrap"></div>
     <div style="margin-top:0.8rem"><button class="btn-green" onclick="exportAll().catch(e=>{console.error(e);alert('שגיאה בייצוא: '+e.message);})">📥 ייצא דוח מלא (4 גיליונות)</button></div>
@@ -442,6 +445,7 @@ let reasonResults = [];
 let monthlyData = {};
 let roundHoursResult = { daily: null, entry: null, exit: null };
 let offMonthRows = [], monthlyCapRows = [], roundedTimesResult = null, domMonth = null;
+let concurrentResults = [];
 let attHrById = {}, attHrByName = {}, attHrByRole = {};
 let expectedTotal = 0, actualInvTotal = 0;
 let pendingAliasQueue = [], currentAlias = null;
@@ -914,6 +918,7 @@ function saveColMapping() {
     invTotal:  getSelColName('col-inv-total'),
     attHdrRow: attFilesList[0]?.data.headerRowIdx || 0,
     invHdrRow: invFileData.headerRowIdx || 0,
+    attSnm:    !!document.getElementById('att-sheet-name-mode')?.checked,
   };
   saveTenders(t);
 }
@@ -963,6 +968,10 @@ function buildAttColSelects() {
     applyColByName('col-att-start', mapping.attStart);
     applyColByName('col-att-end',   mapping.attEnd);
     if (mapping.attTotal != null) applyColByName('col-att-total', mapping.attTotal);
+    if (mapping.attSnm != null) {
+      const snmCb = document.getElementById('att-sheet-name-mode');
+      if (snmCb) { snmCb.checked = !!mapping.attSnm; toggleSheetNameMode(); }
+    }
   }
 }
 
@@ -1216,13 +1225,50 @@ function runFullAudit() {
   const _predomMonth = (_mcPreEntries.length && _mcPreEntries[0][1]/_mcPreTotal >= 0.8) ? _mcPreEntries[0][0] : null;
 
   // Build duplicate detection map (emp||date||start||end)
+  // Skip rows with no date AND no times — they are blank filler rows, not real duplicates
   const _dupeSeen = new Map(), _dupeIdxs = new Set();
   allAtt.forEach((row, idx) => {
     const s = toMin(row[aStart]), e = toMin(row[aEnd]);
-    const k = `${String(row[aEmp]||'').trim()}||${dateKey(row[aDate])}||${s}||${e}`;
+    const dk = dateKey(row[aDate]);
+    if (!dk && s < 0 && e < 0) return;
+    const k = `${String(row[aEmp]||'').trim()}||${dk}||${s}||${e}`;
     if (_dupeSeen.has(k)) { _dupeIdxs.add(idx); _dupeIdxs.add(_dupeSeen.get(k)); }
     else _dupeSeen.set(k, idx);
   });
+
+  // ── 2b. Concurrent workers ──
+  const maxWorkers = parseInt(document.getElementById('max-workers').value) || 1;
+  concurrentResults = [];
+  const _concurrentIdxs = new Set();
+  if (maxWorkers >= 1) {
+    const _byDate = {};
+    allAtt.forEach((row, idx) => {
+      const s = toMin(row[aStart]), e = toMin(row[aEnd]);
+      if (s < 0 || e < 0) return;
+      const eAdj = e < s ? e + 1440 : e;
+      const dk = dateKey(row[aDate]);
+      if (!dk) return;
+      if (!_byDate[dk]) _byDate[dk] = [];
+      _byDate[dk].push({ idx, s, eAdj, emp: String(row[aEmp]||'').trim() });
+    });
+    Object.entries(_byDate).forEach(([date, rows]) => {
+      if (rows.length <= maxWorkers) return;
+      let peakCount = 0, peakIdxs = [], peakEmps = [], peakTime = null;
+      rows.forEach(pivot => {
+        const active = rows.filter(q => q.s <= pivot.s && q.eAdj > pivot.s);
+        if (active.length > peakCount) {
+          peakCount = active.length;
+          peakIdxs = active.map(q => q.idx);
+          peakEmps = [...new Set(active.map(q => q.emp))];
+          peakTime = pivot.s;
+        }
+      });
+      if (peakCount > maxWorkers) {
+        concurrentResults.push({ date, time: fmtMin(peakTime), count: peakCount, max: maxWorkers, emps: peakEmps.join(', '), idxs: peakIdxs });
+        peakIdxs.forEach(i => _concurrentIdxs.add(i));
+      }
+    });
+  }
 
   auditAttRows = allAtt.map((row, idx) => {
     const issues = [], types = [];
@@ -1259,8 +1305,16 @@ function runFullAudit() {
     // Nocturnal hours (entry or exit between 00:00–04:59)
     if (aStart >= 0 && isNocturnal(row[aStart])) { issues.push(`כניסה בשעות לילה (${fmtMin(toMin(row[aStart]))})`); types.push('nocturnal'); }
     if (aEnd   >= 0 && isNocturnal(row[aEnd]))   { issues.push(`יציאה בשעות לילה (${fmtMin(toMin(row[aEnd]))})`); types.push('nocturnal'); }
+    // Missing entry or exit time (row has a date but one punch is absent)
+    if (aStart >= 0 && aEnd >= 0 && dateKey(row[aDate])) {
+      const _ms = toMin(row[aStart]), _me = toMin(row[aEnd]);
+      if (_ms >= 0 && _me < 0) { issues.push('שעת יציאה חסרה'); types.push('missing-time'); }
+      else if (_me >= 0 && _ms < 0) { issues.push('שעת כניסה חסרה'); types.push('missing-time'); }
+    }
     // Duplicate row
     if (_dupeIdxs.has(idx)) { issues.push('שורה כפולה (עובד + תאריך + שעות זהים)'); types.push('dupe'); }
+    // Concurrent workers
+    if (_concurrentIdxs.has(idx)) { issues.push(`ריבוי עובדים בו-זמנית (${concurrentResults.find(r=>r.idxs.includes(idx))?.count||'?'} ב-${concurrentResults.find(r=>r.idxs.includes(idx))?.time||''})`); types.push('concurrent'); }
     // Off-month (row's month != dominant month)
     if (_predomMonth) { try{ const _d=excelDate(row[aDate]); if(!isNaN(_d)&&((_d.getUTCMonth()+1)+'/'+_d.getUTCFullYear())!==_predomMonth){ issues.push(`תאריך מחוץ לחודש הדוח (${_predomMonth})`); types.push('offmonth'); } }catch{} }
     return { _orig:row, _src:row._src, _issues:issues, _types:types, _hasIssue:issues.length>0 };
@@ -1527,6 +1581,9 @@ function renderAllResults() {
   if (_noctCnt>0)    s += `<div class="alert-warn">🟠 ${_noctCnt} שורות עם כניסה/יציאה בשעות לילה (00:00–04:59)</div>`;
   if (offMonthRows.length>0)     s += `<div class="alert-warn">⚠️ ${offMonthRows.length} שורות מחוץ לחודש הדוח${domMonth?' ('+domMonth+')':''}</div>`;
   if (monthlyCapRows.length>0)   s += `<div class="alert-danger">🔴 ${monthlyCapRows.length} עובדים חרגו ממכסת השעות החודשית</div>`;
+  const _missingTimeCnt = auditAttRows.filter(r=>r._types.includes('missing-time')).length;
+  if (_missingTimeCnt>0) s += `<div class="alert-danger">🔴 ${_missingTimeCnt} שורות עם שעת כניסה או יציאה חסרה</div>`;
+  if (concurrentResults.length>0) s += `<div class="alert-danger">🔴 ${concurrentResults.length} מקרים של ריבוי עובדים בו-זמנית (מעל ${concurrentResults[0]?.max||1} מורשים)</div>`;
   s += '</div>';
   document.getElementById('summary-content').innerHTML = s;
 
@@ -1587,7 +1644,10 @@ function renderInvoiceTable() {
 function renderAttTable() {
   const ah = attFilesList[0]?.data.headers || [];
   const snm = getSheetNameMode();
-  let html = `<table><thead><tr>
+  const modeLabel = snm
+    ? `<div style="margin-bottom:0.5rem;font-size:0.78rem;color:var(--blue);font-weight:600">📋 מצב קיבוץ: שם גיליון (SNM פעיל) — כל גיליון = עובד נפרד</div>`
+    : `<div style="margin-bottom:0.5rem;font-size:0.78rem;color:var(--muted)">📋 מצב קיבוץ: עמודת שם עובד</div>`;
+  let html = modeLabel + `<table><thead><tr>
     ${snm ? '<th>שם גיליון (עובד)</th>' : ''}
     ${ah.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}
     <th>מקור קובץ</th><th>ממצאים</th>
@@ -1868,6 +1928,9 @@ async function exportAll() {
   if (_holidayRows.length) aFinds.push(['עבודה בחג / מועד',         _holidayRows.length, +_holidayRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2), uniq(_holidayRows.map(_empOf)).join(', '), 'עבודה בחגים ומועדים יהודיים']);
   if (_electionRows.length) aFinds.push(['עבודה ביום בחירות',       _electionRows.length,+_electionRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2), uniq(_electionRows.map(_empOf)).join(', '), 'עבודה ביום בחירות']);
   if (_nocturnalRows.length) aFinds.push(['שעות לילה (00:00–04:59)',_nocturnalRows.length,+_nocturnalRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),uniq(_nocturnalRows.map(_empOf)).join(', '), 'כניסה או יציאה בין חצות ל-05:00']);
+  const _missingTimeRows = auditAttRows.filter(r=>r._types.includes('missing-time'));
+  if (_missingTimeRows.length) aFinds.push(['שעת כניסה/יציאה חסרה', _missingTimeRows.length, '', uniq(_missingTimeRows.map(_empOf)).join(', '), 'שורה עם תאריך אך ללא שעת כניסה או יציאה — חיתוך חלקי']);
+  if (concurrentResults.length) aFinds.push(['ריבוי עובדים בו-זמנית', concurrentResults.length, '', uniq(concurrentResults.flatMap(r=>r.emps.split(', '))).join(', '), `מקסימום מורשה: ${concurrentResults[0]?.max||1} — ${concurrentResults.map(r=>`${r.date} ${r.time}: ${r.count} עובדים`).join('; ')}`]);
   if (offMonthRows.length) aFinds.push(['שורות מחוץ לחודש הדוח',   offMonthRows.length, +offMonthRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),   uniq(offMonthRows.map(_empOf)).join(', '), `חודש הדוח: ${domMonth||'?'} — שורות מחודש אחר`]);
   if (monthlyCapRows.length) aFinds.push(['חריגת מכסה חודשית',      monthlyCapRows.length,'',                                                                                         monthlyCapRows.map(e=>`${e.emp} (${e.month}: ${e.total.toFixed(1)}ש')`).join('; '), `מכסה: ${monthlyCap} שעות/חודש לעובד`]);
   if (uI.length)    aFinds.push(['עובדים לא מאושרים — חשבון',    uI.length,   +uI.reduce((s,r)=>s+(r._hours||0),0).toFixed(2),   uniq(uI.map(r=>r._emp)).join(', '),   'שורות חשבון עם עובד שאינו ברשימה המאושרת']);
