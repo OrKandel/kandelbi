@@ -214,10 +214,12 @@ tr:hover td{background:var(--bg)}
       <div class="check-label">👥 ריבוי עובדים בו-זמנית</div>
       <div class="check-desc">מספר עובדים שעבדו בו-זמנית מעל למותר (רלוונטי למקרים בהם נדרשת נוכחות של מספר אנשי צוות קבוע. לדוגמה ספק שמירה שנדרש להעמיד שומר אחד בכניסה לא אמור לדווח על 2 עובדים בו-זמנית)</div>
       <div class="check-param"><label>מקסימום עובדים בו-זמנית:</label><input type="number" id="param-maxworkers" value="1" min="1" max="100"/></div>
+      <div class="check-param"><label>התעלם מריבוי הקצר מ-:</label><input type="number" id="param-concurrent-min" value="0" min="0" max="240" style="width:54px"/> דקות</div>
     </div></div>
     <div class="check-item" style="grid-column:1/-1"><input type="checkbox" id="chk-servicehours"/><div style="flex:1">
       <div class="check-label">🕰️ שעות/ימי שירות מותרים</div>
       <div class="check-desc">דיווחים מחוץ לימים ושעות שהוגדרו בהסכם — מאפשר לזהות עבודה בלתי מורשית</div>
+      <div class="check-param" style="margin-top:6px"><label>התעלם מחריגה הקצרה מ-:</label><input type="number" id="param-svcmin" value="0" min="0" max="240" style="width:54px"/> דקות</div>
       <div style="margin-top:10px">
         <div id="svc-windows-list"></div>
         <button type="button" onclick="addSvcWindow()" style="margin-top:4px;width:100%;font-size:0.8rem;background:none;border:1.5px dashed var(--border);border-radius:7px;padding:5px 14px;cursor:pointer;color:var(--blue)">+ הוסף טווח שעות לימים נוספים</button>
@@ -640,7 +642,9 @@ function savePrefs(){
     serviceWindows:getSvcWindowsFromDOM().map(w=>({days:[...w.days],from:w.from,to:w.to})),
     params:{maxHours:parseFloat(document.getElementById('param-maxhours').value)||12,
       monthlyCap:parseFloat(document.getElementById('param-monthlycap').value)||240,
-      maxWorkers:parseInt(document.getElementById('param-maxworkers').value)||1},
+      maxWorkers:parseInt(document.getElementById('param-maxworkers').value)||1,
+      concurrentMin:parseInt(document.getElementById('param-concurrent-min').value)||0,
+      svcMin:parseInt(document.getElementById('param-svcmin').value)||0},
     savedAt:new Date().toLocaleDateString('he-IL')
   };
   localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
@@ -668,6 +672,8 @@ function applyPrefs(){
   if(p.params.maxHours)document.getElementById('param-maxhours').value=p.params.maxHours;
   if(p.params.monthlyCap)document.getElementById('param-monthlycap').value=p.params.monthlyCap;
   if(p.params.maxWorkers)document.getElementById('param-maxworkers').value=p.params.maxWorkers;
+  if(p.params.concurrentMin!=null)document.getElementById('param-concurrent-min').value=p.params.concurrentMin;
+  if(p.params.svcMin!=null)document.getElementById('param-svcmin').value=p.params.svcMin;
   if(p.serviceWindows&&p.serviceWindows.length){
     renderSvcWindows(p.serviceWindows);
   } else if(p.serviceDays){
@@ -704,7 +710,7 @@ function getColIndices(headers){
 }
 
 // ── בדיקות ──
-function runChecks(parsed,maxH,monthlyCap,today,maxWorkers){
+function runChecks(parsed,maxH,monthlyCap,today,maxWorkers,concurrentMin,svcMin){
   const findings={};
   if(document.getElementById('chk-overlaps').checked)    findings.overlaps=checkOverlaps(parsed);
   if(document.getElementById('chk-longday').checked)     findings.longday=checkLongDay(parsed,maxH);
@@ -716,9 +722,9 @@ function runChecks(parsed,maxH,monthlyCap,today,maxWorkers){
   if(document.getElementById('chk-shabbat').checked)     findings.shabbat=checkShabbat(parsed);
   if(document.getElementById('chk-holiday').checked)     findings.holiday=checkHoliday(parsed);
   if(document.getElementById('chk-dupes').checked)       findings.dupes=checkDupes(parsed);
-  if(document.getElementById('chk-concurrent').checked)  findings.concurrent=checkConcurrentWorkers(parsed,maxWorkers);
+  if(document.getElementById('chk-concurrent').checked)  findings.concurrent=checkConcurrentWorkers(parsed,maxWorkers,concurrentMin||0);
   if(document.getElementById('chk-servicehours').checked){
-    findings.servicehours=checkServiceHours(parsed,getSvcWindowsFromDOM());
+    findings.servicehours=checkServiceHours(parsed,getSvcWindowsFromDOM(),svcMin||0);
   }
   return findings;
 }
@@ -751,7 +757,7 @@ function svcWindowHtml(w){
   return `<div class="svc-window">
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:220px">
-        <div style="font-size:0.77rem;font-weight:700;color:var(--muted);margin-bottom:5px">ימי שירות (לחץ לבחירה):</div>
+        <div style="font-size:0.77rem;font-weight:700;color:var(--muted);margin-bottom:5px">יום <u>תחילת</u> המשמרת (לחץ לבחירה):</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap">${dayBtns}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -759,6 +765,10 @@ function svcWindowHtml(w){
         <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'17:00'}" placeholder="HH:MM" style="width:72px"/></div>
       </div>
       <button type="button" class="svc-win-remove" onclick="removeSvcWindow(this)" title="הסר טווח" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;padding:2px 6px;align-self:center;visibility:hidden">✕</button>
+    </div>
+    <div style="font-size:0.74rem;color:var(--muted);margin-top:7px;padding-top:6px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px">
+      <span>💡 <strong>משמרת לילה שחוצה חצות</strong> — הכנס "עד שעה" קטנה מ-"משעה" (לדוג' <strong>16:30 עד 08:00</strong>). שורה אחת מספיקה.</span>
+      <span>💡 <strong>כל השעות מותרות ביום זה</strong> — הכנס <strong>00:00 עד 00:00</strong>.</span>
     </div>
   </div>`;
 }
@@ -800,7 +810,18 @@ function getSvcWindowsFromDOM(){
     return{days,from,to,fromMin,toMin};
   });
 }
-function checkServiceHours(parsed,svcWindows){
+function violationMinutes(startMin,endCheckMin,dayWindows){
+  let covered=0;
+  for(const w of dayWindows){
+    if(w.fromMin===0&&w.toMin===0)return 0;
+    const toAdj=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
+    const os=Math.max(startMin,w.fromMin),oe=Math.min(endCheckMin,toAdj);
+    if(oe>os)covered+=oe-os;
+  }
+  return Math.max(0,endCheckMin-startMin-covered);
+}
+
+function checkServiceHours(parsed,svcWindows,minMinutes=0){
   if(!svcWindows||!svcWindows.length)return[];
   const allDays=new Set(svcWindows.flatMap(w=>[...w.days]));
   const DAY_HE=['א','ב','ג','ד','ה','ו','ש'];
@@ -811,11 +832,13 @@ function checkServiceHours(parsed,svcWindows){
     if(p.startMin===null)return false;
     const endCheck=(p.endMinAdj!==null&&p.endMinAdj>p.startMin)?p.endMinAdj:
                    (p.endMin!==null&&p.endMin>p.startMin?p.endMin:p.startMin);
-    for(const w of svcWindows){
-      if(!w.days.has(dow))continue;
+    const dayWins=svcWindows.filter(w=>w.days.has(dow));
+    for(const w of dayWins){
+      if(w.fromMin===0&&w.toMin===0)return false; // 00:00→00:00 = כל השעות מותרות
       const toAdj=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
       if(p.startMin>=w.fromMin&&endCheck<=toAdj)return false; // valid — within this window
     }
+    if(minMinutes>0&&violationMinutes(p.startMin,endCheck,dayWins)<minMinutes)return false;
     return true; // outside all applicable windows
   }).map(p=>{
     const dow=p.dateObj.getUTCDay();
@@ -829,7 +852,7 @@ function checkServiceHours(parsed,svcWindows){
   });
 }
 
-function checkConcurrentWorkers(parsed, maxWorkers){
+function checkConcurrentWorkers(parsed, maxWorkers, minMinutes=0){
   // Group rows by date
   const byDate={};
   parsed.forEach(p=>{
@@ -851,6 +874,7 @@ function checkConcurrentWorkers(parsed, maxWorkers){
       const empSet=[...new Set(peakEmps.map(q=>q.emp))];
       const fromMin=Math.max(...peakEmps.map(q=>q.startMin));
       const toMin=Math.min(...peakEmps.map(q=>q.endMinAdj));
+      if(minMinutes>0&&(toMin-fromMin)<minMinutes)continue;
       findings.push({date,time:fmtMin(peakTime),fromTime:fmtMin(fromMin),toTime:fmtMin(toMin),
         count:peakCount,max:maxWorkers,
         emps:empSet.join(', '),
@@ -957,12 +981,14 @@ function runAnalysis(){
   const today=new Date();today.setHours(23,59,59,999);
 
   const maxWorkers=parseInt(document.getElementById('param-maxworkers').value)||1;
+  const concurrentMin=parseInt(document.getElementById('param-concurrent-min').value)||0;
+  const svcMin=parseInt(document.getElementById('param-svcmin').value)||0;
 
   filesResults=filesData.map(fd=>{
     const sheetMap=getSheetMapForRawData(fd.wb,fd.selectedSheets,fd.headerRowIdx||0);
     const{ci,cd,cs,ce}=getColIndices(fd.headers);
     const parsed=parseData(fd.rawData,ci,cd,cs,ce);
-    const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers);
+    const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers,concurrentMin,svcMin);
     const rowFlags=buildRowFlags(findings);
     return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags};
   });
