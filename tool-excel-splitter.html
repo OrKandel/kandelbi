@@ -176,7 +176,7 @@ tr:hover td{background:var(--bg);}
   <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
   <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
     <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
-    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים להורדה</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים לשימוש</a></li>
     <li><a href="services.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">שירותים</a></li>
     <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
     <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
@@ -354,23 +354,31 @@ tr:hover td{background:var(--bg);}
 
   <!-- STEP 4: הורדה -->
   <div class="section" id="sec4">
-    <div class="card">
-      <div class="card-title">✅ הקבצים מוכנים להורדה</div>
-      <div class="alert alert-info show" id="result-summary"></div>
-      <div class="results-grid" id="results-grid"></div>
-      <div id="save-preset-wrap" style="margin-top:1.2rem;background:#f0f6ff;border:1.5px solid var(--blue);border-radius:10px;padding:1rem 1.2rem">
-        <div style="font-weight:700;font-size:0.88rem;color:var(--navy);margin-bottom:0.4rem">💾 שמור הגדרות לשימוש עתידי</div>
-        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem">הגדרות כוללות: עמודות שנבחרו, אופן הפלט והגדרות הפיצול — לשימוש נוח על קבצים עתידיים</div>
-        <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
-          <input type="text" id="preset-name-input" placeholder="שם להגדרות (למשל: דוח נוכחות חודשי)" style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem"/>
-          <button class="btn-sm" onclick="saveCurrentPreset()" style="background:var(--blue);color:#fff;border-color:var(--blue)">💾 שמור הגדרות</button>
-        </div>
+
+    <!-- שאלת שמירת הגדרות — מוצגת ראשונה -->
+    <div class="card" id="save-preset-wrap">
+      <div class="card-title">💾 רוצה לשמור את ההגדרות לשימוש בקבצים עתידיים?</div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">ההגדרות כוללות: עמודות שנבחרו, אופן הפלט והגדרות הפיצול. בפעם הבאה תוכל לטעון אותן בלחיצה אחת.</div>
+      <div style="display:flex;gap:0.7rem;align-items:center;flex-wrap:wrap">
+        <input type="text" id="preset-name-input" placeholder="שם להגדרות (למשל: דוח נוכחות חודשי)" style="flex:1;min-width:200px;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem"/>
+        <button class="btn-primary" onclick="saveAndReveal()" style="padding:9px 20px;font-size:0.9rem">💾 שמור והצג קבצים</button>
+        <button class="btn-sm" onclick="revealResults()" style="padding:9px 16px">דלג, הצג קבצים ←</button>
       </div>
     </div>
-    <div class="btn-row">
-      <button class="btn-accent" onclick="downloadAll()">⬇ הורד את כל הקבצים</button>
-      <button class="btn-sm" onclick="reset()">🔄 התחל מחדש</button>
+
+    <!-- תוצאות הורדה — מוצגות אחרי ההחלטה -->
+    <div id="results-wrap" style="display:none">
+      <div class="card">
+        <div class="card-title">✅ הקבצים מוכנים להורדה</div>
+        <div class="alert alert-info show" id="result-summary"></div>
+        <div class="results-grid" id="results-grid"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-accent" onclick="downloadAll()">⬇ הורד את כל הקבצים</button>
+        <button class="btn-sm" onclick="reset()">🔄 התחל מחדש</button>
+      </div>
     </div>
+
   </div>
 
 
@@ -442,7 +450,7 @@ function deletePresetFromSelector() {
 
 function saveCurrentPreset() {
   const name = document.getElementById('preset-name-input')?.value.trim();
-  if (!name) { alert('יש להזין שם להגדרות.'); return; }
+  if (!name) { alert('יש להזין שם להגדרות.'); return false; }
   const sbcEl = document.getElementById('split-by-col');
   const sbdEl = document.getElementById('split-by-date-col');
   const prefs = {
@@ -456,7 +464,16 @@ function saveCurrentPreset() {
   };
   saveNamedPreset(name, prefs);
   document.getElementById('preset-name-input').value = '';
-  alert('ההגדרות "' + name + '" נשמרו. בפעם הבאה תוכל לטעון אותן בשלב 1.');
+  return true;
+}
+
+function saveAndReveal() {
+  if (saveCurrentPreset()) revealResults();
+}
+
+function revealResults() {
+  document.getElementById('save-preset-wrap').style.display = 'none';
+  document.getElementById('results-wrap').style.display = '';
 }
 
 // ══ DRAG & DROP ══
@@ -1618,6 +1635,10 @@ function reset() {
   document.getElementById('files-list').innerHTML='';
   document.getElementById('file-stats-card').classList.remove('show');
   document.getElementById('btn-next1').disabled=true;
+  // שחזור מצב שלב 4 להפעלה הבאה
+  document.getElementById('save-preset-wrap').style.display = '';
+  document.getElementById('results-wrap').style.display = 'none';
+  document.getElementById('preset-name-input').value = '';
   goStep(1);
 }
 
