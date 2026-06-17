@@ -496,19 +496,55 @@ function renderFilesList() {
 // ── Check headers ──
 function checkHeaders() {
   const statusEl = document.getElementById('header-status');
-  if (filesData.length < 2) { statusEl.innerHTML = ''; return; }
-  const base = JSON.stringify(filesData[0].headers);
-  const mismatches = filesData.slice(1).filter(f => JSON.stringify(f.headers) !== base);
-  if (!mismatches.length) {
+  const mergeBtn = document.querySelector('#config-card .btn-primary');
+  if (filesData.length < 2) { statusEl.innerHTML = ''; if (mergeBtn) mergeBtn.disabled = false; return; }
+
+  const baseHeaders = filesData[0].headers;
+  const baseSet = new Set(baseHeaders);
+
+  const diffs = filesData.slice(1).map(fd => {
+    const thisSet = new Set(fd.headers);
+    const missing = baseHeaders.filter(h => !thisSet.has(h));
+    const extra   = fd.headers.filter(h => !baseSet.has(h));
+    return (missing.length || extra.length) ? { fd, missing, extra } : null;
+  }).filter(Boolean);
+
+  if (!diffs.length) {
     statusEl.innerHTML = '<div class="alert-box alert-ok">✅ מבנה זהה בכל הקבצים — האיחוד יהיה מושלם</div>';
-  } else {
-    const names = mismatches.map(f => f.name).join('، ');
-    statusEl.innerHTML = `<div class="alert-box alert-warn">⚠️ מבנה שונה בקבצים: <strong>${names}</strong><br>הכלי יאחד לפי שמות עמודות — עמודות שלא קיימות בקובץ מסוים יישארו ריקות באותן שורות</div>`;
+    if (mergeBtn) mergeBtn.disabled = false;
+    return;
   }
+
+  // חסום איחוד והצג דוח מפורט
+  if (mergeBtn) mergeBtn.disabled = true;
+  let html = `<div class="alert-box alert-warn" style="border-color:#e07700;background:#fff8ed">
+    <div style="font-weight:800;font-size:0.92rem;color:#7a3a00;margin-bottom:0.5rem">⛔ לא ניתן לאחד — יש הבדלי כותרות בין הקבצים</div>
+    <div style="font-size:0.83rem;color:#7a3a00;margin-bottom:0.8rem">תקן את הכותרות בקבצים הבאים ונסה שוב. ייתכן שיש שגיאת הקלדה, רווח מיותר, או עמודה חסרה.</div>`;
+
+  diffs.forEach(({ fd, missing, extra }) => {
+    html += `<div style="margin-bottom:0.5rem;padding:0.55rem 0.8rem;background:rgba(255,255,255,0.6);border-radius:7px;border:1px solid #f5d48a">
+      <div style="font-weight:700;font-size:0.85rem;color:#4a2000;margin-bottom:4px">📄 ${escH(fd.name)}</div>`;
+    if (missing.length)
+      html += `<div style="font-size:0.82rem;color:#c0392b;margin-bottom:2px">❌ חסרות (קיימות ב-<em>${escH(filesData[0].name)}</em> אך לא כאן): ${missing.map(h=>`<code style="background:#fde8e8;padding:1px 5px;border-radius:4px">${escH(h)}</code>`).join(' · ')}</div>`;
+    if (extra.length)
+      html += `<div style="font-size:0.82rem;color:#1a6e3a">➕ נוספות (לא קיימות ב-<em>${escH(filesData[0].name)}</em>): ${extra.map(h=>`<code style="background:#e8f5e9;padding:1px 5px;border-radius:4px">${escH(h)}</code>`).join(' · ')}</div>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  statusEl.innerHTML = html;
 }
+
+function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── Merge logic ──
 function buildMerge() {
+  // בדיקת עקביות מבנה — חסום אם יש הפרשים
+  const baseSet = new Set(filesData[0].headers);
+  const blocked = filesData.slice(1).some(fd => {
+    const s = new Set(fd.headers);
+    return filesData[0].headers.some(h => !s.has(h)) || fd.headers.some(h => !baseSet.has(h));
+  });
+  if (blocked) { checkHeaders(); return; }
   const fileColName = 'קובץ מקור';
   const sheetColName = 'גיליון מקור';
   const sourceValType = 'noext';
