@@ -219,7 +219,14 @@ tr.row-issue:hover td{background:#fde8e8}
   <div id="act-hdr-sel-wrap"></div>
   <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם כל שורה = יחידת שירות אחת — אל תבחר עמודת כמות. אם יש עמודת כמות — בחר אותה.</div>
   <div class="grid2">
-    <div class="form-group"><label>סוג שירות / קוד <span id="act-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label><select id="col-act-svc"></select></div>
+    <div class="form-group">
+      <label>סוג שירות / קוד <span id="act-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label>
+      <select id="col-act-svc" onchange="updateManualSvcSelects()"></select>
+      <div id="manual-act-svc-wrap" class="hidden" style="margin-top:6px">
+        <label style="font-size:0.78rem;color:var(--orange);font-weight:600">⚡ בחר ידנית את סוג התפוקה לכל שורות הקובץ:</label>
+        <select id="manual-act-svc" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;margin-top:3px"></select>
+      </div>
+    </div>
     <div class="form-group"><label>תאריך (אופציונלי):</label><select id="col-act-date"></select></div>
     <div class="form-group"><label>כמות לשורה (אופציונלי — ריק = כל שורה=1):</label><select id="col-act-qty"></select></div>
     <div class="form-group"><label>מבצע / ספק (אופציונלי):</label><select id="col-act-provider"></select></div>
@@ -230,10 +237,17 @@ tr.row-issue:hover td{background:#fde8e8}
   <div id="inv-hdr-sel-wrap"></div>
   <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">💡 אם בחשבון יש שורה לכל שירות עם כמות — בחר עמודת כמות. אם יש רק סה"כ — בחר עמודת סה"כ.</div>
   <div class="grid2">
-    <div class="form-group"><label>סוג שירות / קוד <span id="inv-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label><select id="col-inv-svc"></select></div>
+    <div class="form-group">
+      <label>סוג שירות / קוד <span id="inv-svc-hint" style="font-weight:400;color:var(--muted)"></span>:</label>
+      <select id="col-inv-svc" onchange="updateManualSvcSelects()"></select>
+      <div id="manual-inv-svc-wrap" class="hidden" style="margin-top:6px">
+        <label style="font-size:0.78rem;color:var(--orange);font-weight:600">⚡ בחר ידנית את סוג התפוקה לכל שורות הקובץ:</label>
+        <select id="manual-inv-svc" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;margin-top:3px"></select>
+      </div>
+    </div>
     <div class="form-group"><label>מבצע / ספק בחשבון (אופציונלי):</label><select id="col-inv-provider"></select></div>
-    <div class="form-group"><label>כמות יחידות (אופציונלי):</label><select id="col-inv-qty"></select></div>
-    <div class="form-group"><label>מחיר ליחידה (אופציונלי):</label><select id="col-inv-rate"></select></div>
+    <div class="form-group"><label>כמות יחידות <span style="color:var(--red);font-weight:700">(חובה)</span>:</label><select id="col-inv-qty"></select></div>
+    <div class="form-group"><label>מחיר ליחידה <span style="color:var(--red);font-weight:700">(חובה)</span>:</label><select id="col-inv-rate"></select></div>
     <div class="form-group"><label>סה"כ לשורה (אופציונלי):</label><select id="col-inv-total"></select></div>
   </div>
   <button class="btn-primary" onclick="runFullAudit()">🔍 הרץ בדיקה מלאה</button>
@@ -494,7 +508,7 @@ function getSelColName(id){const sel=document.getElementById(id);if(!sel||sel.se
 function applyColByName(id,name){if(!name)return;const sel=document.getElementById(id);if(!sel)return;const opt=Array.from(sel.options).find(o=>o.text.trim()===name.trim());if(opt)sel.value=opt.value;}
 function saveColMapping(){
   if(!currentTender?.name)return;const t=loadTenders();if(!t[currentTender.name])return;
-  t[currentTender.name].colMapping={actSvc:getSelColName('col-act-svc'),actDate:getSelColName('col-act-date'),actQty:getSelColName('col-act-qty'),actProvider:getSelColName('col-act-provider'),actRef:getSelColName('col-act-ref'),invSvc:getSelColName('col-inv-svc'),invProvider:getSelColName('col-inv-provider'),invQty:getSelColName('col-inv-qty'),invRate:getSelColName('col-inv-rate'),invTotal:getSelColName('col-inv-total'),actHdrRow:actFilesList[0]?.data.headerRowIdx||0,invHdrRow:invFileData.headerRowIdx||0};
+  t[currentTender.name].colMapping={actSvc:getSelColName('col-act-svc'),actDate:getSelColName('col-act-date'),actQty:getSelColName('col-act-qty'),actProvider:getSelColName('col-act-provider'),actRef:getSelColName('col-act-ref'),invSvc:getSelColName('col-inv-svc'),invProvider:getSelColName('col-inv-provider'),invQty:getSelColName('col-inv-qty'),invRate:getSelColName('col-inv-rate'),invTotal:getSelColName('col-inv-total'),actHdrRow:actFilesList[0]?.data.headerRowIdx||0,invHdrRow:invFileData.headerRowIdx||0,manualActSvc:document.getElementById('manual-act-svc')?.value||'',manualInvSvc:document.getElementById('manual-inv-svc')?.value||''};
   saveTenders(t);
 }
 function getColMapping(){if(!currentTender?.name)return null;return loadTenders()[currentTender.name]?.colMapping||null;}
@@ -530,6 +544,8 @@ function buildActColSelects(){
   autoSelect('col-act-provider',ahl,['מבצע','ספק','provider','רופא','מטפל']);
   autoSelect('col-act-ref',ahl,['אסמכתא','מזהה','ref','id','מספר פנייה']);
   if(mapping){applyColByName('col-act-svc',mapping.actSvc);applyColByName('col-act-date',mapping.actDate);applyColByName('col-act-qty',mapping.actQty);applyColByName('col-act-provider',mapping.actProvider);applyColByName('col-act-ref',mapping.actRef);}
+  updateManualSvcSelects();
+  if(mapping?.manualActSvc){const el=document.getElementById('manual-act-svc');if(el)el.value=mapping.manualActSvc;}
 }
 
 function buildInvColSelects(){
@@ -549,11 +565,31 @@ function buildInvColSelects(){
   autoSelect('col-inv-rate',ihl,['מחיר','תעריף','rate','price','ליחידה']);
   autoSelect('col-inv-total',ihl,['סה"כ','סהכ','total','סכום','לתשלום']);
   if(mapping){applyColByName('col-inv-svc',mapping.invSvc);applyColByName('col-inv-provider',mapping.invProvider);applyColByName('col-inv-qty',mapping.invQty);applyColByName('col-inv-rate',mapping.invRate);applyColByName('col-inv-total',mapping.invTotal);}
+  updateManualSvcSelects();
+  if(mapping?.manualInvSvc){const el=document.getElementById('manual-inv-svc');if(el)el.value=mapping.manualInvSvc;}
 }
 
 function changeSvcHeaderRow(idx){applyHeaderRow(svcFileData,+idx);buildSvcColMap();}
 function changeActHeaderRow(idx){actFilesList.forEach(f=>applyHeaderRow(f.data,+idx));buildActColSelects();}
 function changeInvHeaderRow(idx){applyHeaderRow(invFileData,+idx);buildInvColSelects();}
+
+function updateManualSvcSelects(){
+  const services=currentTender?.services||[];
+  const svcOpts='<option value="">— בחר תפוקה —</option>'+
+    services.map(s=>`<option value="${escHtml(String(s.id||''))}">${escHtml(String(s.id||''))}${s.name&&s.name!==s.id?' — '+escHtml(String(s.name||'')):''}${s.rate?' ('+s.rate.toFixed(2)+' ₪)':''}</option>`).join('');
+  const actIsNone=+document.getElementById('col-act-svc')?.value===-1;
+  const invIsNone=+document.getElementById('col-inv-svc')?.value===-1;
+  const manActWrap=document.getElementById('manual-act-svc-wrap');
+  const manInvWrap=document.getElementById('manual-inv-svc-wrap');
+  if(manActWrap){
+    manActWrap.classList.toggle('hidden',!actIsNone||services.length===0);
+    document.getElementById('manual-act-svc').innerHTML=svcOpts;
+  }
+  if(manInvWrap){
+    manInvWrap.classList.toggle('hidden',!invIsNone||services.length===0);
+    document.getElementById('manual-inv-svc').innerHTML=svcOpts;
+  }
+}
 
 // ── MAIN AUDIT ──
 function runFullAudit(){
@@ -567,18 +603,33 @@ function runFullAudit(){
   const irate=+document.getElementById('col-inv-rate').value;
   const itotal=+document.getElementById('col-inv-total').value;
 
+  // Validate required invoice columns
+  if(iqty<0){alert('יש לבחור עמודת כמות יחידות בחשבון.');return;}
+  if(irate<0){alert('יש לבחור עמודת מחיר ליחידה בחשבון.');return;}
+
+  // Manual service selection (when no service column exists in the file)
+  const manualActSvc=(acsvc<0?document.getElementById('manual-act-svc')?.value:'').trim();
+  const manualInvSvc=(isvc<0?document.getElementById('manual-inv-svc')?.value:'').trim();
+
   const allAct=actFilesList.flatMap(f=>f.data.rows.map(r=>({...r,_src:f.name})));
   const services=currentTender?.services||[];
   const svcById={};
   services.forEach(s=>{svcById[nSvc(s.id)]=s;});
 
-  const singleActMode=acsvc<0; // no service column — count all rows as one service
-  const singleInvMode=isvc<0;
+  const singleActMode=acsvc<0&&!manualActSvc; // no column and no manual pick — treat all as one block
+  const singleInvMode=isvc<0&&!manualInvSvc;
+
+  // helper: resolve service key for an activity row
+  function actSk(row){
+    if(acsvc>=0) return nSvc(String(row[acsvc]||'').trim());
+    if(manualActSvc) return nSvc(manualActSvc);
+    return '__single__';
+  }
 
   // 1. Qty per service from activity
   actQtyBySvc={};
   allAct.forEach(row=>{
-    const sk=singleActMode?'__single__':nSvc(String(row[acsvc]||'').trim());
+    const sk=actSk(row);
     if(!singleActMode&&!sk)return;
     const qty=acqty>=0?(parseFloat(row[acqty])||1):1;
     actQtyBySvc[sk]=(actQtyBySvc[sk]||0)+qty;
@@ -588,7 +639,7 @@ function runFullAudit(){
   monthlyData={};
   allAct.forEach(row=>{
     const mn=acdate>=0?monthKey(row[acdate]):'לא ידוע';
-    const sk=singleActMode?'__single__':nSvc(String(row[acsvc]||'').trim());
+    const sk=actSk(row);
     if(!singleActMode&&!sk)return;
     const qty=acqty>=0?(parseFloat(row[acqty])||1):1;
     if(!monthlyData[mn])monthlyData[mn]={};
@@ -604,14 +655,16 @@ function runFullAudit(){
     Object.entries(refMap).forEach(([ref,idxs])=>{
       if(idxs.length>1){
         const fr=allAct[idxs[0]];
-        duplicateResults.push({svc:String(fr[acsvc]||''),date:acdate>=0?dateKey(fr[acdate]):'—',prov:acprov>=0?String(fr[acprov]||''):'—',key:ref,count:idxs.length,type:'ref'});
+        const svcLabel=acsvc>=0?String(fr[acsvc]||''):manualActSvc||'—';
+        duplicateResults.push({svc:svcLabel,date:acdate>=0?dateKey(fr[acdate]):'—',prov:acprov>=0?String(fr[acprov]||''):'—',key:ref,count:idxs.length,type:'ref'});
         idxs.forEach(i=>dupIdxs.add(i));
       }
     });
   } else if(acdate>=0){
     const keyMap={};
     allAct.forEach((row,idx)=>{
-      const svc=String(row[acsvc]||'').trim(), date=dateKey(row[acdate]), prov=acprov>=0?String(row[acprov]||'').trim():'';
+      const svc=acsvc>=0?String(row[acsvc]||'').trim():manualActSvc||'__single__';
+      const date=dateKey(row[acdate]), prov=acprov>=0?String(row[acprov]||'').trim():'';
       const key=`${svc}||${date}||${prov}`; if(!svc)return;
       if(!keyMap[key])keyMap[key]={svc,date,prov,idxs:[]};
       keyMap[key].idxs.push(idx);
@@ -624,7 +677,7 @@ function runFullAudit(){
   // 4. Annotate activity rows
   auditActRows=allAct.map((row,idx)=>{
     const issues=[],types=[];
-    const svcRaw=String(row[acsvc]||'').trim();
+    const svcRaw=acsvc>=0?String(row[acsvc]||'').trim():manualActSvc||'';
     if(dupIdxs.has(idx)){issues.push('כניסה כפולה אפשרית בדוח הביצועים');types.push('dup');}
     if(services.length>0&&svcRaw&&!svcById[nSvc(svcRaw)]){issues.push(`שירות "${svcRaw}" אינו ברשימה המאושרת`);types.push('unauth');}
     return{_orig:row,_src:row._src,_issues:issues,_types:types,_hasIssue:issues.length>0};
@@ -632,14 +685,16 @@ function runFullAudit(){
 
   // 5. Invoice audit
   auditInvoiceRows=invFileData.rows.map(row=>{
-    const svcRaw=singleInvMode?'__single__':String(row[isvc]||'').trim();
+    const svcRaw=isvc>=0?String(row[isvc]||'').trim():manualInvSvc||'__single__';
     const qtyV=iqty>=0?(parseFloat(row[iqty])||null):null;
     const rateV=irate>=0?(parseFloat(row[irate])||null):null;
     const totalV=itotal>=0?(parseFloat(row[itotal])||null):null;
-    if(!singleInvMode&&!svcRaw)return{_orig:row,_skip:true,_issues:[],svcIssue:false,qtyIssue:false,rateIssue:false};
+    if(isvc>=0&&!svcRaw)return{_orig:row,_skip:true,_issues:[],svcIssue:false,qtyIssue:false,rateIssue:false};
     const issues=[]; let svcIssue=false,qtyIssue=false,rateIssue=false;
-    const sk=singleInvMode?'__single__':nSvc(svcRaw);
-    const approvedSvc=singleInvMode&&services.length===1?Object.values(svcById)[0]||null:svcById[sk]||null;
+    const sk=nSvc(svcRaw);
+    const approvedSvc=manualInvSvc?svcById[nSvc(manualInvSvc)]||null:
+                      singleInvMode&&services.length===1?Object.values(svcById)[0]||null:
+                      svcById[sk]||null;
     // a) authorized? (skip check when no service column selected)
     if(!singleInvMode&&services.length>0&&!approvedSvc){issues.push(`שירות "${svcRaw}" אינו ברשימת השירותים המאושרים`);svcIssue=true;}
     // b) rate match?
