@@ -849,9 +849,12 @@ function checkConcurrentWorkers(parsed, maxWorkers){
     if(peakCount>maxWorkers){
       // deduplicate emps (same person may appear multiple times)
       const empSet=[...new Set(peakEmps.map(q=>q.emp))];
-      findings.push({date,time:fmtMin(peakTime),count:peakCount,max:maxWorkers,
+      const fromMin=Math.max(...peakEmps.map(q=>q.startMin));
+      const toMin=Math.min(...peakEmps.map(q=>q.endMinAdj));
+      findings.push({date,time:fmtMin(peakTime),fromTime:fmtMin(fromMin),toTime:fmtMin(toMin),
+        count:peakCount,max:maxWorkers,
         emps:empSet.join(', '),
-        detail:peakCount+' עובדים בו-זמנית ב-'+fmtMin(peakTime)+' (מותר: '+maxWorkers+')',
+        detail:peakCount+' עובדים בו-זמנית '+fmtMin(fromMin)+'–'+fmtMin(toMin)+' (מותר: '+maxWorkers+')',
         indices:peakEmps.map(q=>q.idx)});
     }
   });
@@ -974,7 +977,8 @@ const META={
   overlaps:{label:'חפיפות שעות',icon:'⚠️',
     cols:['קובץ','גיליון','עובד','תאריך','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td><td><span class="badge '+(f.full?'b-full':'b-partial')+'">'+(f.full?'מלאה':'חלקית')+'</span></td>',
-    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'מלאה':'חלקית']},
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'מלאה':'חלקית'],
+    dateCol:3,boldCols:[2,3,6]},
   longday:{label:'שעות ארוכות ביממה',icon:'🕐',
     cols:['קובץ','גיליון','עובד','תאריך',"סה\"כ שעות"],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
@@ -1013,9 +1017,10 @@ const META={
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   concurrent:{label:'ריבוי עובדים בו-זמנית',icon:'👥',
-    cols:['קובץ','גיליון','תאריך','שעה','עובדים','כמות','מותר'],
-    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td>'+f.date+'</td><td>'+f.time+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
-    exportRow:(f,fn,fs)=>[fn,fs||'',f.date,f.time,f.emps,f.count,f.max]}
+    cols:['קובץ','גיליון','תאריך','משעה','עד שעה','עובדים','כמות','מותר'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td>'+f.date+'</td><td>'+(f.fromTime||f.time)+'</td><td>'+(f.toTime||'')+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.date,f.fromTime||f.time,f.toTime||'',f.emps,f.count,f.max],
+    dateCol:2,boldCols:[2,5,6]}
 };
 
 // ── תצוגת תוצאות ──
@@ -1156,6 +1161,12 @@ function _xlsAutoW(headers,rows){
   });
 }
 
+function parseDateForSort(s){
+  if(!s) return 0;
+  const m=String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m?new Date(+m[3],+m[2]-1,+m[1]).getTime():0;
+}
+
 // ── ייצוא ממצאים ──
 function exportFindings(){
   if(!filesResults.length){alert('יש להריץ קודם את הבדיקות');return;}
@@ -1205,10 +1216,15 @@ function exportFindings(){
       (fr.findings[k]||[]).forEach(f=>combined.push(m.exportRow(f,fr.name,getSheetForFinding(f,sm))));
     });
     if(!combined.length)return;
+    if(m.dateCol!=null) combined.sort((a,b)=>parseDateForSort(a[m.dateCol])-parseDateForSort(b[m.dateCol]));
     XLSX.utils.book_append_sheet(wb,_xlsSheet(
       m.cols,combined,
-      {hFill:'7B1010',colWidths:_xlsAutoW(m.cols,combined),
-       getStyle:(_,ri)=>ri%2===0?{bg:'FFF5F5'}:{bg:'FFEAEA'}}
+      {hFill:'8B1A1A',colWidths:_xlsAutoW(m.cols,combined),
+       getStyle:(val,ri,ci)=>{
+         const bg=ri%2===0?'FFF0F0':'FFE0E0';
+         if(m.boldCols&&m.boldCols.includes(ci)) return{bg,tc:'7B0000',b:true};
+         return{bg,tc:'333333'};
+       }}
     ),safeSheetName(m.label));
   });
 
@@ -1264,8 +1280,8 @@ function exportAnnotated(){
         const hasFlag=flags[ri];
         if(isSheetCol) return{bg:'EFF3FF',tc:'1F3864'};
         if(isDataCol){
-          if(hasFlag) return{bg:ri%2===0?'FFF5F5':'FFECEC'};  // שורה עם ממצא — אדמדם
-          return ri%2===0?null:{bg:'F7F9FC'};                  // שורה תקינה — לבן/אפרפר
+          if(hasFlag) return{bg:ri%2===0?'FFF0F0':'FFE0E0',tc:'333333'};  // שורה עם ממצא — אדום
+          return{bg:ri%2===0?'F0FFF4':'E6F9EC',tc:'1B5E20'};              // שורה תקינה — ירוק
         }
         if(isConsolidated){
           return val?{bg:'FFE4E4',tc:'8B0000',b:true}:{bg:'D9EFD2',tc:'2E7D32'}; // ממצא/תקין
