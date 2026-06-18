@@ -756,9 +756,8 @@ function checkOverlaps(parsed){
       if(a.startMin===null||a.endMinAdj===null||b.startMin===null||b.endMinAdj===null)continue;
       const os=Math.max(a.startMin,b.startMin),oe=Math.min(a.endMinAdj,b.endMinAdj);
       if(oe>os){
-        const full=(b.startMin>=a.startMin&&b.endMinAdj<=a.endMinAdj)||(a.startMin>=b.startMin&&a.endMinAdj<=b.endMinAdj);
         res.push({emp:a.emp,date:a.dateStr,s1:a.endStr+'–'+a.startStr,s2:b.endStr+'–'+b.startStr,
-          overlap:Math.round(oe-os),full,idxA:a.idx,idxB:b.idx});
+          overlap:Math.round(oe-os),idxA:a.idx,idxB:b.idx});
       }
     }
   });
@@ -1000,7 +999,7 @@ function checkDupes(parsed){
 function buildRowFlags(findings){
   const flags={};
   const mark=(idx,key,val)=>{if(idx===undefined||idx===null)return;if(!flags[idx])flags[idx]={};flags[idx][key]=val;};
-  findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps',f.full?'חפיפה מלאה':'חפיפה חלקית'));});
+  findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps','חפיפה'));});
   findings.longday?.forEach(f=>f.indices?.forEach(i=>mark(i,'longday',f.detail)));
   ['offmonth','future','nocturnal','shabbat','holiday','dupes'].forEach(k=>{
     findings[k]?.forEach(f=>mark(f.idx,k,f.detail||'✗'));
@@ -1038,9 +1037,9 @@ function runAnalysis(){
 // ── מטא בדיקות ──
 const META={
   overlaps:{label:'חפיפות שעות',icon:'⚠️',
-    cols:['קובץ','גיליון','עובד','תאריך התחלה','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
-    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td><td><span class="badge '+(f.full?'b-full':'b-partial')+'">'+(f.full?'מלאה':'חלקית')+'</span></td>',
-    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'מלאה':'חלקית'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','שורה 1','שורה 2',"חפיפה (דק')"],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap],
     dateCol:3,boldCols:[2,3,6]},
   longday:{label:'שעות ארוכות ביממה',icon:'🕐',
     cols:['קובץ','גיליון','עובד','תאריך התחלה',"סה\"כ שעות"],
@@ -1306,7 +1305,7 @@ function exportAnnotated(){
     // בנה מפת דגלים מחדש ישירות מהממצאים (ביחס לאינדקס שורה ב-rawData)
     const flags={};
     const mark=(idx,key,val)=>{if(idx==null||idx===undefined)return;if(!flags[idx])flags[idx]={};flags[idx][key]=val;};
-    fr.findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps',f.full?'חפיפה מלאה':'חפיפה חלקית'));});
+    fr.findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps','חפיפה'));});
     fr.findings.longday?.forEach(f=>f.indices?.forEach(i=>mark(i,'longday',f.detail)));
     ['offmonth','future','nocturnal','shabbat','holiday','dupes','servicehours'].forEach(k=>{
       fr.findings[k]?.forEach(f=>mark(f.idx,k,f.detail||'✗'));
