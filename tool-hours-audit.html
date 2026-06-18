@@ -1172,6 +1172,10 @@ function toggleSheetNameMode() {
 }
 // ── SERVICE HOURS WINDOWS ──
 const SVC_DAY_LABELS=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
+function fmtSvcTime(inp){
+  const raw=inp.value.replace(/[^\d]/g,'');
+  if(raw.length>=4){inp.value=raw.slice(0,2)+':'+raw.slice(2,4);}
+}
 function svcWindowHtml(w){
   const days=w.days||[];
   const dayBtns=SVC_DAY_LABELS.map((lbl,d)=>`<button type="button" class="sw-day-btn${(days.has?days.has(d):days.includes(d))?' on':''}" data-day="${d}" onclick="toggleSvcDay(this)">${lbl}</button>`).join('');
@@ -1182,8 +1186,8 @@ function svcWindowHtml(w){
         <div style="display:flex;gap:4px;flex-wrap:wrap">${dayBtns}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div class="check-param"><label>משעה:</label><input type="text" class="svc-win-from" value="${w.from||'08:00'}" placeholder="HH:MM" style="width:72px"/></div>
-        <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'17:00'}" placeholder="HH:MM" style="width:72px"/></div>
+        <div class="check-param"><label>משעה:</label><input type="text" class="svc-win-from" value="${w.from||'06:00'}" placeholder="HH:MM" style="width:72px" oninput="fmtSvcTime(this)" onblur="fmtSvcTime(this)"/></div>
+        <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'20:00'}" placeholder="HH:MM" style="width:72px" oninput="fmtSvcTime(this)" onblur="fmtSvcTime(this)"/></div>
       </div>
       <button type="button" class="svc-win-remove" onclick="removeSvcWindow(this)" title="הסר טווח" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;padding:2px 6px;align-self:center;visibility:hidden">✕</button>
     </div>
@@ -1198,7 +1202,7 @@ function toggleSvcDay(btn){ btn.classList.toggle('on'); }
 function addSvcWindow(){
   const c=document.getElementById('svc-windows-list');
   const tmp=document.createElement('div');
-  tmp.innerHTML=svcWindowHtml({days:[],from:'08:00',to:'17:00'});
+  tmp.innerHTML=svcWindowHtml({days:new Set([0,1,2,3,4]),from:'06:00',to:'20:00'});
   c.appendChild(tmp.firstElementChild);
   updateSvcRemoveBtns();
 }
@@ -2212,9 +2216,9 @@ async function exportAll() {
   if (_missingTimeRows.length) aFinds.push(['שעת כניסה/יציאה חסרה', _missingTimeRows.length, '', uniq(_missingTimeRows.map(_empOf)).join(', '), 'שורה עם תאריך אך ללא שעת כניסה או יציאה — חיתוך חלקי']);
   if (concurrentResults.length) aFinds.push(['ריבוי עובדים בו-זמנית', concurrentResults.length, '', uniq(concurrentResults.flatMap(r=>r.emps.split(', '))).join(', '), `מקסימום מורשה: ${concurrentResults[0]?.max||1} — ${concurrentResults.map(r=>`${r.date} ${r.time}: ${r.count} עובדים`).join('; ')}`]);
   const _svcRows = auditAttRows.filter(r=>r._types.includes('service'));
-  if (_svcRows.length) aFinds.push(['חריגת שעות שירות', _svcRows.length, '', uniq(_svcRows.map(_empOf)).join(', '), serviceHoursResults.map(r=>`${r.date}: ${r.detail||r.count+' שורות'}`).join('; ')]);
-  if (offMonthRows.length) aFinds.push(['שורות מחוץ לחודש הדוח',   offMonthRows.length, +offMonthRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),   uniq(offMonthRows.map(_empOf)).join(', '), `חודש הדוח: ${domMonth||'?'} — שורות מחודש אחר`]);
-  if (monthlyCapRows.length) aFinds.push(['חריגת מכסה חודשית',      monthlyCapRows.length,'',                                                                                         monthlyCapRows.map(e=>`${e.emp} (${e.month}: ${e.total.toFixed(1)}ש')`).join('; '), `מכסה: ${monthlyCap} שעות/חודש לעובד`]);
+  if (_svcRows.length && document.getElementById('chk-servicehours')?.checked) aFinds.push(['חריגת שעות שירות', _svcRows.length, '', uniq(_svcRows.map(_empOf)).join(', '), serviceHoursResults.map(r=>`${r.date}: ${r.detail||r.count+' שורות'}`).join('; ')]);
+  if (offMonthRows.length && document.getElementById('chk-offmonth')?.checked) aFinds.push(['שורות מחוץ לחודש הדוח',   offMonthRows.length, +offMonthRows.reduce((s,r)=>s+rowAttHours(r._orig,aStart,aEnd,aTotalCol),0).toFixed(2),   uniq(offMonthRows.map(_empOf)).join(', '), `חודש הדוח: ${domMonth||'?'} — שורות מחודש אחר`]);
+  if (monthlyCapRows.length && document.getElementById('chk-monthly')?.checked) aFinds.push(['חריגת מכסה חודשית',      monthlyCapRows.length,'',                                                                                         monthlyCapRows.map(e=>`${e.emp} (${e.month}: ${e.total.toFixed(1)}ש')`).join('; '), `מכסה: ${monthlyCap} שעות/חודש לעובד`]);
   if (uI.length)    aFinds.push(['עובדים לא מאושרים — חשבון',    uI.length,   +uI.reduce((s,r)=>s+(r._hours||0),0).toFixed(2),   uniq(uI.map(r=>r._emp)).join(', '),   'שורות חשבון עם עובד שאינו ברשימה המאושרת']);
   if (rateR.length) aFinds.push(['אי-התאמת תעריף',                rateR.length,+rateR.reduce((s,r)=>s+(r._hours||0),0).toFixed(2), uniq(rateR.map(r=>r._emp)).join(', '), 'שורות חשבון שבהן התעריף שחויב שונה מהתעריף המאושר']);
   if (hrsR.length)  aFinds.push(['אי-התאמת שעות (חשבון מול נוכחות)', hrsR.length,+hrsR.reduce((s,r)=>s+(r._hours||0),0).toFixed(2), uniq(hrsR.map(r=>r._emp)).join(', '), 'שורות חשבון שבהן כמות השעות שחויבה שונה מסך השעות בדוח הנוכחות']);
@@ -2764,7 +2768,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 
 // ── INIT ──
 renderTenderList();
-renderSvcWindows([{ days: new Set([0,1,2,3,4]), from: '08:00', to: '17:00' }]);
+renderSvcWindows([{ days: new Set([0,1,2,3,4]), from: '06:00', to: '20:00' }]);
 </script>
 </body>
 </html>
