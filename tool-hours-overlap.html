@@ -849,12 +849,15 @@ function checkServiceHours(parsed,svcWindows,minMinutes=0){
     const endCheck=(p.endMinAdj!==null&&p.endMinAdj>p.startMin)?p.endMinAdj:
                    (p.endMin!==null&&p.endMin>p.startMin?p.endMin:p.startMin);
     const dayWins=svcWindows.filter(w=>w.days.has(dow));
+    let matched=false;
     for(const w of dayWins){
-      if(w.fromMin===0&&w.toMin===0)return false; // 00:00→00:00 = כל השעות מותרות
+      if(w.fromMin===0&&w.toMin===0){matched=true;break;}
       const toAdj=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
-      if(p.startMin>=w.fromMin&&endCheck<=toAdj)return false; // valid — within this window
+      if(p.startMin>=w.fromMin&&endCheck<=toAdj){matched=true;break;}
     }
+    if(matched)return false;
     if(minMinutes>0&&violationMinutes(p.startMin,endCheck,dayWins)<minMinutes)return false;
+    console.warn('[שעות שירות] חריגה:',p.emp,p.dateStr,'dow='+dow,'start='+p.startMin,'endCheck='+endCheck,'חלונות='+JSON.stringify(dayWins.map(w=>({from:w.fromMin,to:w.toMin}))));
     return true; // outside all applicable windows
   }).map(p=>{
     const dow=p.dateObj.getUTCDay();
