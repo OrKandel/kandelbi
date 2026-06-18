@@ -94,7 +94,7 @@ td{padding:7px 12px;border-bottom:1px solid var(--border)}
 tr:hover td{background:var(--bg)}
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700}
 .b-full{background:#fef2f2;color:var(--red)}.b-partial{background:#fff3e0;color:var(--orange)}
-.b-ok{background:#edf7f3;color:var(--green)}
+.b-ok{background:#edf7f3;color:var(--green)}.b-missing-time{background:#fde8d8;color:#c2410c}
 .alert-box{border-radius:10px;padding:14px 18px;margin-bottom:0.5rem;font-size:0.88rem;line-height:1.6}
 .alert-box.warn{background:#fff3e0;border:1px solid var(--orange)}
 .alert-box.ok{background:#edf7f3;border:1px solid #b2ddd0;color:var(--green)}
@@ -145,17 +145,17 @@ tr:hover td{background:var(--bg)}
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" multiple hidden/>
   <div class="file-chips" id="chips"></div>
+  <div id="prefs-banner" class="prefs-banner hidden" style="margin-top:1rem">
+    <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
+    <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
+    <button class="pb-clear" onclick="clearPrefs()">מחק</button>
+  </div>
   <div class="files-list hidden" id="files-list"></div>
 </div>
 
 <!-- Config -->
 <div class="card hidden" id="config-card">
   <div class="card-title">⚙️ הגדרת עמודות</div>
-  <div id="prefs-banner" class="prefs-banner hidden">
-    <div class="pb-text">🔖 נמצאו הגדרות שמורות <span class="pb-date" id="prefs-date"></span></div>
-    <button class="pb-apply" onclick="applyPrefs()">החל הגדרות קודמות</button>
-    <button class="pb-clear" onclick="clearPrefs()">מחק</button>
-  </div>
   <div class="grid2">
     <div class="form-group"><label>מזהה עובד (שם / ת.ז.):</label><select id="col-emp"></select></div>
     <div class="form-group"><label>תאריך:</label><select id="col-date"></select></div>
@@ -209,6 +209,10 @@ tr:hover td{background:var(--bg)}
     <div class="check-item"><input type="checkbox" id="chk-dupes" checked/><div>
       <div class="check-label">📋 שורות כפולות</div>
       <div class="check-desc">שתי שורות זהות לחלוטין — עובד, תאריך, שעות</div>
+    </div></div>
+    <div class="check-item"><input type="checkbox" id="chk-missing-time" checked/><div>
+      <div class="check-label">⏱️ שעת כניסה/יציאה חסרה</div>
+      <div class="check-desc">שורה עם תאריך ועובד אך חסרה שעת כניסה או שעת יציאה</div>
     </div></div>
     <div class="check-item"><input type="checkbox" id="chk-concurrent"/><div>
       <div class="check-label">👥 ריבוי עובדים בו-זמנית</div>
@@ -653,6 +657,7 @@ function savePrefs(){
       future:document.getElementById('chk-future').checked,nocturnal:document.getElementById('chk-nocturnal').checked,
       monthly:document.getElementById('chk-monthly').checked,shabbat:document.getElementById('chk-shabbat').checked,
       holiday:document.getElementById('chk-holiday').checked,dupes:document.getElementById('chk-dupes').checked,
+      'missing-time':document.getElementById('chk-missing-time').checked,
       concurrent:document.getElementById('chk-concurrent').checked,
       servicehours:document.getElementById('chk-servicehours').checked},
     serviceWindows:getSvcWindowsFromDOM().map(w=>({days:[...w.days],from:w.from,to:w.to})),
@@ -661,7 +666,9 @@ function savePrefs(){
       maxWorkers:parseInt(document.getElementById('param-maxworkers').value)||1,
       concurrentMin:parseInt(document.getElementById('param-concurrent-min').value)||0,
       svcMin:parseInt(document.getElementById('param-svcmin').value)||0},
-    savedAt:new Date().toLocaleDateString('he-IL')
+    savedAt:new Date().toLocaleDateString('he-IL'),
+    sheetName:filesData[0]?.selectedSheets?.[0]||null,
+    headerRowIdx:filesData[0]?.headerRowIdx||0,
   };
   localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));
 }
@@ -677,14 +684,29 @@ function showPrefsBanner(){
 
 function applyPrefs(){
   const p=loadPrefs();if(!p)return;
-  // Columns by name
+  // 1. Sheet + header row (must come first — changes available columns)
+  if(p.sheetName||p.headerRowIdx!=null){
+    filesData.forEach(fd=>{
+      if(!fd.wb)return;
+      if(p.sheetName&&fd.wb.SheetNames.includes(p.sheetName)){
+        fd.selectedSheets=[p.sheetName];
+        const allRows=getRowsFromWb(fd.wb,[p.sheetName]);
+        while(allRows.length&&allRows[0].every(c=>!c))allRows.shift();
+        fd.allRows=allRows;
+      }
+      if(p.headerRowIdx!=null)applyHdrRow(fd,p.headerRowIdx);
+    });
+    renderFileChips();
+    rebuildColSelects();
+  }
+  // 2. Columns by name
   Object.entries({emp:'col-emp',date:'col-date',start:'col-start',end:'col-end'}).forEach(([field,selId])=>{
     const idx=colIdxByName(firstHeaders,p.colNames[field]);
     if(idx>=0)document.getElementById(selId).value=idx;
   });
-  // Checks
+  // 3. Checks
   Object.entries(p.checks).forEach(([k,v])=>{const el=document.getElementById('chk-'+k);if(el)el.checked=v;});
-  // Params
+  // 4. Params
   if(p.params.maxHours)document.getElementById('param-maxhours').value=p.params.maxHours;
   if(p.params.monthlyCap)document.getElementById('param-monthlycap').value=p.params.monthlyCap;
   if(p.params.maxWorkers)document.getElementById('param-maxworkers').value=p.params.maxWorkers;
@@ -693,8 +715,7 @@ function applyPrefs(){
   if(p.serviceWindows&&p.serviceWindows.length){
     renderSvcWindows(p.serviceWindows);
   } else if(p.serviceDays){
-    // תאימות לאחור — פורמט ישן עם חלון אחד
-    renderSvcWindows([{days:p.serviceDays,from:p.svcFrom||'08:00',to:p.svcTo||'17:00'}]);
+    renderSvcWindows([{days:p.serviceDays,from:p.svcFrom||'06:00',to:p.svcTo||'20:00'}]);
   }
 }
 
@@ -738,6 +759,7 @@ function runChecks(parsed,maxH,monthlyCap,today,maxWorkers,concurrentMin,svcMin)
   if(document.getElementById('chk-shabbat').checked)     findings.shabbat=checkShabbat(parsed);
   if(document.getElementById('chk-holiday').checked)     findings.holiday=checkHoliday(parsed);
   if(document.getElementById('chk-dupes').checked)       findings.dupes=checkDupes(parsed);
+  if(document.getElementById('chk-missing-time').checked) findings.missingtime=checkMissingTime(parsed);
   if(document.getElementById('chk-concurrent').checked)  findings.concurrent=checkConcurrentWorkers(parsed,maxWorkers,concurrentMin||0);
   if(document.getElementById('chk-servicehours').checked){
     findings.servicehours=checkServiceHours(parsed,getSvcWindowsFromDOM(),svcMin||0);
@@ -990,6 +1012,18 @@ function checkHoliday(parsed){
     .map(p=>({emp:p.emp,date:p.dateStr,detail:IL_ELECTIONS.has(p.dateStr)?'יום בחירות':'חג / מועד',idx:p.idx}));
 }
 
+function checkMissingTime(parsed){
+  const res=[];
+  parsed.forEach(p=>{
+    if(isNaN(p.dateObj))return;
+    const hasStart=p.startMin!==null;
+    const hasEnd=p.endMin!==null;
+    if(hasStart&&!hasEnd) res.push({emp:p.emp,date:p.dateStr,detail:'שעת יציאה חסרה',idx:p.idx});
+    else if(!hasStart&&hasEnd) res.push({emp:p.emp,date:p.dateStr,detail:'שעת כניסה חסרה',idx:p.idx});
+  });
+  return res;
+}
+
 function checkDupes(parsed){
   const seen=new Map(),res=[];
   parsed.forEach(p=>{
@@ -1007,7 +1041,7 @@ function buildRowFlags(findings){
   const mark=(idx,key,val)=>{if(idx===undefined||idx===null)return;if(!flags[idx])flags[idx]={};flags[idx][key]=val;};
   findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps','חפיפה'));});
   findings.longday?.forEach(f=>f.indices?.forEach(i=>mark(i,'longday',f.detail)));
-  ['offmonth','future','nocturnal','shabbat','holiday','dupes'].forEach(k=>{
+  ['offmonth','future','nocturnal','shabbat','holiday','dupes','missingtime'].forEach(k=>{
     findings[k]?.forEach(f=>mark(f.idx,k,f.detail||'✗'));
   });
   findings.concurrent?.forEach(f=>f.indices?.forEach(i=>mark(i,'concurrent',f.detail)));
@@ -1078,6 +1112,10 @@ const META={
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   dupes:{label:'שורות כפולות',icon:'📋',
     cols:['קובץ','גיליון','עובד','תאריך התחלה','פירוט'],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
+  missingtime:{label:'שעת כניסה/יציאה חסרה',icon:'⏱️',
+    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   servicehours:{label:'שעות/ימי שירות',icon:'🕰️',
@@ -1305,7 +1343,8 @@ function exportAnnotated(){
   const wb=XLSX.utils.book_new();
   const ALL_CHECKS=Object.keys(META);
   const FLAG_LABELS={overlaps:'חפיפות שעות',longday:'שעות ביממה',offmonth:'חודש חריג',future:'תאריך עתידי',
-    nocturnal:'שעות חריגות',shabbat:'שבת',holiday:'חג-בחירות',dupes:'שורה כפולה',concurrent:'ריבוי עובדים',servicehours:'שעות שירות'};
+    nocturnal:'שעות חריגות',shabbat:'שבת',holiday:'חג-בחירות',dupes:'שורה כפולה',
+    missingtime:'שעת כניסה/יציאה חסרה',concurrent:'ריבוי עובדים',servicehours:'שעות שירות'};
 
   filesResults.forEach(fr=>{
     // בנה מפת דגלים מחדש ישירות מהממצאים (ביחס לאינדקס שורה ב-rawData)
@@ -1313,7 +1352,7 @@ function exportAnnotated(){
     const mark=(idx,key,val)=>{if(idx==null||idx===undefined)return;if(!flags[idx])flags[idx]={};flags[idx][key]=val;};
     fr.findings.overlaps?.forEach(f=>{[f.idxA,f.idxB].forEach(i=>mark(i,'overlaps','חפיפה'));});
     fr.findings.longday?.forEach(f=>f.indices?.forEach(i=>mark(i,'longday',f.detail)));
-    ['offmonth','future','nocturnal','shabbat','holiday','dupes','servicehours'].forEach(k=>{
+    ['offmonth','future','nocturnal','shabbat','holiday','dupes','missingtime','servicehours'].forEach(k=>{
       fr.findings[k]?.forEach(f=>mark(f.idx,k,f.detail||'✗'));
     });
     fr.findings.concurrent?.forEach(f=>f.indices?.forEach(i=>mark(i,'concurrent',f.detail)));
