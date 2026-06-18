@@ -757,7 +757,7 @@ function checkOverlaps(parsed){
       const os=Math.max(a.startMin,b.startMin),oe=Math.min(a.endMinAdj,b.endMinAdj);
       if(oe>os){
         const full=(b.startMin>=a.startMin&&b.endMinAdj<=a.endMinAdj)||(a.startMin>=b.startMin&&a.endMinAdj<=b.endMinAdj);
-        res.push({emp:a.emp,date:a.dateStr,s1:a.startStr+'–'+a.endStr,s2:b.startStr+'–'+b.endStr,
+        res.push({emp:a.emp,date:a.dateStr,s1:a.endStr+'–'+a.startStr,s2:b.endStr+'–'+b.startStr,
           overlap:Math.round(oe-os),full,idxA:a.idx,idxB:b.idx});
       }
     }
@@ -884,8 +884,8 @@ function checkServiceHours(parsed,svcWindows,minMinutes=0){
       return{emp:p.emp,date:p.dateStr,detail:`יום ${DAY_HE[dow]}' — לא מורשה (שירות: ${allowed}')`,idx:p.idx};
     }
     const dayWins=svcWindows.filter(w=>w.days.has(dow));
-    const timeStr=dayWins.map(w=>`${w.from}–${w.to}`).join(', ');
-    return{emp:p.emp,date:p.dateStr,detail:`שעות חריגות ${p.startStr}–${p.endStr} (שירות ביום ${DAY_HE[dow]}': ${timeStr})`,idx:p.idx};
+    const timeStr=dayWins.map(w=>`${w.to}–${w.from}`).join(', ');
+    return{emp:p.emp,date:p.dateStr,detail:`שעות חריגות ${p.endStr}–${p.startStr} (שירות ביום ${DAY_HE[dow]}': ${timeStr})`,idx:p.idx};
   });
 }
 
@@ -915,7 +915,7 @@ function checkConcurrentWorkers(parsed, maxWorkers, minMinutes=0){
       findings.push({date,time:fmtMin(peakTime),fromTime:fmtMin(fromMin),toTime:fmtMin(toMin),
         count:peakCount,max:maxWorkers,
         emps:empSet.join(', '),
-        detail:peakCount+' עובדים בו-זמנית '+fmtMin(fromMin)+'–'+fmtMin(toMin)+' (מותר: '+maxWorkers+')',
+        detail:peakCount+' עובדים בו-זמנית '+fmtMin(toMin)+'–'+fmtMin(fromMin)+' (מותר: '+maxWorkers+')',
         indices:peakEmps.map(q=>q.idx)});
     }
   });

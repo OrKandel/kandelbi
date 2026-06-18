@@ -1208,7 +1208,7 @@ function checkServiceHoursRows(allAtt, aDate, aStart, aEnd, svcWindows){
       }
       if(!ok){
         const win=svcWindows.find(w=>w.days.has(dow));
-        details[idx]=`שעות חריגות — מחוץ לחלון השירות${win?` (${win.from}–${win.to})`:''}`;
+        details[idx]=`שעות חריגות — מחוץ לחלון השירות${win?` (${win.to}–${win.from})`:''}`;
         svcIdxs.add(idx);
       }
     }catch{}
