@@ -20,7 +20,7 @@
 <meta property="og:description" content="10 בדיקות אוטומטיות לדוחות נוכחות: חפיפות שעות, שבתות, חגים, מכסה חודשית ועוד. כלי חינמי, עובד בדפדפן."/>
 <meta property="og:url" content="https://kandelbi.org/tool-hours-overlap.html"/>
 <meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -272,11 +272,19 @@ function fmtMin(m){
 }
 function excelToDate(v){
   if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
-  return new Date(v);
+  if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
+  const d=new Date(v);
+  if(!isNaN(d))return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  return new Date(NaN);
 }
 function fmtDate(v){
   try{if(!v)return '';const d=excelToDate(v);
     if(!isNaN(d))return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
+    return String(v);}catch{return String(v);}
+}
+function fmtDateDots(v){
+  try{if(!v)return String(v||'');const d=excelToDate(v);
+    if(!isNaN(d))return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+String(d.getUTCFullYear()).slice(2);
     return String(v);}catch{return String(v);}
 }
 function colIdxByName(headers,name){
@@ -994,7 +1002,7 @@ function runAnalysis(){
     const parsed=parseData(fd.rawData,ci,cd,cs,ce);
     const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers,concurrentMin,svcMin);
     const rowFlags=buildRowFlags(findings);
-    return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags};
+    return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags,cd};
   });
 
   renderResults();
@@ -1005,25 +1013,25 @@ function runAnalysis(){
 // ── מטא בדיקות ──
 const META={
   overlaps:{label:'חפיפות שעות',icon:'⚠️',
-    cols:['קובץ','גיליון','עובד','תאריך','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','שורה 1','שורה 2',"חפיפה (דק')",'סוג'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td><td><span class="badge '+(f.full?'b-full':'b-partial')+'">'+(f.full?'מלאה':'חלקית')+'</span></td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap,f.full?'מלאה':'חלקית'],
     dateCol:3,boldCols:[2,3,6]},
   longday:{label:'שעות ארוכות ביממה',icon:'🕐',
-    cols:['קובץ','גיליון','עובד','תאריך',"סה\"כ שעות"],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה',"סה\"כ שעות"],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   rounded:{label:'שעות עגולות',icon:'🔄',info:true},
   offmonth:{label:'חודש חריג',icon:'📅',
-    cols:['קובץ','גיליון','עובד','תאריך','הערה'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','הערה'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   future:{label:'תאריך עתידי',icon:'🔮',
-    cols:['קובץ','גיליון','עובד','תאריך','הערה'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','הערה'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   nocturnal:{label:'שעות חריגות',icon:'🌙',
-    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','פירוט'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   monthly:{label:'מכסה חודשית',icon:'📊',
@@ -1031,23 +1039,23 @@ const META={
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.month+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.month,f.detail]},
   shabbat:{label:'דיווח בשבת',icon:'✡️',
-    cols:['קובץ','גיליון','עובד','תאריך','הערה'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','הערה'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   holiday:{label:'חג / בחירות',icon:'🎉',
-    cols:['קובץ','גיליון','עובד','תאריך','סוג'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','סוג'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   dupes:{label:'שורות כפולות',icon:'📋',
-    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','פירוט'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   servicehours:{label:'שעות/ימי שירות',icon:'🕰️',
-    cols:['קובץ','גיליון','עובד','תאריך','פירוט'],
+    cols:['קובץ','גיליון','עובד','תאריך התחלה','פירוט'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   concurrent:{label:'ריבוי עובדים בו-זמנית',icon:'👥',
-    cols:['קובץ','גיליון','תאריך','משעה','עד שעה','עובדים','כמות','מותר'],
+    cols:['קובץ','גיליון','תאריך התחלה','משעה','עד שעה','עובדים','כמות','מותר'],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td>'+f.date+'</td><td>'+(f.fromTime||f.time)+'</td><td>'+(f.toTime||'')+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.date,f.fromTime||f.time,f.toTime||'',f.emps,f.count,f.max],
     dateCol:2,boldCols:[2,5,6]}
@@ -1294,7 +1302,9 @@ function exportAnnotated(){
       const rf=flags[idx]||{};
       const allMatching=activeFlags.filter(k=>rf[k]);
       const consolidated=allMatching.map(k=>FLAG_LABELS[k]+': '+rf[k]).join(' | ');
-      return[sheetName,...row.slice(0,ncols), consolidated, ...activeFlags.map(k=>rf[k]||'')];
+      const displayRow=row.slice(0,ncols);
+      if(fr.cd!=null&&fr.cd<ncols)displayRow[fr.cd]=fmtDateDots(row[fr.cd]);
+      return[sheetName,...displayRow, consolidated, ...activeFlags.map(k=>rf[k]||'')];
     });
 
     const ws=_xlsSheet(allHeaders,dataRows,{
