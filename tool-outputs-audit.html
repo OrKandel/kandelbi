@@ -528,7 +528,8 @@ function buildActColSelects(){
   const ah=actData?.headers||[];
   const opts=ah.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
   const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
-  document.getElementById('col-act-svc').innerHTML=optsOpt;
+  const svcOptsOpt='<option value="-1">— לא קיים — יש לבחור ידנית את סוג התפוקה בשדה שלמטה</option>'+opts;
+  document.getElementById('col-act-svc').innerHTML=svcOptsOpt;
   ['col-act-date','col-act-qty','col-act-provider','col-act-ref'].forEach(id=>document.getElementById(id).innerHTML=optsOpt);
   const ahl=ah.map(x=>String(x||'').toLowerCase());
   autoSelect('col-act-svc',ahl,['שירות','service','קוד','code','סוג']);
@@ -549,7 +550,8 @@ function buildInvColSelects(){
   const ih=invFileData.headers;
   const opts=ih.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
   const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
-  document.getElementById('col-inv-svc').innerHTML=optsOpt;
+  const svcOptsOpt='<option value="-1">— לא קיים — יש לבחור ידנית את סוג התפוקה בשדה שלמטה</option>'+opts;
+  document.getElementById('col-inv-svc').innerHTML=svcOptsOpt;
   ['col-inv-provider','col-inv-qty','col-inv-rate','col-inv-total'].forEach(id=>document.getElementById(id).innerHTML=optsOpt);
   const ihl=ih.map(x=>String(x||'').toLowerCase());
   autoSelect('col-inv-svc',ihl,['שירות','service','קוד','code','סוג']);

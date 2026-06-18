@@ -273,6 +273,10 @@ function fmtMin(m){
 function excelToDate(v){
   if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
   if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
+  if(typeof v==='string'){
+    const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
+    if(m){let d=+m[1],mo=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;return new Date(Date.UTC(yr,mo-1,d));}
+  }
   const d=new Date(v);
   if(!isNaN(d))return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
   return new Date(NaN);
