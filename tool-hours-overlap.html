@@ -783,7 +783,8 @@ function svcWindowHtml(w){
       <button type="button" class="svc-win-remove" onclick="removeSvcWindow(this)" title="הסר טווח" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;padding:2px 6px;align-self:center;visibility:hidden">✕</button>
     </div>
     <div style="font-size:0.74rem;color:var(--muted);margin-top:7px;padding-top:6px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px">
-      <span>💡 <strong>משמרת לילה שחוצה חצות</strong> — הכנס "עד שעה" קטנה מ-"משעה" (לדוג' <strong>16:30 עד 08:00</strong>). שורה אחת מספיקה.</span>
+      <span>💡 <strong>משמרת לילה שחוצה חצות</strong> — אפשר שורה אחת עם "עד שעה" קטנה מ-"משעה" (לדוג' <strong>16:30 עד 08:00</strong>), או 2 שורות (<strong>16:30–24:00</strong> ו-<strong>00:00–08:00</strong>).</span>
+      <span>💡 <strong>כמה טווחים ביום אחד</strong> — לחץ "הוסף טווח", בחר את אותם ימים ומלא טווח נוסף (לדוג' <strong>07:00–13:00</strong> וגם <strong>16:00–19:00</strong>).</span>
       <span>💡 <strong>כל השעות מותרות ביום זה</strong> — הכנס <strong>00:00 עד 00:00</strong>.</span>
     </div>
   </div>`;
@@ -826,15 +827,39 @@ function getSvcWindowsFromDOM(){
     return{days,from,to,fromMin,toMin};
   });
 }
-function violationMinutes(startMin,endCheckMin,dayWindows){
-  let covered=0;
-  for(const w of dayWindows){
-    if(w.fromMin===0&&w.toMin===0)return 0;
-    const toAdj=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
-    const os=Math.max(startMin,w.fromMin),oe=Math.min(endCheckMin,toAdj);
-    if(oe>os)covered+=oe-os;
+// Expand one service window [fromMin,toMin] into flat intervals within [0,1440].
+// Cross-midnight (toMin < fromMin) is split into two intervals.
+function expandWindow(fromMin,toMin){
+  if(fromMin===0&&toMin===0)return[[0,1440]]; // any time
+  if(toMin===0)return[[fromMin,1440]];         // "to midnight" (00:00 as TO)
+  if(toMin>=fromMin)return[[fromMin,toMin]];   // normal
+  return[[fromMin,1440],[0,toMin]];            // cross-midnight: e.g. 16:30→08:00
+}
+
+// Minutes of interval [a,b) not covered by any of the given [start,end) intervals.
+function uncoveredMins(a,b,intervals){
+  if(a>=b)return 0;
+  const sorted=intervals.slice().sort((x,y)=>x[0]-y[0]);
+  let pos=a,unc=0;
+  for(const[ws,we]of sorted){
+    if(ws>=b)break;
+    if(ws>pos)unc+=Math.min(ws,b)-pos;
+    pos=Math.max(pos,we);
+    if(pos>=b)break;
   }
-  return Math.max(0,endCheckMin-startMin-covered);
+  if(pos<b)unc+=b-pos;
+  return unc;
+}
+
+// Total violation minutes for a shift, supporting cross-midnight shifts and windows.
+function violationMinutes(startMin,endMin,crossMidnight,dayWindows){
+  if(startMin===null||endMin===null)return 0;
+  const winIntvls=dayWindows.flatMap(w=>expandWindow(w.fromMin,w.toMin));
+  if(crossMidnight){
+    // Shift spans midnight: two intervals [startMin,1440] and [0,endMin]
+    return uncoveredMins(startMin,1440,winIntvls)+uncoveredMins(0,endMin,winIntvls);
+  }
+  return uncoveredMins(startMin,endMin,winIntvls);
 }
 
 function checkServiceHours(parsed,svcWindows,minMinutes=0){
@@ -844,29 +869,22 @@ function checkServiceHours(parsed,svcWindows,minMinutes=0){
   return parsed.filter(p=>{
     if(isNaN(p.dateObj))return false;
     const dow=p.dateObj.getUTCDay();
-    if(!allDays.has(dow))return true; // day not in any window
-    if(p.startMin===null)return false;
-    const endCheck=(p.endMinAdj!==null&&p.endMinAdj>p.startMin)?p.endMinAdj:
-                   (p.endMin!==null&&p.endMin>p.startMin?p.endMin:p.startMin);
+    if(!allDays.has(dow))return true; // day not covered by any window → violation
+    if(p.startMin===null||p.endMin===null)return false;
     const dayWins=svcWindows.filter(w=>w.days.has(dow));
-    let matched=false;
-    for(const w of dayWins){
-      if(w.fromMin===0&&w.toMin===0){matched=true;break;}
-      const toAdj=w.toMin<w.fromMin?w.toMin+1440:w.toMin;
-      if(p.startMin>=w.fromMin&&endCheck<=toAdj){matched=true;break;}
-    }
-    if(matched)return false;
-    if(minMinutes>0&&violationMinutes(p.startMin,endCheck,dayWins)<minMinutes)return false;
-    console.warn('[שעות שירות] חריגה:',p.emp,p.dateStr,'dow='+dow,'start='+p.startMin,'endCheck='+endCheck,'חלונות='+JSON.stringify(dayWins.map(w=>({from:w.fromMin,to:w.toMin}))));
-    return true; // outside all applicable windows
+    if(dayWins.some(w=>w.fromMin===0&&w.toMin===0))return false; // any time allowed
+    const violMins=violationMinutes(p.startMin,p.endMin,p.crossMidnight,dayWins);
+    if(violMins<=0)return false;
+    if(minMinutes>0&&violMins<minMinutes)return false;
+    return true;
   }).map(p=>{
     const dow=p.dateObj.getUTCDay();
     if(!allDays.has(dow)){
       const allowed=DAY_HE.filter((_,i)=>allDays.has(i)).join('/');
       return{emp:p.emp,date:p.dateStr,detail:`יום ${DAY_HE[dow]}' — לא מורשה (שירות: ${allowed}')`,idx:p.idx};
     }
-    const matchWin=svcWindows.find(w=>w.days.has(dow));
-    const timeStr=matchWin?`${fmtMin(matchWin.fromMin)}–${fmtMin(matchWin.toMin)}`:'';
+    const dayWins=svcWindows.filter(w=>w.days.has(dow));
+    const timeStr=dayWins.map(w=>`${w.from}–${w.to}`).join(', ');
     return{emp:p.emp,date:p.dateStr,detail:`שעות חריגות ${p.startStr}–${p.endStr} (שירות ביום ${DAY_HE[dow]}': ${timeStr})`,idx:p.idx};
   });
 }
