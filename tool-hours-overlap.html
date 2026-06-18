@@ -768,6 +768,10 @@ function checkOverlaps(parsed){
 
 // ── חלונות שעות שירות ──
 const SVC_DAY_LABELS=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
+function fmtSvcTime(inp){
+  const raw=inp.value.replace(/[^\d]/g,'');
+  if(raw.length>=4){inp.value=raw.slice(0,2)+':'+raw.slice(2,4);}
+}
 function svcWindowHtml(w){
   const days=w.days||[];
   const dayBtns=SVC_DAY_LABELS.map((lbl,d)=>`<button type="button" class="sw-day-btn${days.includes(d)?' on':''}" data-day="${d}" onclick="toggleSvcDay(this)">${lbl}</button>`).join('');
@@ -778,8 +782,8 @@ function svcWindowHtml(w){
         <div style="display:flex;gap:4px;flex-wrap:wrap">${dayBtns}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div class="check-param"><label>משעה:</label><input type="text" class="svc-win-from" value="${w.from||'08:00'}" placeholder="HH:MM" style="width:72px"/></div>
-        <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'17:00'}" placeholder="HH:MM" style="width:72px"/></div>
+        <div class="check-param"><label>משעה:</label><input type="text" class="svc-win-from" value="${w.from||'06:00'}" placeholder="HH:MM" style="width:72px" oninput="fmtSvcTime(this)" onblur="fmtSvcTime(this)"/></div>
+        <div class="check-param"><label>עד שעה:</label><input type="text" class="svc-win-to" value="${w.to||'20:00'}" placeholder="HH:MM" style="width:72px" oninput="fmtSvcTime(this)" onblur="fmtSvcTime(this)"/></div>
       </div>
       <button type="button" class="svc-win-remove" onclick="removeSvcWindow(this)" title="הסר טווח" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.2rem;padding:2px 6px;align-self:center;visibility:hidden">✕</button>
     </div>
@@ -800,7 +804,7 @@ function toggleSvcDay(btn){btn.classList.toggle('on');}
 function addSvcWindow(){
   const c=document.getElementById('svc-windows-list');
   const tmp=document.createElement('div');
-  tmp.innerHTML=svcWindowHtml({days:[],from:'08:00',to:'17:00'});
+  tmp.innerHTML=svcWindowHtml({days:[0,1,2,3,4],from:'06:00',to:'20:00'});
   c.appendChild(tmp.firstElementChild);
   updateSvcRemoveBtns();
 }
@@ -1393,7 +1397,7 @@ function exportAnnotated(){
 }
 
 // ── אתחול ──
-renderSvcWindows([{days:[1,2,3,4],from:'08:00',to:'17:00'}]);
+renderSvcWindows([{days:[0,1,2,3,4],from:'06:00',to:'20:00'}]);
 showPrefsBanner();
 </script>
 </body>
