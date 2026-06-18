@@ -248,9 +248,9 @@ tr.row-issue:hover td{background:#fde8e8}
       <div class="upload-box" id="dz-inv" onclick="document.getElementById('fi-inv').click()">
         <div class="ub-icon">💵</div>
         <div class="ub-text">העלה חשבון</div>
-        <div class="ub-sub">xlsx / xls / csv / PDF (לא סרוק)</div>
+        <div class="ub-sub">xlsx / xls / csv</div>
       </div>
-      <input type="file" id="fi-inv" accept=".xlsx,.xls,.csv,.pdf" hidden/>
+      <input type="file" id="fi-inv" accept=".xlsx,.xls,.csv" hidden/>
       <div id="inv-sheet-sel-wrap"></div>
       <div id="inv-info" style="margin-top:5px;font-size:0.79rem;color:var(--muted)"></div>
     </div>
@@ -915,15 +915,10 @@ document.getElementById('fi-inv').addEventListener('change', async e => {
   const info = document.getElementById('inv-info');
 
   if (file.name.toLowerCase().endsWith('.pdf')) {
-    info.textContent = '⏳ מעבד PDF...';
-    try {
-      await loadPdfInvoice(file);
-      setDZLoaded('dz-inv', '✅', file.name);
-      info.textContent = `📄 PDF נטען — ${invFileData.rows.length} שורות זוהו. בשלב הבא בדוק שמיפוי העמודות נכון.`;
-      invFileData.isPdf = true;
-    } catch(err) {
-      info.textContent = '❌ שגיאה: ' + err.message;
-    }
+    setDZReset('dz-inv');
+    info.textContent = '❌ קבצי PDF אינם נתמכים כרגע — אנא העלה קובץ Excel (xlsx / xls) או CSV.';
+    e.target.value = '';
+    return;
   } else {
     await loadExcelAsync(file, invFileData);
     const _invMapping = getColMapping();
