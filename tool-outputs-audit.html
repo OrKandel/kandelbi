@@ -396,6 +396,7 @@ function showStep2Existing(){
   markStep(2,'active');
   const rows=svcs.slice(0,100).map(s=>`<tr><td>${escHtml(s.id||'')}</td><td><strong>${s.rate?Number(s.rate).toFixed(2)+' ₪':'—'}</strong></td><td>${s.maxQty!=null?s.maxQty:'—'}</td></tr>`).join('');
   document.getElementById('svc-saved-preview').innerHTML=`<table><thead><tr><th>קוד / שם שירות</th><th>מחיר מאושר</th><th>כמות מקס'</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('step2-card').scrollIntoView({behavior:'smooth'});
 }
 
 function showReplaceSvc(){
@@ -772,17 +773,36 @@ function renderInvoiceTable(){
   document.getElementById('invoice-table-wrap').innerHTML=html;
 }
 
-function renderActTable(){
+let _actPage=0,_actFilter='all';
+const ACT_PAGE_SIZE=500;
+function _actFilteredRows(){
+  if(_actFilter==='all')return auditActRows;
+  if(_actFilter==='issue')return auditActRows.filter(r=>r._hasIssue);
+  return auditActRows.filter(r=>r._types.includes(_actFilter));
+}
+function renderActTable(resetPage=true){
+  if(resetPage)_actPage=0;
   const ah=actFilesList[0]?.data.headers||[];
-  let html=`<table><thead><tr>${ah.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}<th>מקור קובץ</th><th>ממצאים</th></tr></thead><tbody>`;
-  auditActRows.forEach(r=>{
-    const cls=r._hasIssue?'row-issue':'';
-    html+=`<tr class="${cls}" data-issue="${r._hasIssue}" data-types="${r._types.join(' ')}">`;
+  const rows=_actFilteredRows();
+  const total=rows.length,totalPages=Math.ceil(total/ACT_PAGE_SIZE)||1;
+  const start=_actPage*ACT_PAGE_SIZE,end=Math.min(start+ACT_PAGE_SIZE,total);
+  const pageRows=rows.slice(start,end);
+  let html=`<div style="font-size:0.82rem;color:var(--muted);margin-bottom:6px">מציג ${start+1}–${end} מתוך ${total.toLocaleString()} שורות</div>`;
+  html+=`<table><thead><tr>${ah.map(h=>`<th>${escHtml(String(h||''))}</th>`).join('')}<th>מקור קובץ</th><th>ממצאים</th></tr></thead><tbody>`;
+  pageRows.forEach(r=>{
+    html+=`<tr class="${r._hasIssue?'row-issue':''}">`;
     ah.forEach((_,ci)=>{html+=`<td>${escHtml(String(r._orig[ci]||''))}</td>`;});
     html+=`<td style="font-size:0.75rem;color:var(--muted)">${escHtml(r._src||'')}</td>`;
     html+=`<td class="comment-cell">${r._issues.map(i=>escHtml(i)).join('<br/>')}</td></tr>`;
   });
   html+='</tbody></table>';
+  if(totalPages>1){
+    html+=`<div style="display:flex;gap:8px;align-items:center;margin-top:0.7rem;flex-wrap:wrap">`;
+    if(_actPage>0)html+=`<button class="btn-sm btn-accent" onclick="_actPage--;renderActTable(false)">→ הקודם</button>`;
+    html+=`<span style="font-size:0.82rem;color:var(--muted)">עמוד ${_actPage+1} / ${totalPages}</span>`;
+    if(_actPage<totalPages-1)html+=`<button class="btn-sm btn-accent" onclick="_actPage++;renderActTable(false)">הבא ←</button>`;
+    html+=`</div>`;
+  }
   document.getElementById('act-table-wrap').innerHTML=html;
 }
 
@@ -810,7 +830,7 @@ function renderServicesTab(){
 }
 
 // ── FILTERS ──
-function filterAct(type,btn){btn.parentElement.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('#act-table-wrap tbody tr').forEach(tr=>{let show=true;if(type==='issue')show=tr.dataset.issue==='true';else if(type!=='all')show=(tr.dataset.types||'').includes(type);tr.style.display=show?'':'none';});}
+function filterAct(type,btn){btn.parentElement.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');_actFilter=type;renderActTable(true);}
 function filterDups(type,btn){btn.parentElement.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('#duplicates-body tr').forEach(tr=>tr.style.display=(type==='all'||tr.dataset.type===type)?'':'none');}
 
 // ── MONTHLY CHART ──
@@ -953,7 +973,13 @@ async function exportAll(){
 
 // ── HELPERS ──
 function nSvc(v){return String(v||'').trim().replace(/\s+/g,' ').toLowerCase();}
-function excelDate(v){if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);return new Date(v);}
+function excelDate(v){
+  if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
+  if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
+  if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;return new Date(Date.UTC(yr,mo-1,d));}}
+  const d=new Date(v);if(!isNaN(d))return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  return new Date(NaN);
+}
 function dateKey(v){try{const d=excelDate(v);return isNaN(d)?String(v||''):d.toLocaleDateString('he-IL');}catch{return String(v||'');}}
 function monthKey(v){try{const d=excelDate(v);return isNaN(d)?String(v||'').slice(0,7):`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;}catch{return '';}}
 function todayStr(){return new Date().toLocaleDateString('he-IL').replace(/\//g,'-');}
