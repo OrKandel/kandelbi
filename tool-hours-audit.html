@@ -2496,11 +2496,14 @@ function toMin(v){
 function fmtMin(m){ if(m<0)return '--'; return Math.floor(m/60)+':'+String(Math.round(m)%60).padStart(2,'0'); }
 function excelDate(v){
   if(typeof v==='number'&&v>1) return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
-  return new Date(v);
+  if(v instanceof Date&&!isNaN(v)) return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
+  if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;return new Date(Date.UTC(yr,mo-1,d));}}
+  const d=new Date(v);if(!isNaN(d))return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  return new Date(NaN);
 }
 function dateKey(v){ try{ const d=excelDate(v); return isNaN(d)?String(v||''):d.toLocaleDateString('he-IL'); }catch{return String(v||'');} }
-function monthKey(v){ try{ const d=excelDate(v); return isNaN(d)?String(v||'').slice(0,7):`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }catch{return '';} }
-function isShabbat(v){ try{ const d=excelDate(v); return !isNaN(d)&&d.getDay()===6; }catch{return false;} }
+function monthKey(v){ try{ const d=excelDate(v); return isNaN(d)?String(v||'').slice(0,7):`${String(d.getMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`; }catch{return '';} }
+function isShabbat(v){ try{ const d=excelDate(v); return !isNaN(d)&&d.getUTCDay()===6; }catch{return false;} }
 // ── חגים ובחירות ──
 const IL_HOLIDAYS=new Set(['27/03/2020','28/03/2020','02/04/2020','03/04/2020','28/04/2020','28/05/2020','18/09/2020','19/09/2020','27/09/2020','02/10/2020','03/10/2020','09/10/2020','10/10/2020','27/03/2021','28/03/2021','01/04/2021','02/04/2021','14/04/2021','16/05/2021','17/05/2021','06/09/2021','07/09/2021','15/09/2021','16/09/2021','20/09/2021','21/09/2021','27/09/2021','28/09/2021','15/04/2022','16/04/2022','21/04/2022','22/04/2022','05/05/2022','05/06/2022','06/06/2022','25/09/2022','26/09/2022','04/10/2022','05/10/2022','09/10/2022','10/10/2022','16/10/2022','17/10/2022','05/04/2023','06/04/2023','11/04/2023','12/04/2023','26/04/2023','25/05/2023','26/05/2023','15/09/2023','16/09/2023','24/09/2023','25/09/2023','29/09/2023','30/09/2023','06/10/2023','07/10/2023','22/04/2024','23/04/2024','28/04/2024','29/04/2024','14/05/2024','11/06/2024','12/06/2024','02/10/2024','03/10/2024','11/10/2024','12/10/2024','16/10/2024','17/10/2024','23/10/2024','24/10/2024','12/04/2025','13/04/2025','18/04/2025','19/04/2025','30/04/2025','01/06/2025','02/06/2025','22/09/2025','23/09/2025','01/10/2025','02/10/2025','06/10/2025','07/10/2025','13/10/2025','14/10/2025','31/03/2026','01/04/2026','06/04/2026','07/04/2026','21/04/2026','21/05/2026','22/05/2026','10/09/2026','11/09/2026','19/09/2026','20/09/2026','25/09/2026','26/09/2026','01/10/2026','02/10/2026']);
 const IL_ELECTIONS=new Set(['17/03/2015','09/04/2019','17/09/2019','02/03/2020','23/03/2021','01/11/2022','27/10/2013','30/10/2018','31/10/2023']);
