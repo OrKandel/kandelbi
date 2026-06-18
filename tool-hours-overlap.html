@@ -756,7 +756,9 @@ function checkOverlaps(parsed){
       if(a.startMin===null||a.endMinAdj===null||b.startMin===null||b.endMinAdj===null)continue;
       const os=Math.max(a.startMin,b.startMin),oe=Math.min(a.endMinAdj,b.endMinAdj);
       if(oe>os){
-        res.push({emp:a.emp,date:a.dateStr,s1:a.endStr+'–'+a.startStr,s2:b.endStr+'–'+b.startStr,
+        res.push({emp:a.emp,date:a.dateStr,
+          s1:a.endStr+'–'+a.startStr,s2:b.endStr+'–'+b.startStr,   // HTML RTL Bidi order
+          xs1:a.startStr+'–'+a.endStr,xs2:b.startStr+'–'+b.endStr, // Excel natural order
           overlap:Math.round(oe-os),idxA:a.idx,idxB:b.idx});
       }
     }
@@ -1039,7 +1041,7 @@ const META={
   overlaps:{label:'חפיפות שעות',icon:'⚠️',
     cols:['קובץ','גיליון','עובד','תאריך התחלה','שורה 1','שורה 2',"חפיפה (דק')"],
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td>',
-    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.s1,f.s2,f.overlap],
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.xs1||f.s1,f.xs2||f.s2,f.overlap],
     dateCol:3,boldCols:[2,3,6]},
   longday:{label:'שעות ארוכות ביממה',icon:'🕐',
     cols:['קובץ','גיליון','עובד','תאריך התחלה',"סה\"כ שעות"],

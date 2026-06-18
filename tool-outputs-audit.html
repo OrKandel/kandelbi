@@ -214,6 +214,7 @@ tr.row-issue:hover td{background:#fde8e8}
 <!-- STEP 4 -->
 <div class="card hidden" id="step4-card">
   <div class="card-title"><div class="step-num" id="sn4">4</div> מיפוי עמודות</div>
+  <div id="saved-mapping-banner" style="display:none"></div>
   <div style="font-weight:700;font-size:0.87rem;color:var(--navy);margin-bottom:0.7rem">📊 עמודות בדוח הביצועים:</div>
   <div id="act-sheet-sel-wrap"></div>
   <div id="act-hdr-sel-wrap"></div>
@@ -418,7 +419,7 @@ document.getElementById('fi-svc').addEventListener('change',e=>{
 
 function buildSvcColMap(){
   const svcShWrap=document.getElementById('svc-sheet-sel-wrap');
-  if(svcShWrap)svcShWrap.innerHTML=svcFileData.wb?sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet'):'';
+  if(svcShWrap)svcShWrap.innerHTML=svcFileData.wb?sheetSelectorHtml(svcFileData.wb,svcFileData,'svc'):'';
   document.getElementById('svc-hdr-sel-wrap').innerHTML=headerRowSelectorHtml(svcFileData,'svc-hdr-row','changeSvcHeaderRow');
   const opts=svcFileData.headers.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
   const optsOpt='<option value="-1">— לא קיים —</option>'+opts;
@@ -481,7 +482,7 @@ document.getElementById('fi-inv').addEventListener('change',async e=>{
   } else {
     await loadExcelAsync(file,invFileData);setDZLoaded('dz-inv','✅',`${file.name} (${invFileData.rows.length} שורות)`);info.textContent='';invFileData.isPdf=false;
     const outInvShWrap=document.getElementById('out-inv-sheet-sel-wrap');
-    if(outInvShWrap&&invFileData.wb)outInvShWrap.innerHTML=sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet');
+    if(outInvShWrap&&invFileData.wb)outInvShWrap.innerHTML=sheetSelectorHtml(invFileData.wb,invFileData,'inv');
   }
   checkStep3();
 });
@@ -509,7 +510,7 @@ function getSelColName(id){const sel=document.getElementById(id);if(!sel||sel.se
 function applyColByName(id,name){if(!name)return;const sel=document.getElementById(id);if(!sel)return;const opt=Array.from(sel.options).find(o=>o.text.trim()===name.trim());if(opt)sel.value=opt.value;}
 function saveColMapping(){
   if(!currentTender?.name)return;const t=loadTenders();if(!t[currentTender.name])return;
-  t[currentTender.name].colMapping={actSvc:getSelColName('col-act-svc'),actDate:getSelColName('col-act-date'),actQty:getSelColName('col-act-qty'),actProvider:getSelColName('col-act-provider'),actRef:getSelColName('col-act-ref'),invSvc:getSelColName('col-inv-svc'),invProvider:getSelColName('col-inv-provider'),invQty:getSelColName('col-inv-qty'),invRate:getSelColName('col-inv-rate'),invTotal:getSelColName('col-inv-total'),actHdrRow:actFilesList[0]?.data.headerRowIdx||0,invHdrRow:invFileData.headerRowIdx||0,manualActSvc:document.getElementById('manual-act-svc')?.value||'',manualInvSvc:document.getElementById('manual-inv-svc')?.value||''};
+  t[currentTender.name].colMapping={actSvc:getSelColName('col-act-svc'),actDate:getSelColName('col-act-date'),actQty:getSelColName('col-act-qty'),actProvider:getSelColName('col-act-provider'),actRef:getSelColName('col-act-ref'),invSvc:getSelColName('col-inv-svc'),invProvider:getSelColName('col-inv-provider'),invQty:getSelColName('col-inv-qty'),invRate:getSelColName('col-inv-rate'),invTotal:getSelColName('col-inv-total'),actHdrRow:actFilesList[0]?.data.headerRowIdx||0,invHdrRow:invFileData.headerRowIdx||0,actSheets:actFilesList[0]?.data.selectedSheets||[],invSheets:invFileData.selectedSheets||[],manualActSvc:document.getElementById('manual-act-svc')?.value||'',manualInvSvc:document.getElementById('manual-inv-svc')?.value||''};
   saveTenders(t);
 }
 function getColMapping(){if(!currentTender?.name)return null;return loadTenders()[currentTender.name]?.colMapping||null;}
@@ -518,13 +519,31 @@ function getColMapping(){if(!currentTender?.name)return null;return loadTenders(
 function goToStep4(){markStep(3,'done');document.getElementById('step4-card').classList.remove('hidden');markStep(4,'active');buildColMaps();document.getElementById('step4-card').scrollIntoView({behavior:'smooth'});}
 function buildColMaps(){
   buildActColSelects();buildInvColSelects();
+  const mapping=getColMapping();
+  const banner=document.getElementById('saved-mapping-banner');
+  if(!banner)return;
+  if(!mapping){banner.style.display='none';return;}
+  const actSheets=(actFilesList[0]?.data.selectedSheets||[]).join(', ')||'—';
+  const invSheets=(invFileData.selectedSheets||[]).join(', ')||'—';
+  const actHdr=`שורה ${(mapping.actHdrRow||0)+1}`;
+  const invHdr=`שורה ${(mapping.invHdrRow||0)+1}`;
+  banner.style.display='block';
+  banner.innerHTML=`<div style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:10px 14px;margin-bottom:0.9rem;font-size:0.85rem;color:#2e7d32">✅ <strong>הוחלו הגדרות שמורות</strong> — ביצועים: גיליון <em>${escHtml(actSheets)}</em>, ${escHtml(actHdr)} | חשבון: גיליון <em>${escHtml(invSheets)}</em>, ${escHtml(invHdr)}</div>`;
 }
 
 function buildActColSelects(){
   const actData=actFilesList[0]?.data, mapping=getColMapping();
+  if(mapping?.actSheets?.length&&actData?.wb){
+    const valid=mapping.actSheets.filter(n=>actData.wb.SheetNames.includes(n));
+    if(valid.length){
+      actData.selectedSheets=valid;
+      actFilesList.slice(1).forEach(f=>{const ns=valid.filter(n=>f.data.wb?.SheetNames.includes(n));f.data.selectedSheets=ns.length?ns:[f.data.wb?.SheetNames[0]].filter(Boolean);_reloadDataObj(f.data);});
+      _reloadDataObj(actData);
+    }
+  }
   if(mapping&&actData&&mapping.actHdrRow>0&&actData.allRows?.length>mapping.actHdrRow)actFilesList.forEach(f=>applyHeaderRow(f.data,mapping.actHdrRow));
   const actShWrap=document.getElementById('act-sheet-sel-wrap');
-  if(actShWrap)actShWrap.innerHTML=actData?.wb?sheetSelectorHtml(actData.wb,'act-sh-sel','changeActSheet'):'';
+  if(actShWrap)actShWrap.innerHTML=actData?.wb?sheetSelectorHtml(actData.wb,actData,'act'):'';
   document.getElementById('act-hdr-sel-wrap').innerHTML=headerRowSelectorHtml(actData,'act-hdr-row','changeActHeaderRow');
   const ah=actData?.headers||[];
   const opts=ah.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
@@ -535,7 +554,7 @@ function buildActColSelects(){
   const ahl=ah.map(x=>String(x||'').toLowerCase());
   autoSelect('col-act-svc',ahl,['שירות','service','קוד','code','סוג']);
   autoSelect('col-act-date',ahl,['תאריך','date','יום']);
-  autoSelect('col-act-qty',ahl,['כמות','qty','quantity','מספר']);
+  // col-act-qty defaults to "לא קיים" — no autoSelect
   autoSelect('col-act-provider',ahl,['מבצע','ספק','provider','רופא','מטפל']);
   autoSelect('col-act-ref',ahl,['אסמכתא','מזהה','ref','id','מספר פנייה']);
   if(mapping){applyColByName('col-act-svc',mapping.actSvc);applyColByName('col-act-date',mapping.actDate);applyColByName('col-act-qty',mapping.actQty);applyColByName('col-act-provider',mapping.actProvider);applyColByName('col-act-ref',mapping.actRef);}
@@ -545,8 +564,12 @@ function buildActColSelects(){
 
 function buildInvColSelects(){
   const mapping=getColMapping();
+  if(mapping?.invSheets?.length&&invFileData.wb&&!invFileData.isPdf){
+    const valid=mapping.invSheets.filter(n=>invFileData.wb.SheetNames.includes(n));
+    if(valid.length){invFileData.selectedSheets=valid;_reloadDataObj(invFileData);}
+  }
   if(mapping&&!invFileData.isPdf&&mapping.invHdrRow>0&&invFileData.allRows?.length>mapping.invHdrRow)applyHeaderRow(invFileData,mapping.invHdrRow);
-  ['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=(!invFileData.isPdf&&invFileData.wb)?sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet'):'';});
+  ['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=(!invFileData.isPdf&&invFileData.wb)?sheetSelectorHtml(invFileData.wb,invFileData,'inv'):'';});
   document.getElementById('inv-hdr-sel-wrap').innerHTML=!invFileData.isPdf?headerRowSelectorHtml(invFileData,'inv-hdr-row','changeInvHeaderRow'):'';
   const ih=invFileData.headers;
   const opts=ih.map((h,i)=>`<option value="${i}">${escHtml(String(h||''))||'(עמודה '+(i+1)+')'}</option>`).join('');
@@ -866,7 +889,7 @@ async function exportAll(){
     function addTitle(ws,text,cols){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:13,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.navy}};c.alignment={horizontal:'center',vertical:'middle',readingOrder:'rtl'};r.height=28;}
     function addSec(ws,text,cols,bg=C.blue){const r=ws.addRow([text]);if(cols>1)ws.mergeCells(r.number,1,r.number,cols);const c=r.getCell(1);c.font={bold:true,size:11,color:{argb:C.white},name:'Arial'};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};c.alignment={horizontal:'right',vertical:'middle',readingOrder:'rtl'};r.height=22;}
     function addHdr(ws,headers,bg=C.navy){const r=ws.addRow(headers);r.height=18;headers.forEach((_,i)=>hStyle(r.getCell(i+1),bg));}
-    function mxLen(arr,def=8){if(!arr.length)return def;return Math.max(def,...arr.map(v=>String(v||'').length));}
+    function mxLen(arr,def=8){if(!arr.length)return def;return arr.reduce((m,v)=>Math.max(m,String(v||'').length),def);}
     function uniq(arr){return[...new Set(arr.filter(Boolean))];}
     function asNum(v){if(v===null||v===undefined||v==='')return v;const n=parseFloat(String(v).replace(/,/g,''));return!isNaN(n)?n:v;}
     const CHUNK=150; // yield every N rows to keep browser responsive
@@ -986,13 +1009,65 @@ function todayStr(){return new Date().toLocaleDateString('he-IL').replace(/\//g,
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function escAttr(s){return escHtml(s);}
 function autoSelect(selId,headers,kws){const idx=headers.findIndex(h=>kws.some(k=>h.includes(k)));if(idx>=0)document.getElementById(selId).value=idx;}
-// ── SHEET HELPERS (new) ──
-function sheetSelectorHtml(wb,selId,onchangeFn){
+// ── SHEET HELPERS ──
+function sheetSelectorHtml(wb,dataObj,dataType){
   if(!wb||!wb.SheetNames||wb.SheetNames.length<=1)return '';
-  const opts=wb.SheetNames.map((name,i)=>{const ws2=wb.Sheets[name];const ref=ws2['!ref']||'A1';const range=XLSX.utils.decode_range(ref);const rows=range.e.r-range.s.r+1;return`<option value="${name}"${i===0?' selected':''}>${escHtml(name)} (${rows} שורות)</option>`;});
-  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה חייב להיות זהה)</option>`);
-  return`<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem;font-size:0.82rem"><div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div><select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select></div>`;
+  const selected=dataObj?.selectedSheets||[wb.SheetNames[0]];
+  const btnStyle='padding:3px 10px;border-radius:5px;border:1px solid #c8d9f2;background:#fff;color:#1e6abf;font-size:0.78rem;cursor:pointer;font-family:inherit';
+  const items=wb.SheetNames.map(name=>{
+    const ws=wb.Sheets[name];let rows=0;
+    try{const rng=XLSX.utils.decode_range(ws['!ref']||'A1');rows=rng.e.r-rng.s.r+1;}catch{}
+    const chk=selected.includes(name)?'checked':'';
+    const esc=name.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return`<label style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:0.82rem;white-space:nowrap"><input type="checkbox" onchange="toggleSheet('${esc}',this.checked,'${dataType}')" ${chk} style="accent-color:var(--blue);cursor:pointer"/><span>${escHtml(name)} <span style="color:#9aa5bb">(${rows} שורות)</span></span></label>`;
+  });
+  return`<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-bottom:0.7rem"><div style="font-weight:700;color:#1e6abf;margin-bottom:6px;font-size:0.82rem">📋 בחר גיליונות לבדיקה:</div><div style="display:flex;flex-wrap:wrap;gap:2px">${items.join('')}</div><div style="display:flex;gap:6px;margin-top:6px"><button onclick="selectAllSheets('${dataType}')" style="${btnStyle}">בחר הכל</button><button onclick="clearAllSheets('${dataType}')" style="${btnStyle}">נקה הכל</button></div></div>`;
 }
+function _dataObjForType(t){return t==='svc'?svcFileData:t==='act'?actFilesList[0]?.data:t==='inv'?invFileData:null;}
+function _reloadDataObj(obj){
+  if(!obj||!obj.wb)return;
+  let sheets=(obj.selectedSheets||[]).filter(n=>obj.wb.Sheets[n]);
+  if(!sheets.length)sheets=[obj.wb.SheetNames[0]];
+  const allRows=getRowsFromWbOut(obj.wb,sheets);
+  let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}
+  obj.allRows=allRows;obj.emptyLeadRows=_el;
+  applyHeaderRow(obj,obj.headerRowIdx||0);
+}
+function _applySheetChange(dataType){
+  if(dataType==='svc'){
+    _reloadDataObj(svcFileData);
+    const wrap=document.getElementById('svc-sheet-sel-wrap');
+    if(wrap)wrap.innerHTML=sheetSelectorHtml(svcFileData.wb,svcFileData,'svc');
+    buildSvcColMap();
+  }else if(dataType==='act'){
+    const first=actFilesList[0]?.data;if(!first)return;
+    _reloadDataObj(first);
+    actFilesList.slice(1).forEach(f=>{
+      const ns=(first.selectedSheets||[]).filter(n=>f.data.wb?.SheetNames.includes(n));
+      f.data.selectedSheets=ns.length?ns:[f.data.wb?.SheetNames[0]].filter(Boolean);
+      _reloadDataObj(f.data);
+    });
+    const wrap=document.getElementById('act-sheet-sel-wrap');
+    if(wrap)wrap.innerHTML=sheetSelectorHtml(first.wb,first,'act');
+    buildActColSelects();
+  }else if(dataType==='inv'){
+    _reloadDataObj(invFileData);
+    ['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{
+      const wrap=document.getElementById(id);
+      if(wrap)wrap.innerHTML=sheetSelectorHtml(invFileData.wb,invFileData,'inv');
+    });
+    buildInvColSelects();
+  }
+}
+function toggleSheet(sheetName,checked,dataType){
+  const obj=_dataObjForType(dataType);if(!obj||!obj.wb)return;
+  if(!obj.selectedSheets)obj.selectedSheets=[obj.wb.SheetNames[0]];
+  if(checked){if(!obj.selectedSheets.includes(sheetName))obj.selectedSheets.push(sheetName);}
+  else{const ns=obj.selectedSheets.filter(s=>s!==sheetName);obj.selectedSheets=ns.length?ns:[sheetName];}
+  _applySheetChange(dataType);
+}
+function selectAllSheets(dataType){const obj=_dataObjForType(dataType);if(!obj||!obj.wb)return;obj.selectedSheets=[...obj.wb.SheetNames];_applySheetChange(dataType);}
+function clearAllSheets(dataType){const obj=_dataObjForType(dataType);if(!obj||!obj.wb)return;obj.selectedSheets=[obj.wb.SheetNames[0]];_applySheetChange(dataType);}
 function _fmtCell(v){
   // Convert Excel time-fraction (0<n<1) stored without format to HH:MM string
   if(typeof v==='number'&&v>0&&v<1){const m=Math.round(v*1440);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
@@ -1024,16 +1099,16 @@ function unmergeSheet(ws) {
   });
   return out;
 }
-function getRowsFromWbOut(wb,sheetName){
-  if(sheetName==='__ALL__'){let all=[];wb.SheetNames.forEach((n,i)=>{const r=XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).map(_fmtRow);if(i===0)all.push(...r);else all.push(...r.slice(1));});return all;}
-  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).map(_fmtRow);
+function getRowsFromWbOut(wb,sheets){
+  if(!Array.isArray(sheets)){sheets=sheets==='__ALL__'?wb.SheetNames:[sheets||wb.SheetNames[0]];}
+  if(!sheets.length)sheets=[wb.SheetNames[0]];
+  let all=[];
+  sheets.forEach((n,i)=>{const ws=wb.Sheets[n]||wb.Sheets[wb.SheetNames[0]];const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:false}).map(_fmtRow);if(i===0)all.push(...r);else all.push(...r.slice(1));});
+  return all;
 }
 
-function changeSvcSheet(sheetName){if(!svcFileData.wb)return;const allRows=getRowsFromWbOut(svcFileData.wb,sheetName);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}svcFileData.allRows=allRows;svcFileData.emptyLeadRows=_el;svcFileData.selectedSheet=sheetName;applyHeaderRow(svcFileData,0);const wrap=document.getElementById('svc-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(svcFileData.wb,'svc-sh-sel','changeSvcSheet');buildSvcColMap();}
-function changeActSheet(sheetName){const first=actFilesList[0];if(!first||!first.data.wb)return;const allRows=getRowsFromWbOut(first.data.wb,sheetName);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}first.data.allRows=allRows;first.data.emptyLeadRows=_el;first.data.selectedSheet=sheetName;applyHeaderRow(first.data,0);const wrap=document.getElementById('act-sheet-sel-wrap');if(wrap)wrap.innerHTML=sheetSelectorHtml(first.data.wb,'act-sh-sel','changeActSheet');buildActColSelects();}
-function changeOutInvSheet(sheetName){if(!invFileData.wb||invFileData.isPdf)return;const allRows=getRowsFromWbOut(invFileData.wb,sheetName);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}invFileData.allRows=allRows;invFileData.emptyLeadRows=_el;invFileData.selectedSheet=sheetName;applyHeaderRow(invFileData,0);['out-inv-sheet-sel-wrap','out-inv-sheet-sel-wrap-step4'].forEach(id=>{const wrap=document.getElementById(id);if(wrap)wrap.innerHTML=sheetSelectorHtml(invFileData.wb,'out-inv-sh-sel','changeOutInvSheet');});buildInvColSelects();}
 
-function loadExcel(file,obj,cb){const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});obj.wb=wb;obj.selectedSheet=wb.SheetNames[0];const allRows=getRowsFromWbOut(wb,wb.SheetNames[0]);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}obj.allRows=allRows;obj.emptyLeadRows=_el;applyHeaderRow(obj,0);cb();};r.readAsArrayBuffer(file);}
+function loadExcel(file,obj,cb){const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});obj.wb=wb;obj.selectedSheets=[wb.SheetNames[0]];const allRows=getRowsFromWbOut(wb,[wb.SheetNames[0]]);let _el=0;while(allRows.length&&allRows[0].every(c=>!c)){allRows.shift();_el++;}obj.allRows=allRows;obj.emptyLeadRows=_el;applyHeaderRow(obj,0);cb();};r.readAsArrayBuffer(file);}
 function loadExcelAsync(file,obj){return new Promise(res=>loadExcel(file,obj,res));}
 function applyHeaderRow(obj,idx){idx=+idx;obj.headerRowIdx=idx;obj.headers=(obj.allRows[idx]||[]).map(c=>String(c||''));obj.rows=obj.allRows.slice(idx+1).filter(r=>r.some(c=>c!==''));}
 function headerRowSelectorHtml(obj,selId,onchangeFn){
