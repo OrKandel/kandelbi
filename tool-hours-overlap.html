@@ -603,10 +603,24 @@ function removeOverlapFile(idx){
 }
 
 function rebuildColSelects(){
-  firstHeaders=filesData[0]?.headers||[];
-  const opts=firstHeaders.map((h,i)=>'<option value="'+i+'">'+(h||'עמודה '+(i+1))+'</option>').join('');
-  ['col-emp','col-date','col-start','col-end'].forEach(id=>document.getElementById(id).innerHTML=opts);
-  autoGuess(firstHeaders);
+  const newHeaders=filesData[0]?.headers||[];
+  const selIds=['col-emp','col-date','col-start','col-end'];
+  // Save current selections by column name before rebuilding
+  const savedNames=selIds.map(id=>{
+    const idx=parseInt(document.getElementById(id)?.value);
+    return(!isNaN(idx)&&firstHeaders[idx]!=null)?firstHeaders[idx]:null;
+  });
+  firstHeaders=newHeaders;
+  const opts=newHeaders.map((h,i)=>'<option value="'+i+'">'+(h||'עמודה '+(i+1))+'</option>').join('');
+  selIds.forEach(id=>document.getElementById(id).innerHTML=opts);
+  // Restore by name; only autoGuess columns that couldn't be matched
+  const needsGuess=[];
+  selIds.forEach((id,i)=>{
+    const name=savedNames[i];
+    if(name!=null){const idx=newHeaders.indexOf(name);if(idx>=0){document.getElementById(id).value=idx;return;}}
+    needsGuess.push(id);
+  });
+  if(needsGuess.length)autoGuess(newHeaders,needsGuess);
 }
 
 function onFilesLoaded(){
@@ -650,11 +664,12 @@ function onFilesLoaded(){
   document.getElementById('checks-card').classList.remove('hidden');
 }
 
-function autoGuess(headers){
+function autoGuess(headers,ids){
   const g={'col-emp':['שם','עובד','ת.ז','מזהה','id','name','employee'],
     'col-date':['תאריך','date','יום'],'col-start':['כניסה','התחלה','start','from','משעה'],'col-end':['יציאה','סיום','end','to','עד שעה']};
-  Object.entries(g).forEach(([selId,kws])=>{
-    const idx=headers.findIndex(h=>kws.some(k=>String(h||'').toLowerCase().includes(k)));
+  (ids||Object.keys(g)).forEach(selId=>{
+    if(!g[selId])return;
+    const idx=headers.findIndex(h=>g[selId].some(k=>String(h||'').toLowerCase().includes(k)));
     if(idx>=0)document.getElementById(selId).value=idx;
   });
 }
@@ -715,18 +730,25 @@ function applyPrefs(){
     rebuildColSelects();
   }
   // 2. Columns by name
-  Object.entries({emp:'col-emp',date:'col-date',start:'col-start',end:'col-end'}).forEach(([field,selId])=>{
-    const idx=colIdxByName(firstHeaders,p.colNames[field]);
-    if(idx>=0)document.getElementById(selId).value=idx;
-  });
+  if(p.colNames){
+    Object.entries({emp:'col-emp',date:'col-date',start:'col-start',end:'col-end'}).forEach(([field,selId])=>{
+      if(!p.colNames[field])return;
+      const idx=colIdxByName(firstHeaders,p.colNames[field]);
+      if(idx>=0)document.getElementById(selId).value=idx;
+    });
+  }
   // 3. Checks
-  Object.entries(p.checks).forEach(([k,v])=>{const el=document.getElementById('chk-'+k);if(el)el.checked=v;});
+  if(p.checks){
+    Object.entries(p.checks).forEach(([k,v])=>{const el=document.getElementById('chk-'+k);if(el)el.checked=v;});
+  }
   // 4. Params
-  if(p.params.maxHours)document.getElementById('param-maxhours').value=p.params.maxHours;
-  if(p.params.monthlyCap)document.getElementById('param-monthlycap').value=p.params.monthlyCap;
-  if(p.params.maxWorkers)document.getElementById('param-maxworkers').value=p.params.maxWorkers;
-  if(p.params.concurrentMin!=null)document.getElementById('param-concurrent-min').value=p.params.concurrentMin;
-  if(p.params.svcMin!=null)document.getElementById('param-svcmin').value=p.params.svcMin;
+  if(p.params){
+    if(p.params.maxHours)document.getElementById('param-maxhours').value=p.params.maxHours;
+    if(p.params.monthlyCap)document.getElementById('param-monthlycap').value=p.params.monthlyCap;
+    if(p.params.maxWorkers)document.getElementById('param-maxworkers').value=p.params.maxWorkers;
+    if(p.params.concurrentMin!=null)document.getElementById('param-concurrent-min').value=p.params.concurrentMin;
+    if(p.params.svcMin!=null)document.getElementById('param-svcmin').value=p.params.svcMin;
+  }
   if(p.serviceWindows&&p.serviceWindows.length){
     renderSvcWindows(p.serviceWindows);
   } else if(p.serviceDays){
