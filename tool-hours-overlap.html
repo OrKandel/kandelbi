@@ -274,24 +274,39 @@ function fmtMin(m){
   const t=Math.round(m);
   return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
 }
-function excelToDate(v){
+function detectDateFmt(vals){
+  for(const v of vals){
+    if(typeof v!=='string')continue;
+    const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
+    if(!m)continue;
+    const a=+m[1],b=+m[2];
+    if(a>12)return'DMY';
+    if(b>12)return'MDY';
+  }
+  return'DMY';
+}
+function excelToDate(v,fmt){
   if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
   if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
   if(typeof v==='string'){
     const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
-    if(m){let d=+m[1],mo=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;return new Date(Date.UTC(yr,mo-1,d));}
+    if(m){let a=+m[1],b=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;
+      let d,mo;
+      if(a>12&&b<=12){d=a;mo=b;}else if(b>12&&a<=12){d=b;mo=a;}
+      else if(fmt==='MDY'){mo=a;d=b;}else{d=a;mo=b;}
+      return new Date(Date.UTC(yr,mo-1,d));}
   }
   const d=new Date(v);
   if(!isNaN(d))return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
   return new Date(NaN);
 }
-function fmtDate(v){
-  try{if(!v)return '';const d=excelToDate(v);
+function fmtDate(v,fmt){
+  try{if(!v)return '';const d=excelToDate(v,fmt);
     if(!isNaN(d))return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
     return String(v);}catch{return String(v);}
 }
-function fmtDateDots(v){
-  try{if(!v)return String(v||'');const d=excelToDate(v);
+function fmtDateDots(v,fmt){
+  try{if(!v)return String(v||'');const d=excelToDate(v,fmt);
     if(!isNaN(d))return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+String(d.getUTCFullYear()).slice(2);
     return String(v);}catch{return String(v);}
 }
@@ -722,16 +737,17 @@ function applyPrefs(){
 function clearPrefs(){localStorage.removeItem(PREFS_KEY);document.getElementById('prefs-banner').classList.add('hidden');}
 
 // ── עיבוד נתונים ──
-function parseData(rawData,ci,cd,cs,ce){
+function parseData(rawData,ci,cd,cs,ce,fmt){
+  if(!fmt)fmt=detectDateFmt(rawData.map(r=>r[cd]));
   return rawData.map((row,idx)=>{
-    const dateObj=excelToDate(row[cd]);
+    const dateObj=excelToDate(row[cd],fmt);
     const startMin=parseTime(row[cs]);
     const endMin=parseTime(row[ce]);
     // Cross-midnight: end < start (e.g. start=19:00, end=01:00 next day)
     const crossMidnight=(startMin!==null&&endMin!==null&&endMin<startMin);
     const endMinAdj=crossMidnight?endMin+1440:endMin;
     const dur=(startMin!==null&&endMinAdj!==null&&endMinAdj>startMin)?(endMinAdj-startMin)/60:0;
-    return{row,idx,emp:String(row[ci]||'').trim(),dateRaw:row[cd],dateObj,dateStr:fmtDate(row[cd]),
+    return{row,idx,emp:String(row[ci]||'').trim(),dateRaw:row[cd],dateObj,dateStr:fmtDate(row[cd],fmt),
       startMin,endMin,endMinAdj,crossMidnight,dur,startStr:fmtMin(startMin),endStr:fmtMin(endMin)};
   }).filter(p=>p.emp);
 }
@@ -1063,10 +1079,11 @@ function runAnalysis(){
   filesResults=filesData.map(fd=>{
     const sheetMap=getSheetMapForRawData(fd.wb,fd.selectedSheets,fd.headerRowIdx||0);
     const{ci,cd,cs,ce}=getColIndices(fd.headers);
-    const parsed=parseData(fd.rawData,ci,cd,cs,ce);
+    const dateFmt=detectDateFmt(fd.rawData.map(r=>r[cd]));
+    const parsed=parseData(fd.rawData,ci,cd,cs,ce,dateFmt);
     const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers,concurrentMin,svcMin);
     const rowFlags=buildRowFlags(findings);
-    return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags,cd};
+    return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags,cd,dateFmt};
   });
 
   renderResults();
@@ -1372,7 +1389,7 @@ function exportAnnotated(){
       const allMatching=activeFlags.filter(k=>rf[k]);
       const consolidated=allMatching.map(k=>FLAG_LABELS[k]+': '+rf[k]).join(' | ');
       const displayRow=row.slice(0,ncols);
-      if(fr.cd!=null&&fr.cd<ncols)displayRow[fr.cd]=fmtDateDots(row[fr.cd]);
+      if(fr.cd!=null&&fr.cd<ncols)displayRow[fr.cd]=fmtDateDots(row[fr.cd],fr.dateFmt);
       return[sheetName,...displayRow, consolidated, ...activeFlags.map(k=>rf[k]||'')];
     });
 

@@ -1335,6 +1335,7 @@ function runFullAudit() {
 
   // Merge attendance rows
   const allAtt = buildAllAttRows(sheetNameMode);
+  _dateFmt = detectDateFmt(allAtt.map(r => r[aDate]));
   const attHeaders = attFilesList[0]?.data.headers || [];
   const employees = currentTender?.employees || [];
 
@@ -2533,10 +2534,22 @@ function toMin(v){
   }catch{return -1;}
 }
 function fmtMin(m){ if(m<0)return '--'; return Math.floor(m/60)+':'+String(Math.round(m)%60).padStart(2,'0'); }
+let _dateFmt='DMY';
+function detectDateFmt(vals){
+  for(const v of vals){
+    if(typeof v!=='string')continue;
+    const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
+    if(!m)continue;
+    const a=+m[1],b=+m[2];
+    if(a>12)return'DMY';
+    if(b>12)return'MDY';
+  }
+  return'DMY';
+}
 function excelDate(v){
   if(typeof v==='number'&&v>1) return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
   if(v instanceof Date&&!isNaN(v)) return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
-  if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;return new Date(Date.UTC(yr,mo-1,d));}}
+  if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);if(m){let a=+m[1],b=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;let d,mo;if(a>12&&b<=12){d=a;mo=b;}else if(b>12&&a<=12){d=b;mo=a;}else if(_dateFmt==='MDY'){mo=a;d=b;}else{d=a;mo=b;}return new Date(Date.UTC(yr,mo-1,d));}}
   const d=new Date(v);if(!isNaN(d))return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
   return new Date(NaN);
 }
