@@ -517,13 +517,6 @@ function getColMapping(){if(!currentTender?.name)return null;return loadTenders(
 function goToStep4(){markStep(3,'done');document.getElementById('step4-card').classList.remove('hidden');markStep(4,'active');buildColMaps();document.getElementById('step4-card').scrollIntoView({behavior:'smooth'});}
 function buildColMaps(){
   buildActColSelects();buildInvColSelects();
-  const n=currentTender?.services?.length||0;
-  const multiSvc=n>1;
-  const hintMulti='<span style="color:var(--red);font-weight:700">(חובה)</span>';
-  const hintSingle='(אופציונלי — ריק = שירות יחיד)';
-  const hint=multiSvc?hintMulti:hintSingle;
-  document.getElementById('act-svc-hint').innerHTML=hint;
-  document.getElementById('inv-svc-hint').innerHTML=hint;
 }
 
 function buildActColSelects(){
@@ -575,6 +568,8 @@ function changeInvHeaderRow(idx){applyHeaderRow(invFileData,+idx);buildInvColSel
 
 function updateManualSvcSelects(){
   const services=currentTender?.services||[];
+  const multiSvc=services.length>1;
+  const baseHint=multiSvc?'<span style="color:var(--red);font-weight:700">(חובה)</span>':'(אופציונלי — ריק = שירות יחיד)';
   const svcOpts='<option value="">— בחר תפוקה —</option>'+
     services.map(s=>`<option value="${escHtml(String(s.id||''))}">${escHtml(String(s.id||''))}${s.name&&s.name!==s.id?' — '+escHtml(String(s.name||'')):''}${s.rate?' ('+s.rate.toFixed(2)+' ₪)':''}</option>`).join('');
   const actIsNone=+document.getElementById('col-act-svc')?.value===-1;
@@ -582,12 +577,18 @@ function updateManualSvcSelects(){
   const manActWrap=document.getElementById('manual-act-svc-wrap');
   const manInvWrap=document.getElementById('manual-inv-svc-wrap');
   if(manActWrap){
-    manActWrap.classList.toggle('hidden',!actIsNone||services.length===0);
+    const show=actIsNone&&services.length>0;
+    manActWrap.classList.toggle('hidden',!show);
     document.getElementById('manual-act-svc').innerHTML=svcOpts;
+    const hintEl=document.getElementById('act-svc-hint');
+    if(hintEl) hintEl.innerHTML=show?baseHint+' — יש לבחור ידנית את סוג התפוקה בשדה שלמטה':baseHint;
   }
   if(manInvWrap){
-    manInvWrap.classList.toggle('hidden',!invIsNone||services.length===0);
+    const show=invIsNone&&services.length>0;
+    manInvWrap.classList.toggle('hidden',!show);
     document.getElementById('manual-inv-svc').innerHTML=svcOpts;
+    const hintEl=document.getElementById('inv-svc-hint');
+    if(hintEl) hintEl.innerHTML=show?baseHint+' — יש לבחור ידנית את סוג התפוקה בשדה שלמטה':baseHint;
   }
 }
 
@@ -1021,8 +1022,8 @@ function setDZLoaded(dzId,icon,text){const dz=document.getElementById(dzId);dz.c
 function resetDZ(dzId,icon,text){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').textContent=icon;dz.querySelector('.ub-text').textContent=text;}
 function setDZLoading(dzId){const dz=document.getElementById(dzId);dz.classList.remove('loaded','error');dz.querySelector('.ub-icon').innerHTML='<div style="display:inline-block;width:24px;height:24px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';dz.querySelector('.ub-text').textContent='טוען קובץ...';}
 
-document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>e.preventDefault());
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>e.preventDefault());
 [['dz-svc','fi-svc'],['dz-act','fi-act'],['dz-inv','fi-inv']].forEach(([dzId,fiId])=>{
   const el=document.getElementById(dzId);
   el.addEventListener('dragover',e=>e.preventDefault());
