@@ -1012,11 +1012,12 @@ function checkConcurrentWorkers(parsed, maxWorkers, minMinutes=0){
       const empSet=[...new Set(peakEmps.map(q=>q.emp))];
       const fromMin=Math.max(...peakEmps.map(q=>q.startMin));
       const toMin=Math.min(...peakEmps.map(q=>q.endMinAdj));
-      if(minMinutes>0&&(toMin-fromMin)<minMinutes)return;
+      const overlapMin=Math.max(0,toMin-fromMin);
+      if(minMinutes>0&&overlapMin<minMinutes)return;
       findings.push({date,time:fmtMin(peakTime),fromTime:fmtMin(fromMin),toTime:fmtMin(toMin),
-        count:peakCount,max:maxWorkers,
+        count:peakCount,max:maxWorkers,overlap:overlapMin,
         emps:empSet.join(', '),
-        detail:peakCount+' עובדים בו-זמנית '+fmtMin(toMin)+'–'+fmtMin(fromMin)+' (מותר: '+maxWorkers+')',
+        detail:peakCount+' עובדים בו-זמנית '+fmtMin(toMin)+'–'+fmtMin(fromMin)+' ('+overlapMin+' דק\', מותר: '+maxWorkers+')',
         indices:peakEmps.map(q=>q.idx)});
     }
   });
@@ -1209,10 +1210,10 @@ const META={
     row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.detail+'</td>',
     exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.detail]},
   concurrent:{label:'ריבוי עובדים בו-זמנית',icon:'👥',
-    cols:['קובץ','גיליון','תאריך התחלה','משעה','עד שעה','עובדים','כמות','מותר'],
-    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td>'+f.date+'</td><td>'+(f.fromTime||f.time)+'</td><td>'+(f.toTime||'')+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td>',
-    exportRow:(f,fn,fs)=>[fn,fs||'',f.date,f.fromTime||f.time,f.toTime||'',f.emps,f.count,f.max],
-    dateCol:2,boldCols:[2,5,6]}
+    cols:['קובץ','גיליון','תאריך התחלה','משעה','עד שעה','עובדים','כמות','מותר',"חפיפה (דק')"],
+    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td>'+f.date+'</td><td>'+(f.fromTime||f.time)+'</td><td>'+(f.toTime||'')+'</td><td>'+f.emps+'</td><td><strong style="color:var(--red)">'+f.count+'</strong></td><td>'+f.max+'</td><td><strong>'+(f.overlap??'')+'</strong></td>',
+    exportRow:(f,fn,fs)=>[fn,fs||'',f.date,f.fromTime||f.time,f.toTime||'',f.emps,f.count,f.max,f.overlap??''],
+    dateCol:2,boldCols:[2,5,6,8]}
 };
 
 // ── תצוגת תוצאות ──
