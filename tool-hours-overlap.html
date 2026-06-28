@@ -158,7 +158,13 @@ tr:hover td{background:var(--bg)}
   <div class="card-title">⚙️ הגדרת עמודות</div>
   <div class="grid2">
     <div class="form-group"><label>מזהה עובד (שם / ת.ז.):</label><select id="col-emp"></select></div>
-    <div class="form-group"><label>תאריך:</label><select id="col-date"></select></div>
+    <div class="form-group"><label>תאריך:</label><select id="col-date"></select>
+      <select id="date-fmt-override" style="margin-top:4px;width:100%;font-size:0.82rem;padding:4px 6px;border:1px solid #dce3ef;border-radius:6px;color:#1a1a2e;background:#fff;">
+        <option value="auto">פורמט אוטומטי</option>
+        <option value="DMY">DD/MM/YYYY (ישראלי)</option>
+        <option value="MDY">MM/DD/YYYY (אמריקאי)</option>
+      </select>
+    </div>
     <div class="form-group"><label>שעת כניסה / התחלה:</label><select id="col-start"></select></div>
     <div class="form-group"><label>שעת יציאה / סיום:</label><select id="col-end"></select></div>
   </div>
@@ -281,28 +287,23 @@ function fmtMin(m){
   return String(Math.floor(t2/60)).padStart(2,'0')+':'+String(t2%60).padStart(2,'0')+(nextDay?' (+1)':'');
 }
 function detectDateFmt(vals){
-  const pairs=[];
+  // Manual override takes priority
+  const manual=document.getElementById('date-fmt-override')?.value;
+  if(manual&&manual!=='auto') return manual;
+  // Scan all values for unambiguous signals only (any part >12 pinpoints the day position)
   let aGt12=false,bGt12=false;
   for(const v of vals){
     if(typeof v!=='string')continue;
     const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
     if(!m)continue;
     const a=+m[1],b=+m[2];
-    if(a>12){aGt12=true;continue;} // a can't be month → first part is day → DMY evidence
-    if(b>12){bGt12=true;continue;} // b can't be month → second part is day → MDY evidence
-    pairs.push([a,b]);
+    if(a>12) aGt12=true;
+    if(b>12) bGt12=true;
+    if(aGt12&&bGt12) break;
   }
-  // Unambiguous signals (any value with one part >12) override the heuristic
-  if(aGt12&&!bGt12)return'DMY';
-  if(bGt12&&!aGt12)return'MDY';
-  // Mixed or all-ambiguous — use uniqueness heuristic:
-  // the month position repeats more (a report spans 1-2 months; days vary 1-31)
-  if(pairs.length){
-    const aU=new Set(pairs.map(p=>p[0])).size;
-    const bU=new Set(pairs.map(p=>p[1])).size;
-    if(aU<bU)return'MDY'; // first part barely varies → it's the month → MM/DD
-  }
-  return'DMY'; // default Israeli format
+  if(aGt12&&!bGt12) return'DMY'; // first part has day >12 → DD/MM
+  if(bGt12&&!aGt12) return'MDY'; // second part has day >12 → MM/DD
+  return'DMY'; // default Israeli format (when all values ≤12, can't determine reliably)
 }
 function excelToDate(v,fmt){
   if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
