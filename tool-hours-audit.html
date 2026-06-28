@@ -841,6 +841,8 @@ function onAttGlobalSheetChange() {
     f.data.allRows = allRows; f.data.emptyLeadRows = _el;
     applyHeaderRow(f.data, f.data.headerRowIdx || 0);
   });
+  // If step 4 column mapping is already visible, refresh it (preserving selections by name)
+  if (!document.getElementById('step4-card')?.classList.contains('hidden')) buildAttColSelects();
 }
 function selectAllAttSheets() {
   document.querySelectorAll('input[data-attgsheet]').forEach(cb => cb.checked = true);
@@ -1063,6 +1065,13 @@ function buildAttColSelects() {
   if (mapping && attData && mapping.attHdrRow > 0 && attData.allRows?.length > mapping.attHdrRow) {
     attFilesList.forEach(f => applyHeaderRow(f.data, mapping.attHdrRow));
   }
+  // Save current selections by column name before rebuilding options
+  const _colIds=['col-att-emp','col-att-date','col-att-start','col-att-end','col-att-total'];
+  const _savedNames=_colIds.reduce((acc,id)=>{
+    const sel=document.getElementById(id);
+    if(sel&&sel.selectedIndex>=0){const opt=sel.options[sel.selectedIndex];acc[id]=(opt&&opt.value!=='-1')?opt.text.trim():null;}else acc[id]=null;
+    return acc;
+  },{});
   const attShWrap=document.getElementById('att-sheet-sel-wrap');
   if(attShWrap) attShWrap.innerHTML=''; // sheet selection handled in step 3 via att-global-sheet-wrap
   document.getElementById('att-hdr-sel-wrap').innerHTML = headerRowSelectorHtml(attData,'att-hdr-row','changeAttHeaderRow');
@@ -1078,6 +1087,8 @@ function buildAttColSelects() {
   autoSelect('col-att-start', ahl, ['כניסה','התחלה','start','from','משעה']);
   autoSelect('col-att-end',   ahl, ['יציאה','סיום','end','to','עד']);
   autoSelect('col-att-total', ahl, ['סה"כ שעות','שעות נטו','סה"כ','נטו','total hours','hours','שעות עבודה']);
+  // Restore previously selected columns by name (overrides auto-detect, loses to saved mapping below)
+  _colIds.forEach(id=>{ if(_savedNames[id]) applyColByName(id, _savedNames[id]); });
   if (mapping) {
     applyColByName('col-att-emp',   mapping.attEmp);
     applyColByName('col-att-date',  mapping.attDate);

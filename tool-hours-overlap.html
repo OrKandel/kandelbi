@@ -265,25 +265,44 @@ const IL_ELECTIONS=new Set(['17/03/2015','09/04/2019','17/09/2019','02/03/2020',
 // ── פונקציות עזר ──
 function parseTime(v){
   if(v===null||v===undefined||v==='')return null;
-  if(typeof v==='number'){if(v>=0&&v<1)return Math.round(v*1440);return null;}
-  const m=String(v).trim().match(/^(\d{1,2}):(\d{2})/);
+  if(typeof v==='number'){
+    if(v>=0&&v<1)return Math.round(v*1440);
+    if(v>=1&&v<3)return Math.round(v*1440); // cross-midnight stored as >1.0 (e.g. 1.33=31:58)
+    return null;
+  }
+  const m=String(v).trim().match(/^(\d+):(\d{2})$/);
   return m?parseInt(m[1])*60+parseInt(m[2]):null;
 }
 function fmtMin(m){
-  if(m===null||m<0)return '--';
+  if(m===null||m<0)return'--';
   const t=Math.round(m);
-  return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
+  const nextDay=t>=1440;
+  const t2=nextDay?t%1440:t;
+  return String(Math.floor(t2/60)).padStart(2,'0')+':'+String(t2%60).padStart(2,'0')+(nextDay?' (+1)':'');
 }
 function detectDateFmt(vals){
+  const pairs=[];
+  let aGt12=false,bGt12=false;
   for(const v of vals){
     if(typeof v!=='string')continue;
     const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
     if(!m)continue;
     const a=+m[1],b=+m[2];
-    if(a>12)return'DMY';
-    if(b>12)return'MDY';
+    if(a>12){aGt12=true;continue;} // a can't be month → first part is day → DMY evidence
+    if(b>12){bGt12=true;continue;} // b can't be month → second part is day → MDY evidence
+    pairs.push([a,b]);
   }
-  return'DMY';
+  // Unambiguous signals (any value with one part >12) override the heuristic
+  if(aGt12&&!bGt12)return'DMY';
+  if(bGt12&&!aGt12)return'MDY';
+  // Mixed or all-ambiguous — use uniqueness heuristic:
+  // the month position repeats more (a report spans 1-2 months; days vary 1-31)
+  if(pairs.length){
+    const aU=new Set(pairs.map(p=>p[0])).size;
+    const bU=new Set(pairs.map(p=>p[1])).size;
+    if(aU<bU)return'MDY'; // first part barely varies → it's the month → MM/DD
+  }
+  return'DMY'; // default Israeli format
 }
 function excelToDate(v,fmt){
   if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
@@ -369,6 +388,8 @@ function onSheetCheckChange(fi, fromSelectAll){
   while(rows0.length&&rows0[0].every(c=>!c)) rows0.shift();
   fd.allRows=rows0; fd.headerRowIdx=fd.headerRowIdx||0;
   fd.headers=(rows0[fd.headerRowIdx]||[]).map(c=>String(c||''));
+  // If headers empty (headerRowIdx out of range for this sheet), reset to row 0
+  if(!fd.headers.some(Boolean)){fd.headerRowIdx=0;fd.headers=(rows0[0]||[]).map(c=>String(c||''));}
   fd.rawData=rows0.slice(fd.headerRowIdx+1).filter(r=>r.some(c=>c!==''));
   if(fi===0){
     filesData.forEach((other,i)=>{
@@ -378,9 +399,9 @@ function onSheetCheckChange(fi, fromSelectAll){
         other.selectedSheets=[...other.wb.SheetNames];
         document.querySelectorAll(`input[data-fi="${i}"][data-sheet]`).forEach(cb=>cb.checked=true);
       } else {
-        // שינוי רגיל — הפץ רק גיליונות בשם זהה
+        // שינוי רגיל — הפץ רק גיליונות בשם זהה; אם אין התאמה — אל תבחר אף גיליון
         const matching=fd.selectedSheets.filter(s=>other.wb.SheetNames.includes(s));
-        other.selectedSheets=matching.length?matching:[other.wb.SheetNames[0]];
+        other.selectedSheets=matching;
       }
       const otherRows=getRowsFromWb(other.wb,other.selectedSheets);
       while(otherRows.length&&otherRows[0].every(c=>!c)) otherRows.shift();
@@ -621,6 +642,10 @@ function rebuildColSelects(){
     needsGuess.push(id);
   });
   if(needsGuess.length)autoGuess(newHeaders,needsGuess);
+  // Final safety: if any select still has no valid value (empty headers → no options), set to 0
+  if(newHeaders.length>0){
+    selIds.forEach(id=>{const sel=document.getElementById(id);if(isNaN(parseInt(sel?.value)))sel.value='0';});
+  }
 }
 
 function onFilesLoaded(){
@@ -636,7 +661,7 @@ function onFilesLoaded(){
     });
   }
 
-  // הפץ בחירת גיליון מקובץ 0 לשאר הקבצים שיש להם גיליון בשם זהה
+  // הפץ בחירת גיליון מקובץ 0 לשאר הקבצים — רק גיליונות בשם זהה; אם אין התאמה, אל תבחר אף גיליון
   if(filesData.length>1 && filesData[0]?.selectedSheets?.length){
     const sheet0=filesData[0].selectedSheets[0];
     filesData.forEach((fd,i)=>{
@@ -647,6 +672,11 @@ function onFilesLoaded(){
         while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
         fd.allRows=allRows;
         applyHdrRow(fd, autoDetectHdrRow(fd, filesData[0].headers));
+      } else {
+        // אין גיליון תואם — נקה את הבחירה
+        fd.selectedSheets=[];
+        fd.allRows=[];
+        applyHdrRow(fd, 0);
       }
     });
   }
@@ -775,8 +805,8 @@ function parseData(rawData,ci,cd,cs,ce,fmt){
 }
 
 function getColIndices(headers){
-  const base={ci:parseInt(document.getElementById('col-emp').value),cd:parseInt(document.getElementById('col-date').value),
-    cs:parseInt(document.getElementById('col-start').value),ce:parseInt(document.getElementById('col-end').value)};
+  const si=id=>{const n=parseInt(document.getElementById(id)?.value);return isNaN(n)?0:n;};
+  const base={ci:si('col-emp'),cd:si('col-date'),cs:si('col-start'),ce:si('col-end')};
   // Re-map by column name for non-first files
   const names={emp:firstHeaders[base.ci],date:firstHeaders[base.cd],start:firstHeaders[base.cs],end:firstHeaders[base.ce]};
   const ci=colIdxByName(headers,names.emp); const cd=colIdxByName(headers,names.date);
@@ -1023,9 +1053,13 @@ function checkFuture(parsed,today){
 }
 
 function checkNocturnal(parsed){
-  return parsed.filter(p=>(p.startMin!==null&&p.startMin>=0&&p.startMin<300)||(p.endMin!==null&&p.endMin>=0&&p.endMin<300)).map(p=>{
-    const sN=p.startMin!==null&&p.startMin>=0&&p.startMin<300;
-    const eN=p.endMin!==null&&p.endMin>=0&&p.endMin<300;
+  const tod=m=>m!==null?m%1440:null; // time-of-day: strip whole days for cross-midnight times
+  return parsed.filter(p=>{
+    const s=tod(p.startMin),e=tod(p.endMin);
+    return(s!==null&&s<300)||(e!==null&&e<300);
+  }).map(p=>{
+    const s=tod(p.startMin),e=tod(p.endMin);
+    const sN=s!==null&&s<300,eN=e!==null&&e<300;
     return{emp:p.emp,date:p.dateStr,detail:(sN?'כניסה '+p.startStr:'')+((sN&&eN)?' | ':'')+( eN?'יציאה '+p.endStr:''),idx:p.idx};
   });
 }
@@ -1103,10 +1137,17 @@ function runAnalysis(){
     const{ci,cd,cs,ce}=getColIndices(fd.headers);
     const dateFmt=detectDateFmt(fd.rawData.map(r=>r[cd]));
     const parsed=parseData(fd.rawData,ci,cd,cs,ce,dateFmt);
+    if(parsed.length===0&&fd.rawData.length>0){
+      console.warn('[kandelbi] parsed empty for',fd.name,'— ci='+ci,'headers=',fd.headers,'rawData[0]=',fd.rawData[0]);
+    }
     const findings=runChecks(parsed,maxH,monthlyCap,today,maxWorkers,concurrentMin,svcMin);
     const rowFlags=buildRowFlags(findings);
     return{name:fd.name,headers:fd.headers,rawData:fd.rawData,sheetMap,parsed,findings,rowFlags,cd,dateFmt};
   });
+  if(filesResults.every(fr=>fr.parsed.length===0)&&filesData.some(fd=>fd.rawData.length>0)){
+    alert('⚠️ לא הצלחתי לזהות שורות תקינות לניתוח.\nאנא בדוק שעמודת "שם/מזהה עובד" ממופה נכון בהגדרות העמודות.');
+    return;
+  }
 
   renderResults();
   document.getElementById('results-card').classList.remove('hidden');

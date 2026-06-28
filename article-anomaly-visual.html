@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>זיהוי חריגות בנתוני Excel באמצעות תרשימי פיזור — המדריך המעשי | קנדל BI</title>
+<meta name="description" content="כיצד עובד זיהוי חריגות ויזואלי, אילו קבצי Excel כדאי לנתח, ואיך לפרש תרשים פיזור שמציג ענן נורמלי ונקודות אדומות חריגות."/>
+<meta name="robots" content="index,follow"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;line-height:1.7}
+main{max-width:760px;margin:0 auto;padding:3rem 5vw 5rem}
+.article-meta{color:var(--muted);font-size:0.85rem;margin-bottom:2.5rem;display:flex;gap:1.5rem;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;color:var(--navy);line-height:1.3;margin-bottom:0.5rem}
+h2{font-size:1.15rem;font-weight:800;color:var(--navy);margin:2rem 0 0.8rem}
+h3{font-size:1rem;font-weight:700;color:var(--navy2);margin:1.2rem 0 0.4rem}
+p{margin-bottom:1rem;font-size:0.97rem}
+ul,ol{padding-right:1.4rem;margin-bottom:1rem}
+li{margin-bottom:0.5rem;font-size:0.97rem}
+strong{font-weight:700}
+.highlight-box{background:#fff8ed;border-right:4px solid var(--accent);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.danger-box{background:#fef2f2;border-right:4px solid var(--red);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.green-box{background:#f0faf6;border-right:4px solid var(--green);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem}
+.info-box{background:#f0f7ff;border-right:4px solid var(--blue);border-radius:8px;padding:1rem 1.2rem;margin:1.5rem 0;font-size:0.93rem;color:var(--navy2)}
+.check-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 1.6rem;margin:1.2rem 0;border-right:5px solid var(--blue)}
+.check-card h3{margin-top:0}
+.divider{border:none;border-top:2px solid var(--border);margin:2.5rem 0}
+.flow-steps{display:flex;flex-direction:column;gap:0;margin:1.2rem 0}
+.flow-step{display:flex;gap:1rem;align-items:flex-start;padding:.9rem 0;border-bottom:1px solid var(--border)}
+.flow-step:last-child{border-bottom:none}
+.flow-num{background:var(--navy);color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;flex-shrink:0;margin-top:.1rem}
+.flow-content strong{display:block;color:var(--navy);font-size:.95rem;margin-bottom:.2rem}
+.flow-content p{font-size:.88rem;color:var(--muted);margin:0}
+.usecase-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+@media(max-width:520px){.usecase-grid{grid-template-columns:1fr}}
+.usecase-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem}
+.usecase-card .uc-icon{font-size:1.4rem;margin-bottom:.4rem;display:block}
+.usecase-card strong{display:block;font-size:.93rem;color:var(--navy);margin-bottom:.3rem}
+.usecase-card p{font-size:.85rem;color:var(--muted);margin:0}
+.pair-example{background:var(--white);border:1.5px solid var(--border);border-radius:10px;
+  padding:0.9rem 1.1rem;margin:0.6rem 0;display:flex;align-items:flex-start;gap:0.9rem}
+.pair-cols{font-weight:800;color:var(--blue);font-size:0.88rem;min-width:fit-content;white-space:nowrap;padding-top:0.1rem}
+.pair-desc{font-size:0.85rem;color:var(--muted);line-height:1.5}
+.pair-desc b{color:var(--text)}
+.score-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.88rem}
+.score-table th{background:var(--navy2);color:#fff;padding:8px 12px;text-align:right;font-weight:700}
+.score-table td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.score-table tr:last-child td{border-bottom:none}
+.score-table tr:nth-child(even) td{background:#f7f9fc}
+.badge{display:inline-block;border-radius:5px;padding:2px 8px;font-size:0.75rem;font-weight:700}
+.badge-good{background:#dcfce7;color:#166534}
+.badge-bad{background:#fee2e2;color:#991b1b}
+.badge-mid{background:#fef9c3;color:#854d0e}
+</style>
+</head>
+<body>
+<nav style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;white-space:nowrap;display:block">כלים לשימוש</a></li>
+    <li><a href="services.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;white-space:nowrap;display:block">שירותים</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<main>
+
+<h1>זיהוי חריגות בנתוני Excel באמצעות תרשימי פיזור</h1>
+<div class="article-meta">
+  <span>✍️ אור קנדל, רו"ח CISA | ניתוח נתונים וביקורת</span>
+  <span>⏱️ קריאה של 7 דקות</span>
+</div>
+
+<p>
+דמיינו גיליון Excel עם 500 שורות של עסקאות ספקים: מספר חשבוניות, סכום כולל, מספר עובדים, מספר פריטים. מה השאלה שקשה ביותר לענות עליה בסקירה ידנית?
+</p>
+<p>
+<strong>מי הספק שהתנהגותו שונה מכולם?</strong>
+</p>
+<p>
+לא מי הספק עם הסכום הגבוה ביותר — זה קל למיין. אלא מי הספק שה<em>יחס</em> בין הנתונים שלו חריג: הוגש מספר חשבוניות קטן, אבל הסכום הכולל גדול בצורה לא פרופורציונלית. אספקה מהירה, אבל מחיר ליחידה גבוה מהממוצע פי שלושה. כמות עסקאות נמוכה, אבל ריכוז בספק יחיד.
+</p>
+<p>
+אנליזת תרשים פיזור — scatter plot — היא הדרך הויזואלית הישירה לאתר בדיוק את הדפוסים האלה.
+</p>
+
+<hr class="divider"/>
+
+<h2>מה זה תרשים פיזור ולמה הוא עובד?</h2>
+
+<p>
+תרשים פיזור הוא גרף שבו כל נקודה מייצגת שורה אחת מהנתונים. ציר X הוא עמודה אחת (למשל: מספר חשבוניות), ציר Y הוא עמודה שנייה (למשל: סכום כולל). כל ספק, כל עובד, כל סניף — מופיע כנקודה אחת על הגרף.
+</p>
+<p>
+כאשר הנתונים "הגיוניים", הנקודות יוצרות <strong>ענן מרוכז</strong>: ספקים עם מספר חשבוניות דומה גם יראו סכומים דומים. הנקודות שיוצאות מהענן הזה — שמרוחקות מהאחרות — הן החריגים שמצדיקות בדיקה.
+</p>
+
+<div class="info-box">
+  <strong>הכוח של הוויזואליזציה:</strong> מה שמצריך שעות של מיון ונוסחאות ב-Excel, העין קולטת תוך שניות על גרף. מוח אנושי מזהה "נקודה שלא שייכת לקבוצה" באינסטינקט — עוד לפני שהמספר עצמו נבחן.
+</div>
+
+<hr class="divider"/>
+
+<h2>איך הכלי מוצא אוטומטית את הזוגות המעניינים?</h2>
+
+<p>
+כאשר קובץ מכיל עשר עמודות מספריות, יש 45 זוגות אפשריים לבדיקה. לא כל זוג שווה: "מספר שורה" מול "שנת מסמך" יניב נקודות מפוזרות בצורה אקראית שלא מספרת שום סיפור. הכלי מחשב ניקוד לכל זוג ומציג רק את המעניינים.
+</p>
+
+<h3>מה הכלי מחפש?</h3>
+
+<p><strong>ענן מרוכז + נקודות חריגות ברורות.</strong> זוג טוב הוא זוג שבו 90%–97% מהנקודות יוצרות גוש אחיד, ו-3%–10% נמצאות הרחק ממנו. אם הכול מפוזר בצורה שווה — אין סיפור. אם הכול קרוב — אין חריגים. השילוב שמעניין אותנו הוא ביניים.</p>
+
+<p><strong>מתאם לא טריוויאלי.</strong> כאשר יש קשר בין הצירים — "כמות מעלה, עלות עולה" — חריג מהקשר הזה בולט הרבה יותר. ספק עם כמות גבוהה אך עלות נמוכה בצורה חריגה מזוהה ישירות.</p>
+
+<p><strong>מרחק סטטיסטי מהענן.</strong> הכלי מחשב את המיקום הממוצע של הנקודות ומודד כמה סטיות תקן כל נקודה רחוקה ממנו. ברגע שנקודה חורגת מעבר לסף שנקבע (ברירת מחדל: 2.5 סטיות תקן), היא מסומנת כחריגה.</p>
+
+<p><strong>בונוס לעמודות כספיות.</strong> אם אחת מהעמודות נקראת "סכום", "עלות", "תשלום" וכדומה — הכלי מעלה את הניקוד של הזוג, כי חריגות כספיות בדרך כלל חשובות יותר.</p>
+
+<h3>שלוש שיטות זיהוי</h3>
+
+<div class="flow-steps">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-content">
+      <strong>מרחק אוקלידי (Z-score) — ברירת המחדל</strong>
+      <p>ממיר כל ציר לסטיות תקן ומחשב מרחק גיאומטרי מהמרכז. מתאים לרוב המקרים. מניח שהענן עגול — מה שנכון כאשר אין קשר חזק בין הצירים.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-content">
+      <strong>IQR רבעוני</strong>
+      <p>מזהה חריגים על בסיס התפלגות כל ציר בנפרד (נקודה חריגה אם X שלה חריג או Y שלה חריג). רובוסטי יותר לנתונים לא סימטריים, כמו סכומים כספיים עם "זנב ימני" ארוך.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-content">
+      <strong>מהלנוביס — שומר צורת ענן</strong>
+      <p>מתאים כאשר יש מתאם גבוה בין הצירים. מחשב את הענן כאליפסה ולא כמעגל — כך שנקודה שנמצאת "ביחס נכון" לקשר בין הצירים לא תסומן כחריגה, ורק נקודות שחורגות מהתבנית הכוללת ייסומנו.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<h2>אילו קבצים כדאי להעלות?</h2>
+
+<p>
+הכלל הבסיסי: <strong>קובץ שבו כל שורה מייצגת ישות אחת, ויש כמה עמודות מספריות שמתארות אותה.</strong> לא תקין למיון, לא טבלת שכבות מאוחדת — אלא רשימה שטוחה ונקייה.
+</p>
+
+<h3>דוגמאות לנתונים שמניבים תוצאות מעניינות</h3>
+
+<div class="pair-example">
+  <div class="pair-cols">ספקים וחשבוניות</div>
+  <div class="pair-desc">
+    <b>עמודות לדוגמה:</b> מספר חשבוניות | סכום כולל | מספר פריטים | זמן עיבוד ממוצע.<br/>
+    <b>מה אפשר לגלות:</b> ספק עם מספר קטן של חשבוניות אבל סכום כולל גבוה מאוד — סימן לחשבוניות "עגולות" גדולות שמתחמקות ממגבלות אישור. ספק עם זמן עיבוד ארוך שאינו מוצדק בכמות.
+  </div>
+</div>
+
+<div class="pair-example">
+  <div class="pair-cols">רשימת שכר</div>
+  <div class="pair-desc">
+    <b>עמודות לדוגמה:</b> ימי עבודה | שכר ברוטו | שעות נוספות | שנות ותק.<br/>
+    <b>מה אפשר לגלות:</b> עובד עם ימי עבודה נמוכים אבל שכר גבוה מהממוצע — חריגה בשכר ביחס לנוכחות. שעות נוספות גבוהות לא פרופורציוניות לשנות ותק.
+  </div>
+</div>
+
+<div class="pair-example">
+  <div class="pair-cols">עסקאות רכש</div>
+  <div class="pair-desc">
+    <b>עמודות לדוגמה:</b> כמות מוצרים | מחיר כולל | מספר הזמנות | ימי אספקה.<br/>
+    <b>מה אפשר לגלות:</b> הזמנה עם כמות גדולה ומחיר ליחידה גבוה בצורה חריגה — ייתכן שאין תחרות. אספקה מהירה מאוד ביחס לכמות — עסקה שתוכננה מראש.
+  </div>
+</div>
+
+<div class="pair-example">
+  <div class="pair-cols">ביצועי סניפים / יחידות</div>
+  <div class="pair-desc">
+    <b>עמודות לדוגמה:</b> מספר עובדים | הכנסות | הוצאות תפעול | מספר לקוחות.<br/>
+    <b>מה אפשר לגלות:</b> סניף עם מספר עובדים גדול ביחס להכנסות — יעילות נמוכה מהרגיל. הוצאות תפעול שאינן מוסברות על ידי היקף הפעילות.
+  </div>
+</div>
+
+<div class="pair-example">
+  <div class="pair-cols">דיווחי נסיעות / הוצאות</div>
+  <div class="pair-desc">
+    <b>עמודות לדוגמה:</b> מספר דיווחים | סכום כולל | מספר ימי שהייה | כמות קבלות.<br/>
+    <b>מה אפשר לגלות:</b> דיווח עם סכום גבוה ומספר קבלות קטן — מחשיד לסכומים ממוחזרים. ימי שהייה רבים לא מקבילים לסכום ההוצאות הצפוי.
+  </div>
+</div>
+
+<div class="pair-example">
+  <div class="pair-cols">הלוואות / אשראי</div>
+  <div class="pair-desc">
+    <b>עמודות לדוגמה:</b> סכום הלוואה | ריבית | תקופת החזר | מספר פיגורים.<br/>
+    <b>מה אפשר לגלות:</b> הלוואה גדולה עם ריבית נמוכה מהממוצע — לוודא שמדיניות האשראי יושמה. פיגורים רבים ביחס לסכום — לקוח בעייתי שלא תויג.
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<h2>מה מבדיל זוג עמודות טוב מגרוע?</h2>
+
+<table class="score-table">
+  <thead>
+    <tr>
+      <th>מאפיין</th>
+      <th>זוג טוב לניתוח</th>
+      <th>זוג לא מועיל</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>יחס חריגים</td>
+      <td><span class="badge badge-good">3%–12%</span> — ענן ברור + כמה נקודות בולטות</td>
+      <td><span class="badge badge-bad">0% או 30%+</span> — אין חריגים או יותר מדי</td>
+    </tr>
+    <tr>
+      <td>מתאם בין הצירים</td>
+      <td><span class="badge badge-good">בינוני–גבוה</span> — קשר ליניארי גלוי, חריג ממנו בולט</td>
+      <td><span class="badge badge-bad">אפסי או מושלם</span> — 0 = אקראי; 1.0 = כפל של אותה עמודה</td>
+    </tr>
+    <tr>
+      <td>פיזור הענן</td>
+      <td><span class="badge badge-good">מרוכז</span> — רוב הנקודות קרובות זו לזו</td>
+      <td><span class="badge badge-bad">אחיד</span> — הנקודות מפוזרות שווה על כל הגרף</td>
+    </tr>
+    <tr>
+      <td>ריחוק החריגים</td>
+      <td><span class="badge badge-good">גבוה</span> — חריגים רחוקים מ-3σ ומעלה</td>
+      <td><span class="badge badge-mid">גבולי</span> — חריגים צמודים לענן, קשה לאמת</td>
+    </tr>
+    <tr>
+      <td>קשר כלכלי הגיוני</td>
+      <td><span class="badge badge-good">כן</span> — "שעות × תעריף = עלות" מובן אינטואיטיבית</td>
+      <td><span class="badge badge-bad">לא</span> — "מיקוד × שנת לידה" — גם אם יש מתאם, אין משמעות</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr class="divider"/>
+
+<h2>איך לפרש את התרשים?</h2>
+
+<p>
+כל תרשים שהכלי מציג כולל שתי שכבות: <strong>נקודות כחולות</strong> (הענן הנורמלי) ו<strong>נקודות אדומות</strong> (החריגים). מתחת לגרף מופיע ניתוח טקסטואלי שמפרט את החריג הבולט ביותר עם הערכים המדויקים שלו.
+</p>
+
+<h3>שאלות שכדאי לשאול על כל נקודה אדומה</h3>
+
+<ul>
+  <li><strong>היכן בגרף היא נמצאת?</strong> נקודה בפינה הימנית-עליונה = גבוהה בשני הצירים. נקודה שממוקמת "הצידה" = חריגה ביחס בין הצירים, לא בהכרח בערכים המוחלטים.</li>
+  <li><strong>מה הסיפור שמאחוריה?</strong> ספק עם עסקאות רבות אבל סכום ממוצע נמוך — ייתכן שמדובר בפיצול מלאכותי של חשבוניות.</li>
+  <li><strong>האם יש הסבר לגיטימי?</strong> חברת שמירה גדולה תהיה חריגה בעמודת "כמות עובדים" לעומת שאר הספקים — זה מוסבר במהות ההתקשרות.</li>
+  <li><strong>האם נקודות אדומות אחדות מקובצות?</strong> אם כמה חריגים שייכים לאותו ספק או אותה מחלקה — זה חשוב יותר מחריג בודד.</li>
+</ul>
+
+<div class="highlight-box">
+  <strong>הכלל הזהב:</strong> הכלי לא מוכיח שהייתה עוולה. הוא מדרג היכן להשקיע את שעות הבדיקה. הנקודה האדומה היא <em>שאלה</em>, לא <em>תשובה</em>.
+</div>
+
+<hr class="divider"/>
+
+<h2>מה הכלי לא יעשה</h2>
+
+<div class="danger-box">
+  <strong>הכלי עובד על נתוני טבלה שטוחים — לא על דוחות מעוצבים.</strong><br/>
+  קובץ שמכיל כותרות משנה, שורות סיכום, תאים ממוזגים, עמודות של נוסחאות שמתייחסות לגיליון אחר — לא יתאים. יש לנקות ולהמיר לרשימה שטוחה לפני ההעלאה.
+</div>
+
+<p>בנוסף, הכלי:</p>
+<ul>
+  <li><strong>לא מחפש כפילויות</strong> — יש כלי נפרד לכך.</li>
+  <li><strong>לא מנתח זמן</strong> — שינויים לאורך חודשים דורשים ניתוח סדרות עיתים.</li>
+  <li><strong>לא מזהה שגיאות הקלדה</strong> — "1000" שנרשם בטעות כ-"10000" ייראה כחריג, אבל הסיבה שונה מחריג "אמיתי".</li>
+  <li><strong>לא מחליף שיפוט מקצועי</strong> — הניתוח הסטטיסטי הוא שלב ראשון, לא שלב אחרון.</li>
+</ul>
+
+<hr class="divider"/>
+
+<h2>תיאור תרחיש: ביקורת ספקים</h2>
+
+<p>
+מחלקת רכש בארגון ביצעה 800 עסקאות בשנה האחרונה עם 60 ספקים שונים. ביקורת ידנית של 800 שורות — לא ריאלי. בחירת 10 ספקים לדגימה — אקראית ועלולה להחמיץ את הבעייתיים.
+</p>
+<p>
+הניתוח מריץ את הכלי על קובץ שמכיל לכל ספק: מספר הזמנות, סכום כולל, מספר ספקי-משנה שונים, מספר מוצרים שנרכשו, ממוצע ימי אספקה.
+</p>
+<p>
+תרשים ראשון — "מספר הזמנות מול סכום כולל" — מראה ענן ברור: ספקים עם יותר הזמנות מקבלים יותר כסף. שני ספקים יוצאים מהענן: האחד עם 3 הזמנות בלבד אבל סכום של 400,000 ש"ח — חריג לכיוון ה"מעט הזמנות, הרבה כסף". השני עם 90 הזמנות ורק 12,000 ש"ח — הרבה הזמנות, מעט כסף, סימן אפשרי לפיצול מלאכותי.
+</p>
+<p>
+שני הספקים האלה — מתוך 60 — עולים לראש רשימת הבדיקה. זו תוצאה שניתוח ידני לא היה מגיע אליה ביעילות דומה.
+</p>
+
+<hr class="divider"/>
+
+<h2>מה חשוב להכין לפני ההעלאה</h2>
+
+<div class="flow-steps">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-content">
+      <strong>שורה אחת = ישות אחת</strong>
+      <p>כל שורה צריכה לייצג פריט אחד — ספק אחד, עובד אחד, עסקה אחת. לא שורות סיכום, לא שורות כותרת שנייה.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-content">
+      <strong>עמודות מספריות ברורות</strong>
+      <p>הכלי מזהה עמודות שבהן לפחות 55% מהערכים הם מספרים. טקסטים, קודים, תאריכים — מסוננים החוצה אוטומטית.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-content">
+      <strong>עמודת שם לזיהוי</strong>
+      <p>אם יש עמודה בשם "שם ספק", "שם עובד", "קוד לקוח" — הכלי ישתמש בה לתיוג החריגים בטקסט. בלעדיה, יוצג מספר שורה בלבד.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">4</div>
+    <div class="flow-content">
+      <strong>הסרת שורות ריקות ושורות סיכום</strong>
+      <p>שורת "סה"כ" בתחתית הטבלה תהיה כמעט תמיד חריגה — כי היא מסכמת את כולם. יש למחוק אותה לפני ההעלאה.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">5</div>
+    <div class="flow-content">
+      <strong>לפחות 20–30 שורות</strong>
+      <p>עם פחות שורות, "הענן" קטן מדי ורוב הנקודות ייראו חריגות. הכלי אפקטיבי יותר על 100 שורות ומעלה.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<h2>הכלי כחלק מתהליך עבודה</h2>
+
+<p>
+זיהוי חריגות ויזואלי אינו ממצה ומאמת — הוא <strong>ממפה ומתעדף</strong>. השלב הנכון לשימוש בו הוא בתחילת ניתוח, לא בסופו.
+</p>
+
+<div class="check-card">
+  <h3>תהליך מומלץ</h3>
+  <ol>
+    <li>ייצוא נתונים מהמערכת לקובץ Excel שטוח ונקי</li>
+    <li>הרצת הכלי — זיהוי 5–10 הנקודות החריגות</li>
+    <li>תיעדוף הנקודות: אילו מהן גדולות כספית? אילו שייכות לאותה ישות?</li>
+    <li>בדיקה עמוקה של 3–5 מקרים בולטים במקורות הראשוניים</li>
+    <li>תיעוד ממצאים — האם החריגה מוסברת או מוצדקת בדיקה נוספת?</li>
+  </ol>
+</div>
+
+<p>
+הניסיון מראה שברוב המקרים, 70%–80% מהנקודות האדומות יקבלו הסבר סביר — ספק גדול, עונתיות, חריגה חוקית. אבל ה-20%–30% הנותרים, שלא קיבלו הסבר — הם הממצאים שמצדיקים את כל ההשקעה.
+</p>
+
+<div class="green-box">
+  <strong>יתרון מעשי:</strong> מביקורות שמשתמשות בכלים מסוג זה, נפתחת תחקיר ממוקד תוך פחות ממחצית מהזמן שנדרש לסריקה ידנית מלאה — עם כיסוי של 100% מהנתונים במקום דגימה.
+</div>
+
+</main>
+</body>
+</html>
