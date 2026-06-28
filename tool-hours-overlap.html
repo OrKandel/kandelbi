@@ -271,6 +271,11 @@ const IL_ELECTIONS=new Set(['17/03/2015','09/04/2019','17/09/2019','02/03/2020',
 // ── פונקציות עזר ──
 function parseTime(v){
   if(v===null||v===undefined||v==='')return null;
+  // Date object: SheetJS with raw:true+cellDates converts time serials to Date anchored at 30/12/1899
+  if(v instanceof Date){
+    if(isNaN(v)) return null;
+    return v.getHours()*60+v.getMinutes();
+  }
   if(typeof v==='number'){
     if(v>=0&&v<1)return Math.round(v*1440);
     if(v>=1&&v<3)return Math.round(v*1440); // cross-midnight stored as >1.0 (e.g. 1.33=31:58)
