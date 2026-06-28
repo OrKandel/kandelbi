@@ -459,12 +459,12 @@ function getRowsFromWb(wb, sheetNames){
   if(!Array.isArray(sheetNames)) sheetNames=[sheetNames];
   if(sheetNames[0]==='__ALL__') sheetNames=wb.SheetNames;
   if(sheetNames.length===1){
-    return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetNames[0]]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+    return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetNames[0]]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:true}).filter(r=>r.some(c=>c!==''&&c!=null));
   }
   let all=[];
   sheetNames.forEach((n,i)=>{
     const ws=wb.Sheets[n]; if(!ws)return;
-    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''&&c!=null));
     if(i===0) all.push(...r);
     else all.push(...r.slice(1));
   });
@@ -478,8 +478,8 @@ function getSheetMapForRawData(wb, selectedSheets, headerRowIdx){
   const map=[];
   selectedSheets.forEach((n,i)=>{
     const ws=wb.Sheets[n]; if(!ws) return;
-    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:false})
-               .filter(row=>row.some(c=>c!==''));
+    const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:true})
+               .filter(row=>row.some(c=>c!==''&&c!=null));
     const count=i===0?r.length:Math.max(0,r.length-1);
     for(let j=0;j<count;j++) map.push(n);
   });
