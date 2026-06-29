@@ -335,6 +335,15 @@ function fmtDateDots(v,fmt){
     if(!isNaN(d))return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+String(d.getUTCFullYear()).slice(2);
     return String(v);}catch{return String(v);}
 }
+// ממיר ערך גולמי מ-raw:true לערך תצוגה לפני כתיבה לאקסל
+function rawCellForExport(v){
+  if(!(v instanceof Date)) return v;
+  if(isNaN(v)) return '';
+  // תאי שעה: SheetJS עוגן אותם ב-30/12/1899
+  if(v.getFullYear()<=1900) return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');
+  // תאי תאריך רגילים → מחרוזת DD/MM/YYYY
+  return String(v.getDate()).padStart(2,'0')+'/'+(v.getMonth()+1).toString().padStart(2,'0')+'/'+v.getFullYear();
+}
 function colIdxByName(headers,name){
   return headers.findIndex(h=>String(h||'').trim()===String(name||'').trim());
 }
@@ -389,10 +398,11 @@ function onSheetCheckChange(fi, fromSelectAll){
   const checked=Array.from(document.querySelectorAll(`input[data-fi="${fi}"][data-sheet]`))
     .filter(cb=>cb.checked).map(cb=>cb.dataset.sheet);
   fd.selectedSheets=checked.length?checked:[fd.wb.SheetNames[0]];
-  // טען מחדש את שורות הקובץ הזה
-  const rows0=getRowsFromWb(fd.wb,fd.selectedSheets);
+  // טען מחדש את שורות הקובץ הזה עם headerRowIdx הנוכחי
+  const hdrIdx=fd.headerRowIdx||0;
+  const rows0=getRowsFromWb(fd.wb,fd.selectedSheets,hdrIdx);
   while(rows0.length&&rows0[0].every(c=>!c)) rows0.shift();
-  fd.allRows=rows0; fd.headerRowIdx=fd.headerRowIdx||0;
+  fd.allRows=rows0; fd.headerRowIdx=hdrIdx;
   fd.headers=(rows0[fd.headerRowIdx]||[]).map(c=>String(c||''));
   // If headers empty (headerRowIdx out of range for this sheet), reset to row 0
   if(!fd.headers.some(Boolean)){fd.headerRowIdx=0;fd.headers=(rows0[0]||[]).map(c=>String(c||''));}
@@ -459,7 +469,8 @@ function unmergeSheet(ws) {
   });
   return out;
 }
-function getRowsFromWb(wb, sheetNames){
+function getRowsFromWb(wb, sheetNames, hdrIdx){
+  if(hdrIdx==null) hdrIdx=0;
   if(!sheetNames) sheetNames=[wb.SheetNames[0]];
   if(!Array.isArray(sheetNames)) sheetNames=[sheetNames];
   if(sheetNames[0]==='__ALL__') sheetNames=wb.SheetNames;
@@ -471,7 +482,7 @@ function getRowsFromWb(wb, sheetNames){
     const ws=wb.Sheets[n]; if(!ws)return;
     const r=XLSX.utils.sheet_to_json(unmergeSheet(ws),{header:1,defval:'',raw:true}).filter(row=>row.some(c=>c!==''&&c!=null));
     if(i===0) all.push(...r);
-    else all.push(...r.slice(1));
+    else all.push(...r.slice(hdrIdx+1)); // דלג על אותה כמות שורות כותרת כמו גיליון 1
   });
   return all;
 }
@@ -560,6 +571,12 @@ function autoDetectHdrRow(fd, refHeaders){
 }
 function applyHdrRow(fd, idx){
   fd.headerRowIdx=+idx;
+  // לקובץ רב-גיליון: בנה מחדש את allRows עם הדלגה נכונה על שורות הכותרת בגיליונות נוספים
+  if(fd.wb && fd.selectedSheets && fd.selectedSheets.length>1){
+    const rows=getRowsFromWb(fd.wb,fd.selectedSheets,+idx);
+    while(rows.length&&rows[0].every(c=>!c)) rows.shift();
+    fd.allRows=rows;
+  }
   fd.headers=(fd.allRows[+idx]||[]).map(c=>String(c||''));
   fd.rawData=fd.allRows.slice(+idx+1).filter(r=>r.some(c=>c!==''));
 }
@@ -1165,8 +1182,8 @@ function runAnalysis(){
 const META={
   overlaps:{label:'חפיפות שעות',icon:'⚠️',
     cols:['קובץ','גיליון','עובד','תאריך התחלה','שורה 1','שורה 2',"חפיפה (דק')"],
-    row:(f,fn,fs)=>'<td>'+fn+'</td><td>'+(fs||'')+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td>',
-    exportRow:(f,fn,fs)=>[fn,fs||'',f.emp,f.date,f.xs1||f.s1,f.xs2||f.s2,f.overlap],
+    row:(f,fn,fs)=>{const sheetCell=(f._sheetB&&f._sheetB!==fs)?fs+'<br><small style="color:var(--muted)">'+f._sheetB+'</small>':(fs||'');return'<td>'+fn+'</td><td>'+sheetCell+'</td><td><strong>'+f.emp+'</strong></td><td>'+f.date+'</td><td>'+f.s1+'</td><td>'+f.s2+'</td><td><strong>'+f.overlap+'</strong></td>';},
+    exportRow:(f,fn,fs)=>{const sheetVal=(f._sheetB&&f._sheetB!==fs)?fs+' / '+f._sheetB:(fs||'');return[fn,sheetVal,f.emp,f.date,f.xs1||f.s1,f.xs2||f.s2,f.overlap];},
     dateCol:3,boldCols:[2,3,6]},
   longday:{label:'שעות ארוכות ביממה',icon:'🕐',
     cols:['קובץ','גיליון','עובד','תאריך התחלה',"סה\"כ שעות"],
@@ -1227,7 +1244,11 @@ function renderResults(){
   ALL_CHECKS.forEach(k=>{merged[k]=[];});
   filesResults.forEach(fr=>{
     ALL_CHECKS.forEach(k=>{
-      if(fr.findings[k])merged[k]=[...merged[k],...fr.findings[k].map(f=>({...f,_file:fr.name,_sheet:getSheetForFinding(f,fr.sheetMap)}))];
+      if(fr.findings[k])merged[k]=[...merged[k],...fr.findings[k].map(f=>{
+        const _sheet=getSheetForFinding(f,fr.sheetMap);
+        const _sheetB=(k==='overlaps'&&f.idxB!=null)?(fr.sheetMap[f.idxB]||''):_sheet;
+        return{...f,_file:fr.name,_sheet,_sheetB};
+      })];
     });
   });
 
@@ -1406,7 +1427,10 @@ function exportFindings(){
     const combined=[];
     filesResults.forEach(fr=>{
       const sm=fr.sheetMap||[];
-      (fr.findings[k]||[]).forEach(f=>combined.push(m.exportRow(f,fr.name,getSheetForFinding(f,sm))));
+      (fr.findings[k]||[]).forEach(f=>{
+        const _sheetB=(k==='overlaps'&&f.idxB!=null)?(sm[f.idxB]||''):'';
+        combined.push(m.exportRow({...f,_sheetB},fr.name,getSheetForFinding(f,sm)));
+      });
     });
     if(!combined.length)return;
     if(m.dateCol!=null) combined.sort((a,b)=>parseDateForSort(a[m.dateCol])-parseDateForSort(b[m.dateCol]));
@@ -1458,14 +1482,14 @@ function exportAnnotated(){
       const rf=flags[idx]||{};
       const allMatching=activeFlags.filter(k=>rf[k]);
       const consolidated=allMatching.map(k=>FLAG_LABELS[k]+': '+rf[k]).join(' | ');
-      const displayRow=row.slice(0,ncols);
+      const displayRow=row.slice(0,ncols).map(rawCellForExport);
       if(fr.cd!=null&&fr.cd<ncols)displayRow[fr.cd]=fmtDateDots(row[fr.cd],fr.dateFmt);
       return[sheetName,...displayRow, consolidated, ...activeFlags.map(k=>rf[k]||'')];
     });
 
     const ws=_xlsSheet(allHeaders,dataRows,{
       hFill:'1F3864',
-      colWidths:[12,..._xlsAutoW(trimHdrs,fr.rawData.map(r=>r.slice(0,ncols))),
+      colWidths:[12,..._xlsAutoW(trimHdrs,dataRows.map(r=>r.slice(1,ncols+1))),
                  Math.min(Math.max(...dataRows.map(r=>String(r[ncols+1]||'').length),20)+2,60),
                  ...activeFlags.map(k=>Math.max(FLAG_LABELS[k].length+2,10))],
       getStyle:(val,ri,ci)=>{
