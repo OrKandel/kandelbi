@@ -274,7 +274,7 @@ function parseTime(v){
   // Date object: SheetJS with raw:true+cellDates converts time serials to Date anchored at 30/12/1899
   if(v instanceof Date){
     if(isNaN(v)) return null;
-    return v.getHours()*60+v.getMinutes();
+    return v.getUTCHours()*60+v.getUTCMinutes();
   }
   if(typeof v==='number'){
     if(v>=0&&v<1)return Math.round(v*1440);
@@ -312,7 +312,7 @@ function detectDateFmt(vals){
 }
 function excelToDate(v,fmt){
   if(typeof v==='number'&&v>1)return new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);
-  if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
+  if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getUTCFullYear(),v.getUTCMonth(),v.getUTCDate()));
   if(typeof v==='string'){
     const m=v.trim().match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
     if(m){let a=+m[1],b=+m[2],yr=+m[3];if(yr<100)yr+=yr<50?2000:1900;
@@ -340,9 +340,9 @@ function rawCellForExport(v){
   if(!(v instanceof Date)) return v;
   if(isNaN(v)) return '';
   // תאי שעה: SheetJS עוגן אותם ב-30/12/1899
-  if(v.getFullYear()<=1900) return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');
+  if(v.getUTCFullYear()<=1900) return String(v.getUTCHours()).padStart(2,'0')+':'+String(v.getUTCMinutes()).padStart(2,'0');
   // תאי תאריך רגילים → מחרוזת DD/MM/YYYY
-  return String(v.getDate()).padStart(2,'0')+'/'+(v.getMonth()+1).toString().padStart(2,'0')+'/'+v.getFullYear();
+  return String(v.getUTCDate()).padStart(2,'0')+'/'+(v.getUTCMonth()+1).toString().padStart(2,'0')+'/'+v.getUTCFullYear();
 }
 function colIdxByName(headers,name){
   return headers.findIndex(h=>String(h||'').trim()===String(name||'').trim());
@@ -538,7 +538,7 @@ function loadFiles(fileList){
   arr.forEach(file=>{
     const reader=new FileReader();
     reader.onload=ev=>{
-      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
       const allRows=getRowsFromWb(wb,[wb.SheetNames[0]]);
       while(allRows.length&&allRows[0].every(c=>!c)) allRows.shift();
       const headers=(allRows[0]||[]).map(c=>String(c||''));
