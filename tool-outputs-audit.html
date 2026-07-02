@@ -17,6 +17,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -199,9 +200,9 @@ tr.row-issue:hover td{background:#fde8e8}
       <div class="upload-box" id="dz-inv" onclick="document.getElementById('fi-inv').click()">
         <div class="ub-icon">💵</div>
         <div class="ub-text">העלה חשבון</div>
-        <div class="ub-sub">xlsx / xls / csv</div>
+        <div class="ub-sub">xlsx / xls / csv / pdf</div>
       </div>
-      <input type="file" id="fi-inv" accept=".xlsx,.xls,.csv" hidden/>
+      <input type="file" id="fi-inv" accept=".xlsx,.xls,.csv,.pdf" hidden/>
       <div id="out-inv-sheet-sel-wrap"></div>
       <div id="inv-info" style="margin-top:5px;font-size:0.79rem;color:var(--muted)"></div>
     </div>
@@ -476,10 +477,16 @@ document.getElementById('fi-inv').addEventListener('change',async e=>{
   setDZLoading('dz-inv');
   const info=document.getElementById('inv-info');
   if(file.name.toLowerCase().endsWith('.pdf')){
-    setDZReset('dz-inv');
-    info.textContent='❌ קבצי PDF אינם נתמכים כרגע — אנא העלה קובץ Excel (xlsx / xls) או CSV.';
-    e.target.value='';
-    return;
+    try{
+      await loadPdfInvoice(file);
+      setDZLoaded('dz-inv','✅',`${file.name} (${invFileData.rows.length} שורות)`);
+      info.textContent=invFileData.isOcr?'📄 PDF סרוק — זוהה באמצעות OCR, ודא שמיפוי העמודות נכון':'📄 PDF נטען — ודא שמיפוי העמודות נכון';
+      invFileData.isPdf=true;
+    }catch(err){
+      setDZReset('dz-inv');
+      info.textContent='❌ שגיאה בקריאת PDF: '+err.message;
+      e.target.value='';
+    }
   } else {
     await loadExcelAsync(file,invFileData);setDZLoaded('dz-inv','✅',`${file.name} (${invFileData.rows.length} שורות)`);info.textContent='';invFileData.isPdf=false;
     const outInvShWrap=document.getElementById('out-inv-sheet-sel-wrap');
@@ -488,20 +495,43 @@ document.getElementById('fi-inv').addEventListener('change',async e=>{
   checkStep3();
 });
 
-async function loadPdfInvoice(file){
-  if(typeof pdfjsLib==='undefined')throw new Error('ספריית PDF לא נטענה');
-  const buf=await file.arrayBuffer(), pdf=await pdfjsLib.getDocument({data:buf}).promise, allLines=[];
-  for(let p=1;p<=pdf.numPages;p++){
-    const page=await pdf.getPage(p), tc=await page.getTextContent(), lineMap={};
-    tc.items.forEach(item=>{const y=Math.round(item.transform[5]/5)*5;if(!lineMap[y])lineMap[y]=[];lineMap[y].push(item.str);});
-    Object.keys(lineMap).sort((a,b)=>b-a).forEach(y=>{const line=lineMap[y].join(' ').trim();if(line)allLines.push(line);});
-  }
+function parsePdfLinesToInvData(allLines){
   const kwsHdr=['שירות','כמות','מחיר','סה"כ','סהכ','rate','total','qty','service'];
   let hdrIdx=allLines.findIndex(l=>kwsHdr.filter(k=>l.toLowerCase().includes(k.toLowerCase())).length>=2);
   if(hdrIdx<0)hdrIdx=0;
   const headers=allLines[hdrIdx].split(/\s{2,}|\t/).filter(Boolean), rows=[];
   for(let i=hdrIdx+1;i<allLines.length;i++){const line=allLines[i].trim();if(!line||!/\d/.test(line))continue;const cells=line.split(/\s{2,}|\t/).filter(Boolean);if(cells.length>=2)rows.push(cells);}
   invFileData.headers=headers; invFileData.rows=rows;
+}
+
+async function loadPdfInvoice(file){
+  if(typeof pdfjsLib==='undefined')throw new Error('ספריית PDF לא נטענה');
+  const info=document.getElementById('inv-info');
+  const buf=await file.arrayBuffer(), pdf=await pdfjsLib.getDocument({data:buf}).promise, allLines=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p), tc=await page.getTextContent(), lineMap={};
+    tc.items.forEach(item=>{const y=Math.round(item.transform[5]/5)*5;if(!lineMap[y])lineMap[y]=[];lineMap[y].push(item.str);});
+    Object.keys(lineMap).sort((a,b)=>b-a).forEach(y=>{const line=lineMap[y].join(' ').trim();if(line)allLines.push(line);});
+  }
+  // אם חולץ מעט מאוד טקסט — כנראה PDF סרוק, נעבור ל-OCR
+  if(allLines.join('').replace(/\s/g,'').length<50){
+    if(typeof Tesseract==='undefined')throw new Error('PDF זה נראה סרוק — ספריית OCR לא נטענה עדיין, נסה שוב עוד רגע');
+    for(let p=1;p<=pdf.numPages;p++){
+      info.textContent=`🔍 מזהה טקסט (OCR) — עמוד ${p} מתוך ${pdf.numPages}...`;
+      const page=await pdf.getPage(p);
+      const vp=page.getViewport({scale:2});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width; canvas.height=vp.height;
+      await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+      const result=await Tesseract.recognize(canvas,'heb+eng',{
+        logger:m=>{if(m.status==='recognizing text')info.textContent=`🔍 OCR עמוד ${p}/${pdf.numPages} — ${Math.round(m.progress*100)}%`;}
+      });
+      result.data.text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>allLines.push(l));
+    }
+    info.textContent='';
+    invFileData.isOcr=true;
+  }
+  parsePdfLinesToInvData(allLines);
 }
 
 function checkStep3(){ document.getElementById('btn-step4').disabled=!(actFilesList.length>0&&invFileData.rows.length>0); }
