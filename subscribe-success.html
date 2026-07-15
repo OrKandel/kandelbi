@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>תשלום הצליח — קנדל BI</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--blue:#1e6abf;--bg:#f0f3f8;--white:#fff;--green:#0a7c5e;--green-bg:#edf7f3;--muted:#6b7a99}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:#1a1a2e;direction:rtl;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--navy);padding:14px 5vw}
+header a{color:#fff;text-decoration:none;font-weight:900;font-size:1.2rem}
+.page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+.card{background:var(--white);border-radius:16px;padding:52px 40px;max-width:460px;width:100%;text-align:center;box-shadow:0 4px 28px rgba(0,0,0,.1)}
+.icon{font-size:4rem;margin-bottom:20px;animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+h1{color:var(--navy);font-size:1.6rem;margin-bottom:10px}
+p{color:var(--muted);font-size:0.92rem;line-height:1.6;margin-bottom:28px}
+.btn{display:inline-block;padding:13px 32px;background:var(--blue);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem;transition:opacity .15s}
+.btn:hover{opacity:.9}
+.details{background:var(--green-bg);border:1px solid #a7d7c5;border-radius:10px;padding:16px;margin-bottom:28px;font-size:0.88rem;color:var(--green);line-height:1.7}
+</style>
+</head>
+<body>
+<header><a href="index.html">קנדל BI</a></header>
+<div class="page">
+  <div class="card">
+    <div class="icon">🎉</div>
+    <h1>תשלום התקבל בהצלחה!</h1>
+    <div class="details" id="details">
+      מעדכן את הסטטוס שלך...
+    </div>
+    <p>כעת יש לך גישה מלאה לכל כלי קנדל BI.<br/>תקבל מייל אישור לכתובת הרשומה אצלנו.</p>
+    <a class="btn" href="dashboard.html">עבור ללוח הבקרה</a>
+  </div>
+</div>
+<script>
+const SUPABASE_URL='https://jixaskajgkorrjhxiflc.supabase.co';
+const SUPABASE_KEY='sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
+const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+(async()=>{
+  const {data:{session}}=await _sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+  const {data:profile}=await _sb.from('profiles').select('subscription_status,subscription_end').eq('id',session.user.id).single();
+  const el=document.getElementById('details');
+  if(profile?.subscription_status==='active'&&profile.subscription_end){
+    const d=new Date(profile.subscription_end).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
+    el.textContent='✅ המנוי שלך פעיל עד '+d;
+  } else {
+    el.textContent='✅ המנוי שלך פעיל';
+  }
+})();
+</script>
+</body>
+</html>

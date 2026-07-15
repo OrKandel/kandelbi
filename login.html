@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>כניסה — קנדל BI</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--blue:#1e6abf;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--navy);padding:14px 5vw;display:flex;align-items:center}
+header a{color:#fff;text-decoration:none;font-weight:900;font-size:1.2rem}
+.page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+.card{background:var(--white);border-radius:14px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+h1{color:var(--navy);font-size:1.5rem;margin-bottom:6px}
+.sub{color:var(--muted);font-size:0.9rem;margin-bottom:28px}
+label{display:block;font-weight:700;font-size:0.85rem;margin-bottom:5px;color:var(--navy)}
+input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.95rem;margin-bottom:18px;transition:border .15s}
+input:focus{outline:none;border-color:var(--blue)}
+.btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.msg{padding:12px 14px;border-radius:8px;font-size:0.88rem;margin-bottom:16px;display:none}
+.msg.error{background:#fef2f2;color:var(--red);border:1px solid #fca5a5}
+.msg.success{background:#edf7f3;color:#0a7c5e;border:1px solid #6ee7b7}
+.links{text-align:center;margin-top:20px;font-size:0.88rem;color:var(--muted)}
+.links a{color:var(--blue);text-decoration:none;font-weight:700}
+.links a:hover{text-decoration:underline}
+.divider{text-align:center;color:var(--muted);font-size:0.85rem;margin:6px 0 20px}
+</style>
+</head>
+<body>
+<header><a href="index.html">קנדל BI</a></header>
+<div class="page">
+  <div class="card">
+    <h1>כניסה לחשבון</h1>
+    <p class="sub">ברוכים השבים! הכנס את פרטיך כדי להמשיך</p>
+    <div class="msg" id="msg"></div>
+    <label for="email">כתובת מייל</label>
+    <input type="email" id="email" placeholder="your@email.com" autocomplete="email"/>
+    <label for="password">סיסמה</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+    <button class="btn" id="btn-login">כניסה</button>
+    <div class="divider">—</div>
+    <div class="links">
+      <a href="reset-password.html">שכחת סיסמה?</a>
+      &nbsp;·&nbsp;
+      אין לך חשבון? <a href="register.html">הרשמה חינמית</a>
+    </div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL = 'https://jixaskajgkorrjhxiflc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// אם כבר מחובר — הפנה ישירות
+_sb.auth.getSession().then(({data:{session}})=>{
+  if(session) _redirect();
+});
+
+function _redirect(){
+  const p=new URLSearchParams(window.location.search).get('return');
+  window.location.href=p?decodeURIComponent(p):'dashboard.html';
+}
+
+function showMsg(text,type){
+  const el=document.getElementById('msg');
+  el.textContent=text; el.className='msg '+type; el.style.display='block';
+}
+
+document.getElementById('btn-login').addEventListener('click',async()=>{
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const btn=document.getElementById('btn-login');
+  if(!email||!password){showMsg('נא למלא את כל השדות','error');return;}
+  btn.disabled=true; btn.textContent='מתחבר...';
+  const {error}=await _sb.auth.signInWithPassword({email,password});
+  if(error){
+    const msgs={'Invalid login credentials':'מייל או סיסמה שגויים','Email not confirmed':'יש לאמת את כתובת המייל תחילה — בדוק את תיבת הדואר שלך'};
+    showMsg(msgs[error.message]||error.message,'error');
+    btn.disabled=false; btn.textContent='כניסה';
+  } else {
+    showMsg('מחובר! מעביר...','success');
+    setTimeout(_redirect,600);
+  }
+});
+
+document.getElementById('password').addEventListener('keydown',e=>{
+  if(e.key==='Enter') document.getElementById('btn-login').click();
+});
+</script>
+</body>
+</html>

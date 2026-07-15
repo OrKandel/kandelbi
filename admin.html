@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>פאנל ניהול — קנדל BI</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--green-bg:#edf7f3;--red:#d93025;--red-bg:#fef2f2;--orange:#e67e22}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--navy);padding:14px 5vw;display:flex;align-items:center;justify-content:space-between}
+header a.logo{color:#fff;text-decoration:none;font-weight:900;font-size:1.2rem}
+.admin-badge{background:#e53935;color:#fff;font-size:0.7rem;font-weight:900;padding:2px 8px;border-radius:12px;margin-right:8px}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:0.85rem}
+.nav-links a:hover,.nav-links a.active{color:#fff;font-weight:700}
+.btn-nav-logout{background:transparent;border:1px solid rgba(255,255,255,.4);color:rgba(255,255,255,.8);padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.82rem}
+.btn-nav-logout:hover{border-color:#fff;color:#fff}
+main{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:28px 20px}
+h1{color:var(--navy);font-size:1.4rem;margin-bottom:4px}
+.sub{color:var(--muted);font-size:0.88rem;margin-bottom:24px}
+/* Summary stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.stat-lbl{font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.stat-val{font-size:1.6rem;font-weight:900;color:var(--navy)}
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border)}
+.tab{padding:10px 18px;font-family:inherit;font-size:0.88rem;font-weight:700;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+/* Table */
+.table-wrap{overflow-x:auto;background:var(--white);border:1px solid var(--border);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+thead th{padding:11px 14px;text-align:right;font-weight:700;color:var(--muted);font-size:0.78rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg)}
+tbody tr{border-bottom:1px solid var(--bg);transition:background .1s}
+tbody tr:hover{background:#f8fafc}
+tbody tr:last-child{border-bottom:none}
+td{padding:10px 14px;vertical-align:middle}
+.badge{display:inline-block;padding:2px 9px;border-radius:14px;font-size:0.75rem;font-weight:700;white-space:nowrap}
+.badge-trial{background:#fff3cd;color:#856404}
+.badge-active{background:var(--green-bg);color:var(--green)}
+.badge-expired{background:var(--red-bg);color:var(--red)}
+.badge-pending{background:#e8eaf6;color:#3949ab}
+.badge-suspended{background:#fff0e6;color:var(--orange)}
+.badge-admin{background:#fce4ec;color:#c62828}
+/* Search / filter bar */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.search-input{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.88rem;width:220px}
+.search-input:focus{outline:none;border-color:var(--blue)}
+select.filter{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.88rem;color:var(--text);background:var(--white)}
+select.filter:focus{outline:none;border-color:var(--blue)}
+.btn-sm{padding:7px 14px;font-family:inherit;font-size:0.82rem;font-weight:700;border-radius:7px;cursor:pointer;transition:all .15s;border:none}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{opacity:.9}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{opacity:.9}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue)}
+.action-btns{display:flex;gap:6px;flex-wrap:nowrap}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.modal h2{color:var(--navy);font-size:1.1rem;margin-bottom:18px}
+.modal-close{position:absolute;top:14px;left:16px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted)}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.9rem}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--blue)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.msg{padding:9px 12px;border-radius:7px;font-size:0.85rem;margin-bottom:12px;display:none}
+.msg.error{background:var(--red-bg);color:var(--red);border:1px solid #fca5a5}
+.msg.success{background:var(--green-bg);color:var(--green);border:1px solid #6ee7b7}
+/* Audit log */
+.log-item{padding:10px 14px;border-bottom:1px solid var(--bg);font-size:0.84rem}
+.log-item:last-child{border-bottom:none}
+.log-time{color:var(--muted);font-size:0.78rem;margin-top:2px}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:0.9rem}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center">
+    <a class="logo" href="index.html">קנדל BI</a>
+    <span class="admin-badge">ADMIN</span>
+  </div>
+  <div class="nav-links">
+    <a href="admin.html" class="active">ניהול</a>
+    <a href="dashboard.html">לוח בקרה</a>
+    <a href="tools.html">כלים</a>
+    <button class="btn-nav-logout" id="btn-logout">התנתקות</button>
+  </div>
+</header>
+
+<main>
+  <h1>פאנל ניהול</h1>
+  <p class="sub" id="admin-greeting">טוען...</p>
+
+  <div class="stats" id="stats-row">
+    <div class="stat"><div class="stat-lbl">סה"כ משתמשים</div><div class="stat-val" id="st-total">—</div></div>
+    <div class="stat"><div class="stat-lbl">בניסיון</div><div class="stat-val" id="st-trial">—</div></div>
+    <div class="stat"><div class="stat-lbl">מנויים פעילים</div><div class="stat-val" id="st-active">—</div></div>
+    <div class="stat"><div class="stat-lbl">פג תוקף</div><div class="stat-val" id="st-expired">—</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="users">משתמשים</button>
+    <button class="tab" data-tab="log">יומן פעילות</button>
+  </div>
+
+  <!-- Users tab -->
+  <div class="tab-pane active" id="tab-users">
+    <div class="toolbar">
+      <input class="search-input" id="search" placeholder="חיפוש לפי שם / מייל..." />
+      <select class="filter" id="filter-status">
+        <option value="">כל הסטטוסים</option>
+        <option value="trial">ניסיון</option>
+        <option value="active">פעיל</option>
+        <option value="expired">פג תוקף</option>
+        <option value="pending_verification">ממתין לאימות</option>
+        <option value="cancelled">מבוטל</option>
+      </select>
+      <button class="btn-sm btn-blue" id="btn-refresh">רענן</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>שם</th>
+            <th>מייל</th>
+            <th>סטטוס</th>
+            <th>תפקיד</th>
+            <th>פג תוקף</th>
+            <th>הצטרף</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="7" class="empty">טוען...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Audit log tab -->
+  <div class="tab-pane" id="tab-log">
+    <div class="toolbar">
+      <input class="search-input" id="log-search" placeholder="חיפוש ביומן..." />
+      <button class="btn-sm btn-blue" id="btn-log-refresh">רענן</button>
+    </div>
+    <div class="table-wrap" id="log-wrap">
+      <div class="empty">טוען...</div>
+    </div>
+  </div>
+</main>
+
+<!-- Edit user modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" id="modal-close">✕</button>
+    <h2>עריכת משתמש</h2>
+    <div class="msg" id="modal-msg"></div>
+    <input type="hidden" id="edit-uid"/>
+    <div class="form-row"><label>שם</label><input type="text" id="edit-name"/></div>
+    <div class="form-row"><label>סטטוס מנוי</label>
+      <select id="edit-status">
+        <option value="pending_verification">ממתין לאימות</option>
+        <option value="trial">ניסיון חינמי</option>
+        <option value="active">פעיל</option>
+        <option value="expired">פג תוקף</option>
+        <option value="cancelled">מבוטל</option>
+        <option value="past_due">תשלום באיחור</option>
+      </select>
+    </div>
+    <div class="form-row"><label>תפקיד</label>
+      <select id="edit-role">
+        <option value="user">משתמש</option>
+        <option value="admin">מנהל</option>
+      </select>
+    </div>
+    <div class="form-row"><label>סטטוס חשבון</label>
+      <select id="edit-account-status">
+        <option value="active">פעיל</option>
+        <option value="suspended">מושהה</option>
+      </select>
+    </div>
+    <div class="form-row"><label>תאריך סיום ניסיון</label><input type="date" id="edit-trial-end"/></div>
+    <div class="form-row"><label>תאריך סיום מנוי</label><input type="date" id="edit-sub-end"/></div>
+    <div class="form-row"><label>הערות מנהל</label><textarea id="edit-notes" rows="2" placeholder="הערות פנימיות..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-outline" id="modal-cancel">ביטול</button>
+      <button class="btn-sm btn-blue" id="modal-save">שמור שינויים</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://jixaskajgkorrjhxiflc.supabase.co';
+const SUPABASE_KEY='sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
+const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let _allUsers=[];
+
+function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function statusLabel(s){const m={pending_verification:'ממתין לאימות',trial:'ניסיון',active:'פעיל',expired:'פג תוקף',cancelled:'מבוטל',past_due:'תשלום באיחור'};return m[s]||s||'—';}
+function statusBadge(s){const m={pending_verification:'badge-pending',trial:'badge-trial',active:'badge-active',expired:'badge-expired',cancelled:'badge-expired',past_due:'badge-expired',suspended:'badge-suspended'};return m[s]||'';}
+
+// ── Auth check (admin only) ───────────────────────────────────────────
+(async()=>{
+  const {data:{session}}=await _sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+
+  const {data:profile}=await _sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(!profile||profile.role!=='admin'){
+    document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Heebo,sans-serif;direction:rtl"><div style="text-align:center"><div style="font-size:3rem">🔒</div><h2 style="color:#0d1f3c;margin:16px 0 8px">גישה אסורה</h2><p style="color:#6b7a99">רק מנהלי מערכת יכולים לגשת לדף זה</p><a href="dashboard.html" style="color:#1e6abf">חזרה ללוח הבקרה</a></div></div>';
+    return;
+  }
+
+  document.getElementById('admin-greeting').textContent='שלום '+profile.name+' | פאנל ניהול מערכת';
+  await loadUsers();
+  await loadStats();
+})();
+
+// ── Load users ───────────────────────────────────────────────────────
+async function loadUsers(){
+  const {data,error}=await _sb.from('profiles').select('*').order('created_at',{ascending:false});
+  if(error){console.error(error);return;}
+  _allUsers=data||[];
+  renderUsers(_allUsers);
+}
+
+function renderUsers(users){
+  const tbody=document.getElementById('users-tbody');
+  if(!users.length){tbody.innerHTML='<tr><td colspan="7" class="empty">לא נמצאו משתמשים</td></tr>';return;}
+  tbody.innerHTML=users.map(u=>{
+    const endDate=u.subscription_status==='trial'?u.trial_end_date:u.subscription_end;
+    return `<tr>
+      <td>${u.name||'—'}</td>
+      <td style="direction:ltr;text-align:right;font-size:0.82rem">${u.email||'—'}</td>
+      <td><span class="badge ${statusBadge(u.subscription_status)}">${statusLabel(u.subscription_status)}</span></td>
+      <td>${u.role==='admin'?'<span class="badge badge-admin">מנהל</span>':'משתמש'}</td>
+      <td>${fmtDate(endDate)}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><div class="action-btns">
+        <button class="btn-sm btn-outline" onclick="openEdit('${u.id}')">עריכה</button>
+        ${u.account_status==='active'
+          ?`<button class="btn-sm btn-red" onclick="suspendUser('${u.id}')">השהה</button>`
+          :`<button class="btn-sm btn-blue" onclick="unsuspendUser('${u.id}')">שחרר</button>`}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────
+async function loadStats(){
+  const u=_allUsers;
+  document.getElementById('st-total').textContent=u.length;
+  document.getElementById('st-trial').textContent=u.filter(x=>x.subscription_status==='trial').length;
+  document.getElementById('st-active').textContent=u.filter(x=>x.subscription_status==='active').length;
+  document.getElementById('st-expired').textContent=u.filter(x=>x.subscription_status==='expired'||x.subscription_status==='cancelled').length;
+}
+
+// ── Search / filter ───────────────────────────────────────────────────
+function applyFilters(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const s=document.getElementById('filter-status').value;
+  renderUsers(_allUsers.filter(u=>{
+    const matchQ=!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q);
+    const matchS=!s||u.subscription_status===s;
+    return matchQ&&matchS;
+  }));
+}
+document.getElementById('search').addEventListener('input',applyFilters);
+document.getElementById('filter-status').addEventListener('change',applyFilters);
+document.getElementById('btn-refresh').addEventListener('click',async()=>{await loadUsers();await loadStats();applyFilters();});
+
+// ── Edit modal ────────────────────────────────────────────────────────
+function openEdit(uid){
+  const u=_allUsers.find(x=>x.id===uid);
+  if(!u) return;
+  document.getElementById('edit-uid').value=uid;
+  document.getElementById('edit-name').value=u.name||'';
+  document.getElementById('edit-status').value=u.subscription_status||'pending_verification';
+  document.getElementById('edit-role').value=u.role||'user';
+  document.getElementById('edit-account-status').value=u.account_status||'active';
+  document.getElementById('edit-trial-end').value=u.trial_end_date?(u.trial_end_date.split('T')[0]):'';
+  document.getElementById('edit-sub-end').value=u.subscription_end?(u.subscription_end.split('T')[0]):'';
+  document.getElementById('edit-notes').value=u.admin_notes||'';
+  document.getElementById('modal-msg').style.display='none';
+  document.getElementById('modal').classList.add('open');
+}
+
+document.getElementById('modal-close').addEventListener('click',closeModal);
+document.getElementById('modal-cancel').addEventListener('click',closeModal);
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+document.getElementById('modal-save').addEventListener('click',async()=>{
+  const uid=document.getElementById('edit-uid').value;
+  const btn=document.getElementById('modal-save');
+  const msgEl=document.getElementById('modal-msg');
+  btn.disabled=true; btn.textContent='שומר...';
+
+  const updates={
+    name:document.getElementById('edit-name').value.trim(),
+    subscription_status:document.getElementById('edit-status').value,
+    role:document.getElementById('edit-role').value,
+    account_status:document.getElementById('edit-account-status').value,
+    admin_notes:document.getElementById('edit-notes').value.trim(),
+    trial_end_date:document.getElementById('edit-trial-end').value||null,
+    subscription_end:document.getElementById('edit-sub-end').value||null,
+  };
+
+  const {error}=await _sb.from('profiles').update(updates).eq('id',uid);
+  if(error){
+    msgEl.textContent='שגיאה: '+error.message;msgEl.className='msg error';msgEl.style.display='block';
+  } else {
+    msgEl.textContent='✅ השינויים נשמרו בהצלחה';msgEl.className='msg success';msgEl.style.display='block';
+    await loadUsers(); applyFilters();
+    setTimeout(closeModal,1200);
+  }
+  btn.disabled=false; btn.textContent='שמור שינויים';
+});
+
+// ── Suspend / unsuspend ───────────────────────────────────────────────
+async function suspendUser(uid){
+  if(!confirm('האם לשהות את המשתמש?')) return;
+  await _sb.from('profiles').update({account_status:'suspended'}).eq('id',uid);
+  await loadUsers(); applyFilters();
+}
+async function unsuspendUser(uid){
+  await _sb.from('profiles').update({account_status:'active'}).eq('id',uid);
+  await loadUsers(); applyFilters();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='log') loadLog();
+  });
+});
+
+// ── Audit log ─────────────────────────────────────────────────────────
+async function loadLog(){
+  const wrap=document.getElementById('log-wrap');
+  wrap.innerHTML='<div class="empty">טוען...</div>';
+  const {data,error}=await _sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(200);
+  if(error||!data?.length){wrap.innerHTML='<div class="empty">אין רשומות ביומן</div>';return;}
+  const q=(document.getElementById('log-search').value||'').toLowerCase();
+  const rows=data.filter(r=>!q||(r.action||'').toLowerCase().includes(q)||(r.user_id||'').includes(q));
+  wrap.innerHTML='<div>'+rows.map(r=>`
+    <div class="log-item">
+      <div><strong>${r.action||'—'}</strong>${r.target_id?' — '+r.target_id:''}</div>
+      <div class="log-time">${fmtDate(r.created_at)} ${new Date(r.created_at).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})} · ${r.actor_id||'מערכת'}</div>
+    </div>`).join('')+'</div>';
+}
+document.getElementById('log-search').addEventListener('input',loadLog);
+document.getElementById('btn-log-refresh').addEventListener('click',loadLog);
+
+document.getElementById('btn-logout').addEventListener('click',async()=>{
+  await _sb.auth.signOut();
+  window.location.href='index.html';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>כלים — הדגמה | קנדל BI</title>
+  <meta name="description" content="כלים מקצועיים להורדה: קבצי אקסל לבקרה, צ'אטבוטים לביקורת פנימית ועוד." />
+  <link rel="canonical" href="https://kandelbi.org/tools.html" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Assistant:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --navy:#0d1f3c;--navy-mid:#1a3561;--blue:#1e6abf;--blue-light:#2d87e8;
+      --accent:#f0a500;--accent-light:#ffc940;--bg:#f5f7fa;--bg-white:#ffffff;
+      --text:#1a1a2e;--text-mid:#3d4f6b;--text-muted:#6b7a99;--border:#dce3ef;
+      --green:#0a7c5e;--green-bg:#edf7f3;--orange-bg:#fff8ed;--blue-bg:#eef3fb;--red:#e24b4b;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Assistant','Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;line-height:1.7;font-size:16px}
+    nav{position:fixed;top:0;right:0;left:0;z-index:1000;background:var(--navy);padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:68px;box-shadow:0 2px 20px rgba(0,0,0,0.25)}
+    .logo{font-family:'Heebo';font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none}
+    .logo span{color:var(--accent)}
+    nav ul{list-style:none;display:flex;gap:0.15rem}
+    nav ul li a{color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.92rem;font-weight:500;padding:0.5rem 0.9rem;border-radius:6px;transition:all 0.2s;cursor:pointer}
+    nav ul li a:hover,nav ul li a.active{color:#fff;background:rgba(255,255,255,0.1)}
+    .nav-cta{background:var(--accent) !important;color:var(--navy) !important;font-weight:700 !important}
+    .nav-user{color:var(--accent) !important;font-weight:700 !important}
+    .user-bar{background:var(--green-bg);border-bottom:1px solid #b2ddd0;padding:10px 5vw;display:none;align-items:center;justify-content:space-between}
+    .user-bar.show{display:flex}
+    .user-bar span{font-size:0.88rem;color:var(--green);font-weight:600}
+    .btn-logout{background:none;border:1px solid var(--green);color:var(--green);font-size:0.8rem;font-weight:600;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit}
+    .user-dropdown{display:none;position:absolute;top:52px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.13);padding:0.5rem;min-width:160px;z-index:2000;text-align:center}
+    .user-dropdown.open{display:block}
+    .user-dropdown-name{font-size:0.82rem;color:var(--text-mid);padding:6px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;white-space:nowrap}
+    .user-dropdown button{display:block;width:100%;background:none;border:none;padding:8px 14px;font-family:inherit;font-size:0.9rem;font-weight:600;cursor:pointer;border-radius:6px;color:#c0392b;white-space:nowrap}
+    .user-dropdown button:hover{background:#fff0ee}
+    .page-hero{background:linear-gradient(145deg,var(--navy) 0%,var(--navy-mid) 100%);padding:120px 5vw 60px;text-align:center}
+    .page-hero h1{font-family:'Heebo';font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;color:#fff;margin-bottom:0.8rem}
+    .page-hero h1 em{color:var(--accent);font-style:normal}
+    .page-hero p{color:rgba(255,255,255,0.7);font-size:1.05rem;max-width:560px;margin:0 auto}
+    .tier-legend{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;padding:1.5rem 5vw;background:var(--bg-white);border-bottom:1px solid var(--border)}
+    .tier-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:0.82rem;font-weight:700}
+    .tier-member{background:var(--blue-bg);color:var(--blue);border:1px solid #c8d9f2}
+    .tier-premium{background:var(--orange-bg);color:#b87400;border:1px solid #f5d48a}
+    .tier-procurement{background:#f0f0ff;color:#5b21b6;border:1px solid #c4b5fd}
+    .filters-bar{max-width:1200px;margin:0 auto;padding:2rem 5vw 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+    .filter-tabs{display:flex;gap:0.5rem;flex-wrap:wrap}
+    .filter-tab{padding:7px 18px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-white);color:var(--text-mid);font-size:0.88rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+    .filter-tab:hover{border-color:var(--blue);color:var(--blue)}
+    .filter-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .search-box{display:flex;align-items:center;gap:8px;background:var(--bg-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 14px}
+    .search-box input{border:none;outline:none;font-size:0.9rem;font-family:inherit;background:transparent;width:200px;direction:rtl}
+    .tools-grid{max-width:1200px;margin:1.5rem auto 4rem;padding:0 5vw;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.5rem}
+    .tool-card{background:var(--bg-white);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all 0.25s;display:flex;flex-direction:column;position:relative;cursor:pointer}
+    .tool-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(13,31,60,0.1);border-color:var(--blue-light)}
+    .card-top{padding:0.8rem 1.5rem 0.5rem;display:flex;align-items:flex-start;gap:1rem}
+    .card-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+    .icon-excel{background:#e8f5ee}.icon-bot{background:#eef3fb}
+    .card-meta{flex:1}
+    .card-title{font-family:'Heebo';font-weight:800;font-size:1rem;color:var(--navy);margin-bottom:4px;line-height:1.3}
+    .card-sub{font-size:0.8rem;color:var(--text-muted)}
+    .card-tier{display:block;padding:8px 1.5rem 0}
+    .card-body{padding:0 1.5rem 1rem;flex:1}
+    .card-desc{font-size:0.9rem;color:var(--text-mid);line-height:1.65}
+    .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.8rem}
+    .card-output{margin-top:0.75rem;font-size:0.82rem;color:var(--green);background:var(--green-bg);border:1px solid #b2ddd0;border-radius:8px;padding:6px 10px;line-height:1.4}
+    .tag{background:var(--bg);color:var(--text-muted);font-size:0.75rem;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid var(--border)}
+    .card-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .card-price{font-family:'Heebo';font-weight:900;font-size:1.1rem;color:var(--navy)}
+    .card-price small{font-size:0.75rem;color:var(--text-muted);font-weight:400}
+    .btn-dl{padding:8px 18px;border-radius:8px;border:none;font-size:0.88rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;font-family:inherit}
+    .btn-member{background:var(--blue);color:#fff}.btn-member:hover{background:#1558a0}
+    .btn-premium{background:var(--accent);color:var(--navy)}.btn-premium:hover{background:var(--accent-light)}
+    .card-locked .card-body{opacity:0.6}
+    .tools-grid .tool-card{display:flex !important}
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(13,31,60,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--bg-white);border-radius:20px;padding:2.5rem;max-width:460px;width:100%;position:relative;text-align:center;max-height:90vh;overflow-y:auto}
+    .modal-close{position:absolute;top:16px;left:16px;background:var(--bg);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+    .modal-icon{font-size:2.5rem;margin-bottom:0.8rem}
+    .modal h2{font-family:'Heebo';font-weight:800;font-size:1.4rem;color:var(--navy);margin-bottom:0.5rem}
+    .modal-desc{font-size:0.92rem;color:var(--text-mid);margin-bottom:1.5rem}
+    .form-field{margin-bottom:0.9rem;text-align:right}
+    .form-field label{display:block;font-size:0.85rem;font-weight:600;color:var(--text-mid);margin-bottom:5px}
+    .form-field input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.95rem;font-family:inherit;outline:none;transition:border-color 0.2s;direction:rtl}
+    .form-field input:focus{border-color:var(--blue)}
+    .form-field input.err{border-color:var(--red) !important}
+    .ferr{color:var(--red);font-size:0.78rem;margin-top:3px}
+    .form-tabs{display:flex;margin-bottom:1.5rem;border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+    .form-tab{flex:1;padding:9px;border:none;background:var(--bg);color:var(--text-mid);font-weight:600;font-size:0.88rem;cursor:pointer;font-family:inherit;transition:all 0.2s}
+    .form-tab.active{background:var(--navy);color:#fff}
+    .terms-row{display:flex;align-items:flex-start;gap:8px;text-align:right;margin-bottom:1rem;font-size:0.82rem;color:var(--text-mid)}
+    .terms-row input{width:16px;height:16px;margin-top:3px;flex-shrink:0;cursor:pointer}
+    .terms-row a{color:var(--blue)}
+    .btn-sub{width:100%;padding:12px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;margin-top:0.3rem}
+    .btn-sub.green{background:var(--green);color:#fff}.btn-sub.green:hover{background:#086b50}
+    .btn-sub.gold{background:var(--accent);color:var(--navy)}.btn-sub.gold:hover{background:var(--accent-light)}
+    .modal-note{font-size:0.78rem;color:var(--text-muted);margin-top:0.8rem}
+    .modal-switch{font-size:0.83rem;color:var(--text-muted);margin-top:0.8rem}
+    .modal-switch a{color:var(--blue);cursor:pointer;text-decoration:underline}
+    .cta-strip{background:linear-gradient(135deg,var(--blue) 0%,var(--navy) 100%);text-align:center;padding:60px 5vw}
+    .cta-strip h2{font-family:'Heebo';font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:0.8rem}
+    .cta-strip p{color:rgba(255,255,255,0.7);max-width:500px;margin:0 auto 1.8rem}
+    .btn-white{background:#fff;color:var(--navy);font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:1rem;transition:all 0.2s;display:inline-block}
+    .btn-white:hover{background:var(--accent)}
+    footer{background:#080f1e;color:rgba(255,255,255,0.5);padding:30px 5vw;text-align:center;font-size:0.85rem}
+    footer a{color:rgba(255,255,255,0.4);text-decoration:none}
+    @media(max-width:600px){.tools-grid{grid-template-columns:1fr}.search-box input{width:130px}}
+    .articles-section{max-width:1200px;margin:0 auto 4rem;padding:0 5vw}
+    .articles-section h2{font-family:'Heebo';font-weight:900;font-size:1.4rem;color:var(--navy);margin-bottom:1.2rem;padding-bottom:0.6rem;border-bottom:2px solid var(--border)}
+    .articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.2rem}
+    .article-card{background:var(--bg-white);border:1px solid var(--border);border-radius:14px;padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:0.6rem;transition:all 0.22s;text-decoration:none;color:inherit;border-right:4px solid var(--blue)}
+    .article-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(13,31,60,0.09);border-color:var(--blue-light)}
+    .article-card-cat{font-size:0.76rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.03em}
+    .article-card-title{font-family:'Heebo';font-weight:800;font-size:1rem;color:var(--navy);line-height:1.35}
+    .article-card-desc{font-size:0.88rem;color:var(--text-mid);line-height:1.6;flex:1}
+    .article-card-meta{font-size:0.78rem;color:var(--text-muted);display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.2rem}
+    .article-card-read{font-size:0.82rem;font-weight:700;color:var(--blue);margin-top:0.4rem}
+    @media(max-width:600px){.articles-grid{grid-template-columns:1fr}}
+    .wa-widget{position:fixed;bottom:24px;left:24px;z-index:9999;display:flex;flex-direction:column;align-items:center;gap:10px}
+    .wa-toggle{width:58px;height:58px;border-radius:50%;background:#25d366;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.5);transition:transform 0.2s,box-shadow 0.2s;padding:0}
+    .wa-toggle:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(37,211,102,0.65)}
+    .wa-panel{background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.18);width:272px;overflow:hidden;display:none;margin-bottom:4px}
+    .wa-panel.open{display:block;animation:waSlide 0.22s ease}
+    @keyframes waSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .wa-panel-header{background:#25d366;color:#fff;padding:12px 15px;font-weight:700;font-size:0.88rem;font-family:'Heebo',sans-serif}
+    .wa-option{display:flex;align-items:center;gap:12px;padding:12px 15px;text-decoration:none;color:#1a1a2e;border-bottom:1px solid #f0f0f0;transition:background 0.15s;font-family:'Heebo',sans-serif}
+    .wa-option:hover{background:#f0fff7}
+    .wa-option:last-child{border-bottom:none}
+    .wa-option-icon{font-size:1.5rem;flex-shrink:0;line-height:1}
+    .wa-option-title{font-weight:700;font-size:0.85rem;display:block}
+    .wa-option-sub{font-size:0.73rem;color:#6b7a99;margin-top:2px;display:block;line-height:1.4}
+  
+    .demo-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0d1f3c;
+      color:#f0a500;text-align:center;padding:10px 20px;font-family:'Heebo',sans-serif;
+      font-weight:700;font-size:0.95rem;border-top:3px solid #f0a500;letter-spacing:0.02em}
+    .card-badge-new{display:inline-block;background:#0a7c5e;color:#fff;font-size:0.7rem;
+      font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;vertical-align:middle}
+    .card-badge-draft{display:inline-block;background:#5b21b6;color:#fff;font-size:0.7rem;
+      font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">קנדל <span>BI</span></a>
+  <ul>
+    <li><a href="index.html">בית</a></li>
+    <li><a href="services.html">שירותים</a></li>
+    <li><a href="tools.html" class="active">כלים לשימוש</a></li>
+    <li><a href="articles.html">מאמרים</a></li>
+    <li><a href="about.html">אודות</a></li>
+    <li><a href="tel:050-691-4898" class="nav-phone"><span style="color:#25d366;">☎</span> 050-691-4898</a></li>
+    <li><a href="contact.html" class="nav-cta">צרו קשר</a></li>
+    <li style="position:relative">
+      <a id="nav-auth-btn" class="nav-user" onclick="openAuthModal('login')">כניסה / הרשמה</a>
+      <div id="user-dropdown" class="user-dropdown">
+        <div class="user-dropdown-name" id="user-dropdown-name"></div>
+        <button onclick="confirmLogout()">🚪 התנתקות</button>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="user-bar" id="user-bar">
+  <span>שלום, <strong id="user-name-display"></strong> 👋</span>
+  <button class="btn-logout" onclick="logout()">יציאה מהחשבון</button>
+</div>
+
+<div class="page-hero">
+  <h1>כלים לבקרה <em>חשבונאית אוטומטית</em></h1>
+  <p>כלים חינמיים לבדיקת חשבונות ספקים, שעות, תעריפים, SLA וקבצי Excel — ישירות בדפדפן, בלי לשלוח את הנתונים לשרת</p>
+  <p style="margin-top:0.6rem;font-size:0.88rem;color:rgba(255,255,255,0.5);font-style:italic;">"הספק יודע שמישהו בודק"</p>
+</div>
+
+<div class="tier-legend">
+  <span class="tier-badge tier-member">👤 כלים כלליים · בקרות מכרזים, התקשרויות ותשלומים</span>
+</div>
+
+<div class="filters-bar">
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterCards('all',this)">הכול</button>
+    <button class="filter-tab" onclick="filterCards('excel',this)">כלי אקסל</button>
+    <button class="filter-tab" onclick="filterCards('procurement',this)">מכרזים והתקשרויות</button>
+  </div>
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" placeholder="חיפוש כלי..." oninput="searchCards(this.value)" />
+  </div>
+</div>
+
+<div class="tools-grid" id="tools-grid">
+
+  <!-- ═══ כלי: בקרת חשבון קבלן — תשומות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="בקרת חשבון קבלן — תשומות שעות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📋</div>
+      <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תשומות</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">העלו חשבון ספק, רשימת עובדים מאושרים ותעריפים — הכלי מזהה עובדים לא מאושרים, חריגות תעריף, אי-התאמות שעות וכפילויות, ומחזיר קובץ Excel מסומן לכל שורה.</p>
+      <div class="card-tags"><span class="tag">בקרה</span><span class="tag">חשבון קבלן</span><span class="tag">שעות</span><span class="tag">תעריפים</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel עם סימון חריגות לכל עובד ולכל שורה</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-hours-audit.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי: בקרת חשבון קבלן — תפוקות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="בקרת חשבון קבלן — תפוקות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">📊</div>
+      <div class="card-meta"><div class="card-title">בקרת חשבון קבלן — תפוקות</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">בדיקת חשבון ספק מול דוח ביצוע חודשי: שירותים שסופקו, כמויות, מחירים ותקרות מאושרות. מתאים לחוזים שבהם התשלום מבוסס על יחידות שירות, פניות, פעולות או תפוקות.</p>
+      <div class="card-tags"><span class="tag">בקרה</span><span class="tag">תפוקות</span><span class="tag">כמויות</span><span class="tag">מכרז</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel עם חריגות כמות, מחיר ועקביות — לכל שורת חשבון</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-outputs-audit.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 1: מפצל אקסל ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="פיצול והקטנת קבצי אקסל">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">✂️</div>
+      <div class="card-meta"><div class="card-title">פיצול והקטנת קבצי אקסל</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">קובץ Excel כבד שתוקע את המחשב? בחרו עמודות רלוונטיות, סננו לפי תאריך, מחלקה או מספר שורות — וקבלו קבצים קטנים ונוחים לעבודה. מתאים לדוחות מערכת גדולים לפני בקרה, ניתוח או העברה לגורם אחר.</p>
+      <div class="card-tags"><span class="tag">ביצועים</span><span class="tag">פיצול</span><span class="tag">ניקוי</span><span class="tag">תאריכים</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel מוקטן, מסונן ומוכן לעבודה</div>
+    </div>
+    <div class="card-footer">
+<button class="btn-dl btn-member" onclick="window.location.href='tool-excel-splitter.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי: איחוד קבצים ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="איחוד קבצי אקסל">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">🗂️</div>
+      <div class="card-meta"><div class="card-title">איחוד קבצי Excel</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מאחד קבצים חודשיים או קבצים ממספר יחידות לקובץ אחד — כל השורות נשמרות, כולל עמודת מקור לכל שורה. מתאים לאיחוד דוחות נוכחות, חשבונות ספקים, דיווחי ביצוע או קבצים ממחוזות שונים.</p>
+      <div class="card-tags"><span class="tag">איחוד</span><span class="tag">חודשי</span><span class="tag">מיזוג</span><span class="tag">עמודת מקור</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> קובץ Excel מאוחד עם עמודת מקור לכל שורה</div>
+    </div>
+    <div class="card-footer">
+<button class="btn-dl btn-member" onclick="window.location.href='tool-merge-files.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ═══ כלי 3: חפיפת שעות ═══ -->
+  <div class="tool-card" data-tier="member" data-type="excel procurement" data-title="בדיקת תקינות דיווחי שעות">
+    <span class="card-tier"><span class="tier-badge tier-member">👤 מנוי חינמי</span></span>
+    <div class="card-top">
+      <div class="card-icon icon-excel">🔍</div>
+      <div class="card-meta"><div class="card-title">בדיקת תקינות דיווחי שעות</div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">10 בדיקות אוטומטיות לדוחות שעות: חפיפות, שעות עגולות, עבודה בשבת/חג, רצף שעות חריג, תאריכים עתידיים, חריגה ממכסה חודשית ועוד. מתאים לבדיקת חשבונות קבלן, שכר ונוכחות.</p>
+      <div class="card-tags"><span class="tag">שעות</span><span class="tag">חפיפה</span><span class="tag">תקינות</span><span class="tag">ביקורת שכר</span><span class="tag">מכרזים</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> דוח חריגות לכל עובד — מסומן לפי סוג הממצא</div>
+    </div>
+    <div class="card-footer">
+<button class="btn-dl btn-member" onclick="window.location.href='tool-hours-overlap.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: השוואת רשימות ══ -->
+  <div class="tool-card" data-tier="member" data-type="excel procurement" data-title="השוואת רשימות עם התאמה חלקית">
+    <div class="card-top">
+      <div class="card-icon icon-excel">🔗</div>
+      <div class="card-meta"><div class="card-title">השוואת רשימות — התאמה חלקית <span class="card-badge-new">חדש</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מושווות שתי רשימות גם כשאין זהות מלאה — שמות שגויים, קיצורים, שגיאות כתיב. אלגוריתם מבוסס מילים לשמות עבריים. ציון התאמה לכל שורה, ייצוא לאקסל.</p>
+      <div class="card-tags"><span class="tag">השוואה</span><span class="tag">שמות</span><span class="tag">fuzzy</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> טבלה עם ציון התאמה לכל זוג שורות — ייצוא לאקסל</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-list-compare.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: השוואת חשבון ספק ══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="השוואת חשבון ספק מול פירוט עבודה">
+    <div class="card-top">
+      <div class="card-icon icon-excel">🧾</div>
+      <div class="card-meta"><div class="card-title">השוואת חשבון ספק מול פירוט <span class="card-badge-new">חדש</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">בדיקת התאמה בין חשבון ספק לפירוט עבודה לפי קריטריונים מרובים. מזהה הפרשים, פריטים חסרים ועודפים. מתאים לביקורת חשבוניות שוטפות ורכש ציבורי.</p>
+      <div class="card-tags"><span class="tag">חשבון ספק</span><span class="tag">התאמה</span><span class="tag">רכש</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> דוח חריגות לפי שורה — פריטים חסרים, עודפים והפרשי מחיר</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-reconcile.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: זמן בין פעולות ══ -->
+  <div class="tool-card" data-tier="member" data-type="excel procurement" data-title="חישוב זמן בין פעולות">
+    <div class="card-top">
+      <div class="card-icon icon-excel">⏱️</div>
+      <div class="card-meta"><div class="card-title">זמן בין פעולות — זיהוי חריגות <span class="card-badge-new">חדש</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מחשב את הזמן שעבר בין פעולות עוקבות של כל עובד/משתמש. מאתר פעולות חשודות המבוצעות מהר מדי. מחזיר את הטבלה המקורית עם עמודת זמן — ייצוא לאקסל.</p>
+      <div class="card-tags"><span class="tag">זמן</span><span class="tag">חריגות</span><span class="tag">עובדים</span><span class="tag">בקרה</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> הטבלה המקורית + עמודת זמן בין פעולות — סימון חריגים</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-time-between.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: דשבורד איתור חריגים ══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="דשבורד איתור חריגים">
+    <div class="card-top">
+      <div class="card-icon icon-bot">📉</div>
+      <div class="card-meta"><div class="card-title">דשבורד איתור חריגים <span class="card-badge-new">חדש</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">הגדירו יחסים בין סעיפים וראו מיד מי חורג מהנורמה. כלי ויזואלי לגילוי ישויות חריגות על בסיס נתוני אקסל — הגדרת ספי התראה ופילוח אינטראקטיבי.</p>
+      <div class="card-tags"><span class="tag">חריגים</span><span class="tag">ויזואליזציה</span><span class="tag">ספי התראה</span><span class="tag">ניתוח</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> דשבורד אינטראקטיבי עם סימון ישויות החורגות מהנורמה</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-outlier-dashboard.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: זיהוי חריגות ויזואלי ══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="זיהוי חריגות ויזואלי">
+    <div class="card-top">
+      <div class="card-icon icon-bot">🔭</div>
+      <div class="card-meta"><div class="card-title">זיהוי חריגות ויזואלי <span class="card-badge-new">חדש</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">העלה קובץ Excel או CSV — הכלי מזהה אוטומטית זוגות עמודות מספריות מעניינים ומציג תרשימי פיזור עם סימון חריגים וניתוח טקסטואלי לכל תרשים.</p>
+      <div class="card-tags"><span class="tag">חריגות</span><span class="tag">גרפים</span><span class="tag">scatter</span><span class="tag">ביקורת</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> תרשימי פיזור אוטומטיים עם סימון חריגים וניתוח לכל זוג עמודות</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-anomaly-visual.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: דשבורד פילוח דינמי ══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="דשבורד פילוח דינמי">
+    <div class="card-top">
+      <div class="card-icon icon-bot">📊</div>
+      <div class="card-meta"><div class="card-title">דשבורד פילוח דינמי <span class="card-badge-new">חדש</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">דשבורד אינטראקטיבי לפילוח נתונים מקובץ אקסל — בחר עמודות, סנן ערכים וצפה בסיכומים דינמיים. עובד ישירות בדפדפן. מחליף pivot tables מסובכות.</p>
+      <div class="card-tags"><span class="tag">דשבורד</span><span class="tag">פילוח</span><span class="tag">סיכומים</span><span class="tag">pivot</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> דשבורד פילוח אינטראקטיבי ישירות בדפדפן</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl btn-member" onclick="window.location.href='tool-dashboard.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: מודל סיכון (טיוטה) ══ -->
+  <div class="tool-card" data-tier="member" data-type="excel" data-title="מודל סיכון לביקורת">
+    <div class="card-top">
+      <div class="card-icon icon-bot">🧠</div>
+      <div class="card-meta"><div class="card-title">מודל סיכון לביקורת <span class="card-badge-draft">בפיתוח</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">בנו מודל חיזוי סיכון לממצאי ביקורת על בסיס נתוני ביקורות עבר. הכלי לומד מהנתונים ומסייע לתעדף את הביקורת הבאה. כל הנתונים נשארים בדפדפן.</p>
+      <div class="card-tags"><span class="tag">סיכון</span><span class="tag">ביקורת</span><span class="tag">חיזוי</span><span class="tag">מודל</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> מפת סיכון לפי ישות — ציון חיזוי לכל יחידה לביקורת</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl" style="background:#5b21b6;color:#fff;border:none;cursor:pointer" onclick="window.location.href='_drafts/tool-audit-risk-model.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+  <!-- ══ כלי: חילוץ נתוני מכרז (טיוטה) ══ -->
+  <div class="tool-card" data-tier="member" data-type="procurement" data-title="חילוץ נתוני מכרז מ-PDF">
+    <div class="card-top">
+      <div class="card-icon icon-bot">📄</div>
+      <div class="card-meta"><div class="card-title">חילוץ נתוני מכרז מ-PDF <span class="card-badge-draft">בפיתוח</span></div><div class="card-sub">כלי בדפדפן · ללא התקנה</div></div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">מעלים PDF של מכרז פומבי, הכלי מחלץ אוטומטית תנאי סף, מועדים, שירותים ותעריפים — סוקרים, עורכים ומייצאים לאקסל. חוסך שעות של קריאה ידנית.</p>
+      <div class="card-tags"><span class="tag">מכרז</span><span class="tag">PDF</span><span class="tag">חילוץ</span><span class="tag">רכש</span></div>
+      <div class="card-output">✅ <strong>התוצר:</strong> תמצית מכרז מובנית — תנאים, מועדים ותעריפים לאקסל</div>
+    </div>
+    <div class="card-footer">
+      <button class="btn-dl" style="background:#5b21b6;color:#fff;border:none;cursor:pointer" onclick="window.location.href='_drafts/tool-tender-chat.html'">← פתח כלי</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ ARTICLES LINK ══ -->
+<section style="max-width:1200px;margin:0 auto 1.5rem;padding:0 5vw">
+  <div style="background:var(--bg-white);border:1.5px solid var(--border);border-radius:14px;padding:1.4rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-weight:900;font-size:1rem;color:var(--navy);margin-bottom:0.3rem;">📝 מאמרים ומדריכים</div>
+      <div style="font-size:0.88rem;color:var(--text-muted);">14 מאמרים מקצועיים על בקרה, רכש ציבורי, חשבות וביקורת פנימית</div>
+    </div>
+    <a href="articles.html" style="background:var(--navy);color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:0.9rem;white-space:nowrap;">לכל המאמרים ←</a>
+  </div>
+</section>
+
+<!-- ══ MANAGED SERVICE BANNER ══ -->
+<section style="max-width:1200px;margin:0 auto 3.5rem;padding:0 5vw">
+  <div style="background:linear-gradient(135deg,#0d1f3c 0%,#1a3561 100%);border-radius:18px;padding:2.2rem 2.5rem;display:flex;gap:2rem;align-items:center;flex-wrap:wrap;border:2px solid #f0a500;">
+    <div style="flex:1;min-width:260px;">
+      <span style="display:inline-block;background:#f0a500;color:#0d1f3c;font-size:0.72rem;font-weight:900;padding:3px 12px;border-radius:20px;margin-bottom:0.9rem;">✨ שירות מנוהל — חדש</span>
+      <h2 style="font-family:'Heebo';font-size:1.25rem;font-weight:900;color:#f0a500;margin-bottom:0.6rem;">🎯 אנחנו בודקים, אתם מקבלים דוח</h2>
+      <p style="color:rgba(255,255,255,0.85);font-size:0.93rem;line-height:1.7;margin-bottom:1rem;">
+        מתחילים מלימוד מסמכי המכרז שלכם (רצוי לערב אותנו עוד לפני פרסום המכרז הסופי), הכנת תבניות דיווח חודשי שהספק יידרש להגיש, ובניית מערך בקרות המותאם לחוזה הספציפי — לא תבנית גנרית. מכאן, כל חודש מריצים את הבקרות, דוגמים אסמכתאות לאימות הנתונים ומנתחים את הממצאים.<br/>
+        <strong style="color:#fff;">אתם מקבלים כל חודש: דוח חריגות מוכן לפעולה + חישוב SLA.</strong>
+      </p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:1.2rem;">
+        <li style="font-size:0.85rem;color:rgba(255,255,255,0.8);padding-right:18px;position:relative;"><span style="position:absolute;right:0;color:#f0a500;font-weight:700;">✓</span> דגימת אסמכתאות לאימות הדיווחים</li>
+        <li style="font-size:0.85rem;color:rgba(255,255,255,0.8);padding-right:18px;position:relative;"><span style="position:absolute;right:0;color:#f0a500;font-weight:700;">✓</span> הפעלת כל הבקרות האוטומטיות עבורכם</li>
+        <li style="font-size:0.85rem;color:rgba(255,255,255,0.8);padding-right:18px;position:relative;"><span style="position:absolute;right:0;color:#f0a500;font-weight:700;">✓</span> דוח חריגות ו-SLA חודשי מוכן לפעולה</li>
+        <li style="font-size:0.85rem;color:rgba(255,255,255,0.8);padding-right:18px;position:relative;"><span style="position:absolute;right:0;color:#f0a500;font-weight:700;">✓</span> מחיר חודשי קבוע ומוזל — בזכות האוטומציה</li>
+      </ul>
+      <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;margin-top:0.3rem">
+        <a href="contact.html" style="display:inline-block;background:#f0a500;color:#0d1f3c;padding:11px 26px;border-radius:10px;font-weight:900;font-size:0.92rem;text-decoration:none;">דברו איתנו על זה ←</a>
+      </div>
+    </div>
+    <div style="flex-shrink:0;text-align:center;min-width:140px;">
+      <div style="font-size:3.5rem;margin-bottom:0.5rem;">📋</div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5;">בלי לגייס מומחה פנימי</div>
+    </div>
+  </div>
+</section>
+
+
+<form name="member-register" netlify hidden>
+  <input type="text" name="name"/><input type="text" name="office"/>
+  <input type="email" name="email"/><input type="tel" name="phone"/>
+</form>
+<form name="premium-purchase" netlify hidden>
+  <input type="text" name="name"/><input type="text" name="office"/>
+  <input type="email" name="email"/><input type="tel" name="phone"/>
+  <input type="text" name="tool"/>
+</form>
+
+
+<div class="cta-strip">
+  <h2>צריכים כלי מותאם אישית?</h2>
+  <p>לא מצאתם מה שחיפשתם? אני בונה כלים מותאמים לצרכי הארגון שלכם.</p>
+  <a href="index.html#cta" class="btn-white">דברו איתי ←</a>
+</div>
+
+<footer>
+  <p>© 2025 קנדל BI — אור קנדל רו"ח · <a href="index.html">kandelbi.org</a> · <a href="terms.html">תנאי שימוש</a> · <a href="about.html">אודות</a> | כל הזכויות שמורות</p>
+</footer>
+
+
+<!-- WhatsApp Widget -->
+<div class="wa-widget" id="waWidget">
+  <div class="wa-panel" id="waPanel">
+    <div class="wa-panel-header">👋 שלום! במה נוכל לעזור?</div>
+    <a href="https://wa.me/972506914898" class="wa-option" target="_blank" rel="noopener">
+      <span class="wa-option-icon">💬</span>
+      <span>
+        <span class="wa-option-title">הודעה אישית לאור קנדל</span>
+        <span class="wa-option-sub">שאלה, ייעוץ או הצעת שיתוף פעולה</span>
+      </span>
+    </a>
+  </div>
+  <button class="wa-toggle" id="waToggle" aria-label="פתח אפשרויות WhatsApp">
+    <svg id="waIconOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="#fff">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+    <svg id="waIconClose" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#fff" style="display:none;">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+  </button>
+</div>
+<script>
+/* TOOLS2 — demo mode, no auth */
+function filterCards(type, btn) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.tool-card').forEach(c => {
+    c.style.display = (type === 'all' || c.dataset.type.includes(type)) ? '' : 'none';
+  });
+}
+const searchInput = document.querySelector('.search-box input');
+if(searchInput) searchInput.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.tool-card').forEach(c => {
+    const t = (c.dataset.title || '') + ' ' + c.innerText;
+    c.style.display = t.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+
+
+<div class="demo-banner">🎯 קובץ הדגמה — כלים שלא הועלו עדיין לאתר הרשמי · לשימוש פנימי בלבד</div>
+</body>
+</html>
+
+

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>לוח בקרה — קנדל BI</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;--green:#0a7c5e;--green-bg:#edf7f3;--orange:#e67e22;--orange-bg:#fff8ed;--red:#d93025;--red-bg:#fef2f2}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--navy);padding:14px 5vw;display:flex;align-items:center;justify-content:space-between}
+header a.logo{color:#fff;text-decoration:none;font-weight:900;font-size:1.2rem}
+.nav-links{display:flex;gap:20px;align-items:center}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:0.88rem;transition:color .15s}
+.nav-links a:hover{color:#fff}
+.nav-links a.active{color:#fff;font-weight:700}
+.btn-nav-logout{background:transparent;border:1px solid rgba(255,255,255,.4);color:rgba(255,255,255,.8);padding:6px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.85rem;transition:all .15s}
+.btn-nav-logout:hover{border-color:#fff;color:#fff}
+main{flex:1;max-width:900px;width:100%;margin:0 auto;padding:32px 20px}
+h1{color:var(--navy);font-size:1.6rem;margin-bottom:4px}
+.greeting{color:var(--muted);margin-bottom:28px;font-size:0.95rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--white);border-radius:12px;padding:20px 22px;border:1px solid var(--border)}
+.stat-label{font-size:0.8rem;color:var(--muted);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.stat-value{font-size:1.5rem;font-weight:900;color:var(--navy)}
+.stat-sub{font-size:0.78rem;color:var(--muted);margin-top:3px}
+.section{background:var(--white);border-radius:12px;padding:24px;border:1px solid var(--border);margin-bottom:20px}
+.section h2{font-size:1rem;color:var(--navy);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bg);font-size:0.9rem}
+.info-row:last-child{border-bottom:none}
+.info-label{color:var(--muted);font-weight:700}
+.info-value{color:var(--navy);font-weight:400}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700}
+.badge-trial{background:#fff3cd;color:#856404}
+.badge-active{background:var(--green-bg);color:var(--green)}
+.badge-expired{background:var(--red-bg);color:var(--red)}
+.badge-pending{background:#e8eaf6;color:#3949ab}
+.progress-wrap{margin-top:10px}
+.progress-label{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:5px}
+.progress-bar{background:#e9ecef;border-radius:8px;height:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:8px;background:var(--blue);transition:width .4s}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.tool-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;text-decoration:none;color:var(--text);transition:all .15s;display:block}
+.tool-card:hover{border-color:var(--blue);background:#e8f0fb;transform:translateY(-1px)}
+.tool-card .icon{font-size:1.4rem;margin-bottom:6px}
+.tool-card .name{font-size:0.85rem;font-weight:700;color:var(--navy)}
+.btn-subscribe{display:inline-block;padding:11px 24px;background:var(--blue);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:opacity .15s}
+.btn-subscribe:hover{opacity:.9}
+.alert{padding:14px 18px;border-radius:10px;font-size:0.88rem;margin-bottom:24px;display:flex;align-items:center;gap:12px}
+.alert-warning{background:var(--orange-bg);border:1px solid #f5cba7;color:#7d4a00}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html">קנדל BI</a>
+  <div class="nav-links">
+    <a href="dashboard.html" class="active">לוח בקרה</a>
+    <a href="tools.html">כלים</a>
+    <a href="subscribe.html">מנוי</a>
+    <button class="btn-nav-logout" id="btn-logout">התנתקות</button>
+  </div>
+</header>
+<main>
+  <div id="alert-wrap"></div>
+  <h1 id="greeting-name">שלום!</h1>
+  <p class="greeting" id="greeting-sub">ברוך הבא ללוח הבקרה שלך</p>
+
+  <div class="cards" id="stat-cards">
+    <div class="stat-card"><div class="stat-label">סטטוס</div><div class="stat-value" id="stat-status">—</div></div>
+    <div class="stat-card"><div class="stat-label">ימים שנותרו</div><div class="stat-value" id="stat-days">—</div><div class="stat-sub" id="stat-days-sub"></div></div>
+    <div class="stat-card"><div class="stat-label">תאריך הצטרפות</div><div class="stat-value" id="stat-joined">—</div></div>
+    <div class="stat-card"><div class="stat-label">פג תוקף</div><div class="stat-value" id="stat-expires">—</div></div>
+  </div>
+
+  <div class="section" id="progress-section" style="display:none">
+    <h2>תקופת הניסיון</h2>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>יום 1</span><span id="progress-label-end">יום 90</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>פרטי חשבון</h2>
+    <div class="info-row"><span class="info-label">מייל</span><span class="info-value" id="info-email">—</span></div>
+    <div class="info-row"><span class="info-label">שם</span><span class="info-value" id="info-name">—</span></div>
+    <div class="info-row"><span class="info-label">תוכנית</span><span class="info-value"><span id="info-plan" class="badge">—</span></span></div>
+    <div class="info-row"><span class="info-label">תאריך אימות מייל</span><span class="info-value" id="info-verified">—</span></div>
+  </div>
+
+  <div class="section">
+    <h2>גישה מהירה לכלים</h2>
+    <div class="tools-grid">
+      <a class="tool-card" href="tool-hours-overlap.html"><div class="icon">🕐</div><div class="name">בדיקת חפיפות שעות</div></a>
+      <a class="tool-card" href="tool-outputs-audit.html"><div class="icon">📋</div><div class="name">בדיקת חשבון תפוקות</div></a>
+      <a class="tool-card" href="tool-hours-audit.html"><div class="icon">📊</div><div class="name">ביקורת שעות</div></a>
+      <a class="tool-card" href="tool-reconcile.html"><div class="icon">⚖️</div><div class="name">התאמת נתונים</div></a>
+      <a class="tool-card" href="tool-outlier-dashboard.html"><div class="icon">🔍</div><div class="name">זיהוי חריגים</div></a>
+      <a class="tool-card" href="tools.html"><div class="icon">➕</div><div class="name">כל הכלים</div></a>
+    </div>
+  </div>
+</main>
+<script>
+const SUPABASE_URL='https://jixaskajgkorrjhxiflc.supabase.co';
+const SUPABASE_KEY='sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
+const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+function fmtDate(d){if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function daysLeft(d){if(!d)return null;const diff=new Date(d)-new Date();return Math.max(0,Math.ceil(diff/86400000));}
+function statusLabel(s){const m={pending_verification:'ממתין לאימות',trial:'ניסיון חינמי',active:'מנוי פעיל',expired:'פג תוקף',cancelled:'מבוטל',past_due:'תשלום באיחור'};return m[s]||s;}
+function statusBadge(s){const m={pending_verification:'badge-pending',trial:'badge-trial',active:'badge-active',expired:'badge-expired',cancelled:'badge-expired',past_due:'badge-expired'};return m[s]||'';}
+
+(async()=>{
+  const {data:{session}}=await _sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+  if(!session.user.email_confirmed_at){window.location.href='verify-email.html';return;}
+
+  const {data:profile}=await _sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(!profile){window.location.href='login.html';return;}
+
+  const name=profile.name||session.user.user_metadata?.full_name||'';
+  document.getElementById('greeting-name').textContent='שלום'+(name?' '+name.split(' ')[0]:'')+'!';
+  document.getElementById('info-email').textContent=profile.email||session.user.email;
+  document.getElementById('info-name').textContent=name||'—';
+  document.getElementById('stat-joined').textContent=fmtDate(profile.created_at);
+  document.getElementById('info-verified').textContent=fmtDate(session.user.email_confirmed_at);
+
+  const status=profile.subscription_status;
+  const endDate=status==='trial'?profile.trial_end_date:profile.subscription_end;
+  const days=daysLeft(endDate);
+
+  document.getElementById('stat-status').innerHTML=`<span class="badge ${statusBadge(status)}">${statusLabel(status)}</span>`;
+  document.getElementById('stat-expires').textContent=fmtDate(endDate);
+  document.getElementById('info-plan').className='badge '+(statusBadge(status));
+  document.getElementById('info-plan').textContent=statusLabel(status);
+
+  if(days!==null){
+    document.getElementById('stat-days').textContent=days;
+    document.getElementById('stat-days-sub').textContent=status==='trial'?'מתוך 90 יום ניסיון':'עד חידוש';
+  }
+
+  // סרגל התקדמות לניסיון
+  if(status==='trial'&&profile.trial_end_date){
+    document.getElementById('progress-section').style.display='';
+    const total=90, used=total-days;
+    const pct=Math.min(100,Math.round(used/total*100));
+    document.getElementById('progress-fill').style.width=pct+'%';
+    document.getElementById('progress-label-end').textContent='יום 90 ('+fmtDate(profile.trial_end_date)+')';
+  }
+
+  // התראות
+  const alertWrap=document.getElementById('alert-wrap');
+  if(status==='trial'&&days<=14&&days>0){
+    alertWrap.innerHTML=`<div class="alert alert-warning">⚠️ נותרו <strong>${days} ימים</strong> בתקופת הניסיון — <a href="subscribe.html" style="color:inherit;font-weight:700">עבור למנוי עכשיו</a></div>`;
+  } else if(status==='expired'||status==='cancelled'){
+    alertWrap.innerHTML=`<div class="alert alert-warning">🔒 תקופת הגישה שלך פגה — <a href="subscribe.html" style="color:inherit;font-weight:700">לחץ כאן להמשך גישה לכלים</a></div>`;
+  }
+})();
+
+document.getElementById('btn-logout').addEventListener('click',async()=>{
+  await _sb.auth.signOut();
+  window.location.href='index.html';
+});
+</script>
+</body>
+</html>

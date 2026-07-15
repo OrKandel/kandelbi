@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>אימות מייל — קנדל BI</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0d1f3c;--blue:#1e6abf;--bg:#f0f3f8;--white:#fff;--border:#d5dde8;--muted:#6b7a99;--green:#0a7c5e;--red:#d93025}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:#1a1a2e;direction:rtl;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--navy);padding:14px 5vw}
+header a{color:#fff;text-decoration:none;font-weight:900;font-size:1.2rem}
+.page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+.card{background:var(--white);border-radius:14px;padding:48px 36px;width:100%;max-width:440px;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}
+.icon{font-size:3rem;margin-bottom:16px}
+h1{color:var(--navy);font-size:1.4rem;margin-bottom:10px}
+p{color:var(--muted);font-size:0.92rem;line-height:1.6;margin-bottom:24px}
+.email-highlight{color:var(--navy);font-weight:700}
+.btn{display:inline-block;padding:12px 28px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;transition:opacity .15s;text-decoration:none}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue);margin-top:12px}
+.msg{padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-top:16px;display:none}
+.msg.success{background:#edf7f3;color:var(--green);border:1px solid #6ee7b7}
+.msg.error{background:#fef2f2;color:var(--red);border:1px solid #fca5a5}
+.logout-link{margin-top:24px;font-size:0.82rem;color:var(--muted)}
+.logout-link a{color:var(--blue);text-decoration:none}
+</style>
+</head>
+<body>
+<header><a href="index.html">קנדל BI</a></header>
+<div class="page">
+  <div class="card">
+    <div class="icon">📧</div>
+    <h1>אמת את כתובת המייל שלך</h1>
+    <p>שלחנו מייל אימות לכתובת<br/><span class="email-highlight" id="user-email">—</span><br/>לחץ על הקישור במייל כדי להפעיל את חשבונך ולהתחיל את תקופת הניסיון החינמית.</p>
+    <button class="btn" id="btn-resend">שלח מייל אימות מחדש</button>
+    <div class="msg" id="msg"></div>
+    <p style="margin-top:20px;font-size:0.82rem">לא קיבלת? בדוק את תיקיית הספאם</p>
+    <div class="logout-link"><a href="#" id="btn-logout">התנתק וחזור לדף הבית</a></div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL='https://jixaskajgkorrjhxiflc.supabase.co';
+const SUPABASE_KEY='sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
+const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+(async()=>{
+  const {data:{session}}=await _sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+  if(session.user.email_confirmed_at){
+    // מייל כבר אומת — עדכן פרופיל והפנה
+    await _sb.from('profiles').update({
+      subscription_status:'trial',
+      trial_end_date:new Date(Date.now()+90*24*60*60*1000).toISOString()
+    }).eq('id',session.user.id).eq('subscription_status','pending_verification');
+    window.location.href='dashboard.html';
+    return;
+  }
+  document.getElementById('user-email').textContent=session.user.email;
+})();
+
+document.getElementById('btn-resend').addEventListener('click',async()=>{
+  const btn=document.getElementById('btn-resend');
+  const {data:{session}}=await _sb.auth.getSession();
+  if(!session)return;
+  btn.disabled=true;btn.textContent='שולח...';
+  const {error}=await _sb.auth.resend({type:'signup',email:session.user.email});
+  const msg=document.getElementById('msg');
+  if(error){msg.textContent=error.message;msg.className='msg error';}
+  else{msg.textContent='✅ מייל נשלח מחדש — בדוק את תיבת הדואר';msg.className='msg success';}
+  msg.style.display='block';
+  setTimeout(()=>{btn.disabled=false;btn.textContent='שלח מייל אימות מחדש';},30000);
+});
+
+document.getElementById('btn-logout').addEventListener('click',async e=>{
+  e.preventDefault();
+  await _sb.auth.signOut();
+  window.location.href='index.html';
+});
+</script>
+</body>
+</html>
