@@ -48,7 +48,7 @@ input:focus{outline:none;border-color:var(--blue)}
     <div class="links">
       <a href="reset-password.html">שכחת סיסמה?</a>
       &nbsp;·&nbsp;
-      אין לך חשבון? <a href="register.html">הרשמה חינמית</a>
+      אין לך חשבון? <a href="register.html">הרשמה</a>
     </div>
   </div>
 </div>
@@ -57,9 +57,11 @@ const SUPABASE_URL = 'https://jixaskajgkorrjhxiflc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// אם כבר מחובר — הפנה ישירות
-_sb.auth.getSession().then(({data:{session}})=>{
-  if(session) _redirect();
+// אם כבר מחובר — הפנה ישירות (דרך onAuthStateChange למניעת לולאה)
+_sb.auth.onAuthStateChange((event, session)=>{
+  if((event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED'||event==='SIGNED_IN')&&session){
+    _redirect();
+  }
 });
 
 function _redirect(){

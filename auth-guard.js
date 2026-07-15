@@ -119,11 +119,26 @@ async function signOut() {
 
 // ── הרצה דרך onAuthStateChange (פותר race condition) ─────────────────
 let _guardDone = false;
+let _guardTimer = null;
+
 _sb.auth.onAuthStateChange((event, session) => {
-  if (_guardDone) return;
-  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
-    _guardDone = true;
-    _handleSession(session);
-    updateNav();
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    clearTimeout(_guardTimer);
+    if (!_guardDone) { _guardDone = true; _handleSession(session); updateNav(); }
+  } else if (event === 'INITIAL_SESSION') {
+    if (session) {
+      clearTimeout(_guardTimer);
+      if (!_guardDone) { _guardDone = true; _handleSession(session); updateNav(); }
+    } else {
+      // אם דף ציבורי — לא צריך לחכות
+      if (_isPublicPage()) { updateNav(); return; }
+      // ממתינים ל-TOKEN_REFRESHED לפני החלטה
+      _guardTimer = setTimeout(() => {
+        if (!_guardDone) { _guardDone = true; _handleSession(null); updateNav(); }
+      }, 2000);
+    }
+  } else if (event === 'SIGNED_OUT') {
+    clearTimeout(_guardTimer);
+    if (!_guardDone) { _guardDone = true; _handleSession(null); updateNav(); }
   }
 });

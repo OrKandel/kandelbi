@@ -114,14 +114,13 @@ function statusLabel(s){const m={pending_verification:'ממתין לאימות',
 function statusBadge(s){const m={pending_verification:'badge-pending',trial:'badge-trial',active:'badge-active',expired:'badge-expired',cancelled:'badge-expired',past_due:'badge-expired'};return m[s]||'';}
 
 let _initDone=false;
-async function _initDashboard(session){
-  if(_initDone)return; _initDone=true;
-  if(!session){window.location.href='login.html';return;}
+let _loginTimer=null;
+
+async function _renderDashboard(session){
   if(!session.user.email_confirmed_at){window.location.href='verify-email.html';return;}
 
   const {data:profile}=await _sb.from('profiles').select('*').eq('id',session.user.id).single();
   if(!profile){
-    // פרופיל לא נטען — מציגים מידע בסיסי מה-session
     document.getElementById('greeting-name').textContent='שלום!';
     document.getElementById('info-email').textContent=session.user.email;
     document.getElementById('info-verified').textContent=fmtDate(session.user.email_confirmed_at);
@@ -149,7 +148,6 @@ async function _initDashboard(session){
     document.getElementById('stat-days-sub').textContent=status==='trial'?'מתוך 90 יום ניסיון':'עד חידוש';
   }
 
-  // סרגל התקדמות לניסיון
   if(status==='trial'&&profile.trial_end_date){
     document.getElementById('progress-section').style.display='';
     const total=90, used=total-days;
@@ -158,7 +156,6 @@ async function _initDashboard(session){
     document.getElementById('progress-label-end').textContent='יום 90 ('+fmtDate(profile.trial_end_date)+')';
   }
 
-  // התראות
   const alertWrap=document.getElementById('alert-wrap');
   if(status==='trial'&&days<=14&&days>0){
     alertWrap.innerHTML=`<div class="alert alert-warning">⚠️ נותרו <strong>${days} ימים</strong> בתקופת הניסיון — <a href="subscribe.html" style="color:inherit;font-weight:700">עבור למנוי עכשיו</a></div>`;
@@ -167,8 +164,27 @@ async function _initDashboard(session){
   }
 }
 
+function _gotSession(session){
+  if(_initDone)return; _initDone=true;
+  clearTimeout(_loginTimer);
+  if(!session){window.location.href='login.html';return;}
+  _renderDashboard(session);
+}
+
 _sb.auth.onAuthStateChange((event, session)=>{
-  if(event==='INITIAL_SESSION'||event==='SIGNED_IN') _initDashboard(session);
+  if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'){
+    _gotSession(session);
+  } else if(event==='INITIAL_SESSION'){
+    if(session){
+      _gotSession(session);
+    } else {
+      // Session לא זמין עדיין — מחכים ל-TOKEN_REFRESHED או SIGNED_IN לפני הפניה ל-login
+      _loginTimer=setTimeout(()=>{ if(!_initDone){_initDone=true;window.location.href='login.html';} }, 2000);
+    }
+  } else if(event==='SIGNED_OUT'){
+    clearTimeout(_loginTimer);
+    if(!_initDone){_initDone=true;window.location.href='login.html';}
+  }
 });
 
 document.getElementById('btn-logout').addEventListener('click',async()=>{
