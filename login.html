@@ -39,11 +39,13 @@ input:focus{outline:none;border-color:var(--blue)}
     <h1>כניסה לחשבון</h1>
     <p class="sub">ברוכים השבים! הכנס את פרטיך כדי להמשיך</p>
     <div class="msg" id="msg"></div>
+    <form id="login-form" action="#" onsubmit="return false">
     <label for="email">כתובת מייל</label>
-    <input type="email" id="email" placeholder="your@email.com" autocomplete="email"/>
+    <input type="email" id="email" name="email" placeholder="your@email.com" autocomplete="username"/>
     <label for="password">סיסמה</label>
-    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
-    <button class="btn" id="btn-login">כניסה</button>
+    <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password"/>
+    <button class="btn" id="btn-login" type="submit">כניסה</button>
+    </form>
     <div class="divider">—</div>
     <div class="links">
       <a href="reset-password.html">שכחת סיסמה?</a>
