@@ -51,43 +51,6 @@ async function _getProfile(userId) {
   return data;
 }
 
-// ── פונקציה ראשית: הגנה על הדף הנוכחי ──────────────────────────────
-async function requireAuth() {
-  if (_isPublicPage()) return;
-
-  const { data: { session } } = await _sb.auth.getSession();
-
-  if (!session) {
-    const returnTo = encodeURIComponent(window.location.href);
-    window.location.href = `login.html?return=${returnTo}`;
-    return;
-  }
-
-  const profile = await _getProfile(session.user.id);
-
-  // לא אימת מייל
-  if (!session.user.email_confirmed_at) {
-    window.location.href = 'verify-email.html';
-    return;
-  }
-
-  // חשבון מושהה
-  if (profile?.account_status === 'suspended') {
-    _showBlockScreen('חשבונך הושהה. לפרטים פנה לתמיכה.');
-    return;
-  }
-
-  // ניסיון חינמי פג / מנוי לא פעיל
-  if (!_isSubscriptionActive(profile)) {
-    const returnTo = encodeURIComponent(window.location.href);
-    window.location.href = `subscribe.html?return=${returnTo}`;
-    return;
-  }
-
-  // עדכון last_login
-  await _sb.from('profiles').update({ last_login: new Date().toISOString() }).eq('id', session.user.id);
-}
-
 function _showBlockScreen(msg) {
   document.body.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;
@@ -103,7 +66,35 @@ function _showBlockScreen(msg) {
     </div>`;
 }
 
-// ── עדכון ניווט לפי סטטוס התחברות ──────────────────────────────────
+// ── פונקציה ראשית ────────────────────────────────────────────────────
+async function _handleSession(session) {
+  if (_isPublicPage()) return;
+
+  if (!session) {
+    const returnTo = encodeURIComponent(window.location.href);
+    window.location.href = `login.html?return=${returnTo}`;
+    return;
+  }
+
+  if (!session.user.email_confirmed_at) {
+    window.location.href = 'verify-email.html';
+    return;
+  }
+
+  const profile = await _getProfile(session.user.id);
+
+  if (profile?.account_status === 'suspended') {
+    _showBlockScreen('חשבונך הושהה. לפרטים פנה לתמיכה.');
+    return;
+  }
+
+  // אם profile לא נטען — מניחים שהמנוי פעיל (שגיאת DB זמנית)
+  if (!profile || _isSubscriptionActive(profile)) return;
+
+  const returnTo = encodeURIComponent(window.location.href);
+  window.location.href = `subscribe.html?return=${returnTo}`;
+}
+
 async function updateNav() {
   const { data: { session } } = await _sb.auth.getSession();
   const loginLink  = document.getElementById('nav-login');
@@ -126,8 +117,13 @@ async function signOut() {
   window.location.href = 'index.html';
 }
 
-// ── הרצה אוטומטית ───────────────────────────────────────────────────
-(async () => {
-  await requireAuth();
-  await updateNav();
-})();
+// ── הרצה דרך onAuthStateChange (פותר race condition) ─────────────────
+let _guardDone = false;
+_sb.auth.onAuthStateChange((event, session) => {
+  if (_guardDone) return;
+  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+    _guardDone = true;
+    _handleSession(session);
+    updateNav();
+  }
+});

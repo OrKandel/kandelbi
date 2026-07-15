@@ -120,7 +120,13 @@ async function _initDashboard(session){
   if(!session.user.email_confirmed_at){window.location.href='verify-email.html';return;}
 
   const {data:profile}=await _sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(!profile){window.location.href='login.html';return;}
+  if(!profile){
+    // פרופיל לא נטען — מציגים מידע בסיסי מה-session
+    document.getElementById('greeting-name').textContent='שלום!';
+    document.getElementById('info-email').textContent=session.user.email;
+    document.getElementById('info-verified').textContent=fmtDate(session.user.email_confirmed_at);
+    return;
+  }
 
   const name=profile.name||session.user.user_metadata?.full_name||'';
   document.getElementById('greeting-name').textContent='שלום'+(name?' '+name.split(' ')[0]:'')+'!';
