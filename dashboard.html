@@ -113,8 +113,9 @@ function daysLeft(d){if(!d)return null;const diff=new Date(d)-new Date();return 
 function statusLabel(s){const m={pending_verification:'ממתין לאימות',trial:'ניסיון חינמי',active:'מנוי פעיל',expired:'פג תוקף',cancelled:'מבוטל',past_due:'תשלום באיחור'};return m[s]||s;}
 function statusBadge(s){const m={pending_verification:'badge-pending',trial:'badge-trial',active:'badge-active',expired:'badge-expired',cancelled:'badge-expired',past_due:'badge-expired'};return m[s]||'';}
 
-(async()=>{
-  const {data:{session}}=await _sb.auth.getSession();
+let _initDone=false;
+async function _initDashboard(session){
+  if(_initDone)return; _initDone=true;
   if(!session){window.location.href='login.html';return;}
   if(!session.user.email_confirmed_at){window.location.href='verify-email.html';return;}
 
@@ -158,7 +159,11 @@ function statusBadge(s){const m={pending_verification:'badge-pending',trial:'bad
   } else if(status==='expired'||status==='cancelled'){
     alertWrap.innerHTML=`<div class="alert alert-warning">🔒 תקופת הגישה שלך פגה — <a href="subscribe.html" style="color:inherit;font-weight:700">לחץ כאן להמשך גישה לכלים</a></div>`;
   }
-})();
+}
+
+_sb.auth.onAuthStateChange((event, session)=>{
+  if(event==='INITIAL_SESSION'||event==='SIGNED_IN') _initDashboard(session);
+});
 
 document.getElementById('btn-logout').addEventListener('click',async()=>{
   await _sb.auth.signOut();
