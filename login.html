@@ -68,7 +68,7 @@ _sb.auth.onAuthStateChange((event, session)=>{
 
 function _redirect(){
   const p=new URLSearchParams(window.location.search).get('return');
-  window.location.href=p?decodeURIComponent(p):'dashboard.html';
+  window.location.href=p?decodeURIComponent(p):'tools.html';
 }
 
 function showMsg(text,type){
