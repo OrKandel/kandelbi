@@ -3,467 +3,1254 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>זיהוי חריגות ויזואלי | קנדל BI</title>
+<title>זיהוי חריגות סטטיסטי V2 | קנדל BI</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="auth-guard.js"></script>
 <style>
 :root{
-  --navy:#1a1a2e;--blue:#1e6abf;--green:#2e7d32;--red:#c62828;
-  --orange:#c2410c;--border:#dce3ef;--bg:#f0f4fb;--muted:#6b7a99;--card:#fff;
+  --navy:#1a1a2e;--blue:#1e6abf;--blue-light:#eff6ff;
+  --green:#1a7c4f;--green-bg:#f0fdf4;
+  --amber:#b45309;--amber-bg:#fffbeb;
+  --orange:#c2410c;--orange-bg:#fff7ed;
+  --red:#b91c1c;--red-bg:#fef2f2;
+  --crimson:#7f1d1d;--crimson-bg:#fef2f2;
+  --border:#dce3ef;--bg:#f0f4fb;--muted:#6b7a99;--card:#fff;
+  --step-active:#1e6abf;--step-done:#1a7c4f;--step-idle:#c8d0e0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--navy);direction:rtl}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--navy);direction:rtl;font-size:15px}
 a{color:var(--blue)}
-
-header{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;gap:1rem}
-.logo{color:#fff;font-size:1.25rem;font-weight:800;text-decoration:none}
-.logo span{color:#60a5fa}
-.tagline{color:#9aa5bb;font-size:0.8rem;margin-top:2px}
-
-main{max-width:1200px;margin:2rem auto;padding:0 5vw}
-
-.card{background:var(--card);border-radius:14px;border:1px solid var(--border);
-  box-shadow:0 2px 12px rgba(30,106,191,0.06);padding:1.5rem;margin-bottom:1.5rem}
-.card-title{font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:1rem;
-  display:flex;align-items:center;gap:0.5rem}
 .hidden{display:none!important}
+
+/* Header */
+header{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between}
+.logo{color:#fff;font-size:1.2rem;font-weight:800;text-decoration:none}
+.logo span{color:#60a5fa}
+.privacy-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
+  color:rgba(255,255,255,.8);font-size:0.72rem;padding:4px 10px;border-radius:20px;white-space:nowrap}
+
+/* Step indicator */
+.steps-bar{display:flex;align-items:center;justify-content:center;gap:0;padding:1.4rem 5vw;
+  background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem}
+.step-item{display:flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--muted)}
+.step-item.active{color:var(--step-active)}
+.step-item.done{color:var(--step-done)}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--step-idle);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
+.step-item.active .step-num{background:var(--step-active)}
+.step-item.done .step-num{background:var(--step-done)}
+.step-sep{width:32px;height:2px;background:var(--border);flex-shrink:0}
+.step-sep.done{background:var(--step-done)}
+
+main{max-width:1100px;margin:1.8rem auto;padding:0 5vw}
+
+/* Cards */
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);
+  box-shadow:0 2px 12px rgba(30,106,191,.06);padding:1.5rem;margin-bottom:1.4rem}
+.card-title{font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.5rem}
+.desc{color:var(--muted);font-size:.85rem;margin-bottom:1.1rem;line-height:1.6}
 
 /* Drop zone */
 #dz{border:2.5px dashed var(--border);border-radius:10px;padding:2.5rem 1rem;
   text-align:center;cursor:pointer;transition:all .2s;background:#f8faff}
-#dz:hover,#dz.drag{border-color:var(--blue);background:#eff6ff}
-#dz.loaded{border-color:var(--green);background:#f0fdf4}
-.ub-icon{font-size:2.2rem;margin-bottom:0.5rem}
-.ub-text{color:var(--muted);font-size:0.88rem;line-height:1.5}
+#dz:hover,#dz.drag{border-color:var(--blue);background:var(--blue-light)}
+#dz.loaded{border-color:var(--green);background:var(--green-bg)}
+.ub-icon{font-size:2rem;margin-bottom:.5rem}
+.ub-text{color:var(--muted);font-size:.85rem;line-height:1.5}
 #fi{display:none}
 
-/* Controls */
-.controls-row{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end}
-.ctrl{display:flex;flex-direction:column;gap:5px}
-.ctrl label{font-size:0.78rem;color:var(--muted);font-weight:600}
-.ctrl input[type=range]{width:180px;accent-color:var(--blue)}
-.ctrl input[type=number]{border:1.5px solid var(--border);border-radius:7px;padding:6px 10px;
-  font-size:0.85rem;width:80px;text-align:center;font-family:inherit}
-.ctrl select{border:1.5px solid var(--border);border-radius:7px;padding:6px 10px;
-  font-size:0.85rem;font-family:inherit;background:#fff;cursor:pointer}
-.btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:0.55rem 1.5rem;
-  font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-.btn:hover{background:#1557a0}
+/* Sheet selector */
+.sheet-row{display:flex;align-items:center;gap:.8rem;margin-top:1rem;flex-wrap:wrap}
+.sheet-row label{font-size:.82rem;font-weight:600;color:var(--muted)}
+.sel{border:1.5px solid var(--border);border-radius:7px;padding:6px 10px;
+  font-size:.85rem;font-family:inherit;background:#fff;cursor:pointer;min-width:160px}
+.sel:focus{outline:none;border-color:var(--blue)}
+
+/* File info chips */
+.info-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.chip{background:var(--blue-light);border:1px solid #bfdbfe;border-radius:8px;
+  padding:.3rem .75rem;font-size:.78rem;color:var(--blue);font-weight:600}
+.chip.warn{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
+.chip.ok{background:var(--green-bg);border-color:#86efac;color:var(--green)}
+
+/* Buttons */
+.btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:.6rem 1.4rem;
+  font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn:hover:not(:disabled){background:#1557a0}
 .btn:disabled{background:#9aa5bb;cursor:not-allowed}
+.btn-outline{background:#fff;color:var(--blue);border:1.5px solid var(--blue);
+  border-radius:8px;padding:.5rem 1.1rem;font-size:.85rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-outline:hover{background:var(--blue-light)}
+.btn-sm{padding:.35rem .85rem;font-size:.78rem}
+.btn-danger{background:#fff;color:var(--red);border:1.5px solid var(--red);
+  border-radius:7px;padding:.35rem .75rem;font-size:.78rem;font-weight:700;
+  cursor:pointer;font-family:inherit}
+.btn-danger:hover{background:var(--red-bg)}
 
-/* Summary chips */
-.chips{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.2rem}
-.chip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;
-  padding:0.35rem 0.85rem;font-size:0.8rem;color:var(--blue);font-weight:600}
-.chip.warn{background:#fff7ed;border-color:#fed7aa;color:var(--orange)}
-.chip.ok{background:#f0fdf4;border-color:#bbf7d0;color:var(--green)}
+/* Discovery */
+.top-n-bar{display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.top-n-bar span{font-size:.82rem;color:var(--muted);font-weight:600}
+.n-btn{background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:.28rem .7rem;
+  font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;color:var(--muted);transition:all .1s}
+.n-btn.active,.n-btn:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+#n-custom{width:60px;border:1.5px solid var(--border);border-radius:6px;padding:.28rem .4rem;
+  font-size:.78rem;text-align:center;font-family:inherit}
 
-/* Charts grid */
-#charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:1.5rem}
-.chart-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1.2rem;
-  box-shadow:0 1px 6px rgba(30,106,191,0.06)}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem}
-.chart-pair{font-weight:700;color:var(--navy);font-size:0.92rem}
-.rank-badge{background:var(--blue);color:#fff;border-radius:20px;font-size:0.72rem;
-  padding:0.15rem 0.65rem;font-weight:700;white-space:nowrap}
-.rank-badge.top{background:#7c3aed}
-.chart-wrap{position:relative;height:300px}
+.disco-grid{display:grid;gap:1rem;margin-bottom:1.4rem}
+.disco-card{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem;
+  display:flex;align-items:flex-start;gap:.8rem}
+.disco-card.selected{border-color:var(--green);background:var(--green-bg)}
+.disco-card.removed{opacity:.45;border-style:dashed}
+.disco-info{flex:1;min-width:0}
+.disco-pair{font-weight:800;font-size:.9rem;color:var(--navy);margin-bottom:.3rem;
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.disco-strength{font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:12px;white-space:nowrap}
+.str-very-strong{background:#dbeafe;color:#1e40af}
+.str-strong{background:#d1fae5;color:#065f46}
+.str-moderate{background:#fef3c7;color:#92400e}
+.str-weak{background:#fee2e2;color:#991b1b}
+.disco-meta{font-size:.78rem;color:var(--muted);margin-top:.25rem}
+.disco-actions{display:flex;gap:.4rem;flex-shrink:0;margin-top:.1rem}
 
-/* Insight box */
-.insight{margin-top:0.9rem;background:#f8faff;border:1px solid #bfdbfe;border-radius:8px;
-  padding:0.75rem 1rem;font-size:0.81rem;color:#1e3a5f;line-height:1.65}
-.ins-row{display:flex;align-items:flex-start;gap:0.45rem;margin-bottom:0.35rem}
-.ins-row:last-child{margin-bottom:0}
-.ins-icon{flex-shrink:0;line-height:1.4}
-.outlier-tags{margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.25rem}
-.outlier-tag{background:#fef2f2;border:1px solid #fecaca;border-radius:5px;
-  padding:0.1rem 0.5rem;font-size:0.76rem;color:var(--red);font-weight:600}
+.tech-toggle{font-size:.72rem;color:var(--blue);cursor:pointer;text-decoration:underline;
+  background:none;border:none;font-family:inherit;padding:0;margin-top:.3rem}
+.tech-details{background:var(--bg);border-radius:6px;padding:.5rem .7rem;margin-top:.4rem;
+  font-size:.75rem;color:var(--muted);line-height:1.7;display:none}
+.tech-details.open{display:block}
 
-.no-results{text-align:center;color:var(--muted);padding:2.5rem;font-size:0.9rem}
-.desc{color:var(--muted);font-size:0.87rem;margin-bottom:1.2rem;line-height:1.6}
+/* Manual pair */
+.manual-row{display:flex;align-items:flex-end;gap:.7rem;flex-wrap:wrap;padding:1rem;
+  background:var(--bg);border-radius:8px;border:1px dashed var(--border)}
+.manual-row .ctrl{display:flex;flex-direction:column;gap:4px;min-width:160px}
+.manual-row .ctrl label{font-size:.78rem;font-weight:600;color:var(--muted)}
 
+/* Selected list */
+.selected-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
+.sel-item{display:flex;align-items:center;justify-content:space-between;
+  background:var(--green-bg);border:1px solid #86efac;border-radius:8px;padding:.5rem .9rem;
+  font-size:.85rem;font-weight:600;color:#065f46}
+.sel-item span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sel-item.manual{background:#fdf4ff;border-color:#d8b4fe;color:#6b21a8}
+.sel-item.weak-warn{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
+
+/* Results */
+.result-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;
+  padding:1.2rem;margin-bottom:1.5rem}
+.result-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap}
+.result-pair{font-weight:800;font-size:1rem;color:var(--navy)}
+.result-n{font-size:.78rem;color:var(--muted)}
+
+.chart-wrap{position:relative;height:320px;margin-bottom:.8rem}
+
+/* Severity colors */
+.sv-normal{color:var(--muted)}
+.sv-attention{color:var(--amber)}
+.sv-anomaly{color:var(--orange)}
+.sv-sig{color:var(--red)}
+.sv-critical{color:var(--crimson)}
+.sv-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.74rem;font-weight:700}
+.sv-badge.normal{background:#f1f5f9;color:var(--muted)}
+.sv-badge.attention{background:var(--amber-bg);color:var(--amber)}
+.sv-badge.anomaly{background:var(--orange-bg);color:var(--orange)}
+.sv-badge.sig{background:var(--red-bg);color:var(--red)}
+.sv-badge.critical{background:var(--crimson-bg);color:var(--crimson)}
+
+/* Anomaly table */
+.anomaly-wrap{overflow-x:auto;margin-top:.6rem}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{padding:7px 10px;text-align:right;font-weight:700;color:var(--muted);
+  font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:1px solid var(--border);background:var(--bg);white-space:nowrap}
+tbody td{padding:7px 10px;border-bottom:1px solid #f0f4fb;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+
+/* Legend */
+.chart-legend{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;font-size:.75rem;
+  margin-bottom:.8rem;padding:.5rem .7rem;background:var(--bg);border-radius:7px}
+.leg-item{display:flex;align-items:center;gap:.35rem;color:var(--navy)}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.leg-diamond{width:10px;height:10px;transform:rotate(45deg);flex-shrink:0}
+.leg-line{width:16px;height:2px;border-top:2px dashed #888;flex-shrink:0}
+
+/* Weak warning */
+.weak-banner{background:var(--amber-bg);border:1px solid #fcd34d;border-radius:8px;
+  padding:.6rem 1rem;font-size:.8rem;color:var(--amber);margin-bottom:.8rem;
+  display:flex;align-items:flex-start;gap:.5rem}
+
+/* R² / model info */
+.model-info{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-size:.78rem;color:var(--muted);
+  margin-bottom:.8rem;padding:.5rem .7rem;border:1px solid var(--border);
+  border-radius:7px;background:var(--bg)}
+.model-info span strong{color:var(--navy)}
+
+/* Spinner */
 @keyframes spin{to{transform:rotate(360deg)}}
-.spinner{display:inline-block;width:22px;height:22px;border:3px solid #dce3ef;
-  border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle}
+.spinner{display:inline-block;width:18px;height:18px;border:2.5px solid #dce3ef;
+  border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 
-footer{max-width:1200px;margin:0 auto;padding:1.2rem 5vw;border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem}
-footer span{font-size:0.8rem;color:var(--muted)}
+/* Progress */
+.progress-wrap{margin:.8rem 0}
+.progress-bar{height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--blue);border-radius:4px;transition:width .3s}
+.progress-label{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+
+footer{max-width:1100px;margin:0 auto;padding:1rem 5vw;border-top:1px solid var(--border);
+  font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="auth-guard.js"></script>
 </head>
 <body>
 <header>
   <div>
     <a class="logo" href="index.html">קנדל <span>BI</span></a>
-    <div class="tagline">כלים לביקורת נתונים</div>
   </div>
+  <div class="privacy-badge">🔒 הנתונים נשארים בדפדפן — לא נשלח שרת</div>
 </header>
+<div id="qa-banner" style="background:#fffbeb;border-bottom:2px solid #f5d48a;padding:8px 5vw;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-family:'Heebo',sans-serif;direction:rtl">
+  <span>⚠️</span>
+  <span style="font-size:0.85rem;color:#7a5200;flex:1;line-height:1.5"><strong>כלי זה לא עבר עדיין בקרת איכות מלאה</strong> — יש לבדוק ולאמת את התוצאות לפני הסתמכות עליהם. נתקלתם בבעיה? נשמח לשמוע: <a href="tel:050-6914898" style="color:#b87400;font-weight:700;text-decoration:none">050-6914898</a></span>
+  <button onclick="document.getElementById('qa-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#b87400;font-size:1.1rem;padding:0;line-height:1;flex-shrink:0">✕</button>
+</div>
+
+<!-- Step bar -->
+<div class="steps-bar" id="steps-bar">
+  <div class="step-item active" id="si-1"><div class="step-num">1</div><span>העלאת קובץ</span></div>
+  <div class="step-sep" id="ss-1"></div>
+  <div class="step-item" id="si-2"><div class="step-num">2</div><span>גילוי קשרים</span></div>
+  <div class="step-sep" id="ss-2"></div>
+  <div class="step-item" id="si-3"><div class="step-num">3</div><span>בחירת זוגות</span></div>
+  <div class="step-sep" id="ss-3"></div>
+  <div class="step-item" id="si-4"><div class="step-num">4</div><span>ניתוח מלא</span></div>
+  <div class="step-sep" id="ss-4"></div>
+  <div class="step-item" id="si-5"><div class="step-num">5</div><span>תוצאות</span></div>
+</div>
 
 <main>
-  <!-- Upload -->
+
+<!-- ══ STEP 1: UPLOAD ══ -->
+<div id="section-upload">
   <div class="card">
-    <div class="card-title">🔍 זיהוי חריגות ויזואלי</div>
-    <p class="desc">
-      העלה קובץ Excel או CSV — הכלי יזהה אוטומטית זוגות עמודות מספריות מעניינים
-      ויציג תרשימי פיזור עם סימון חריגים וניתוח טקסטואלי לכל תרשים.
-    </p>
-    <div id="dz" onclick="document.getElementById('fi').click()">
+    <div class="card-title">📂 העלאת קובץ</div>
+    <p class="desc">העלה קובץ Excel או CSV. כל העיבוד מתבצע מקומית בדפדפן — הנתונים לא עוזבים את המחשב שלך.</p>
+    <div id="dz">
       <div class="ub-icon">📊</div>
-      <div class="ub-text">לחץ לבחירת קובץ, או גרור לכאן<br><small>Excel (.xlsx, .xls) &nbsp;·&nbsp; CSV</small></div>
+      <div class="ub-text">לחץ לבחירת קובץ, או גרור לכאן<br><small>Excel (.xlsx, .xls) · CSV</small></div>
     </div>
     <input type="file" id="fi" accept=".xlsx,.xls,.csv">
+    <div id="sheet-row" class="sheet-row hidden">
+      <label for="sheet-sel">בחר גיליון:</label>
+      <select class="sel" id="sheet-sel"></select>
+      <button class="btn-outline btn-sm" id="btn-load-sheet">טען גיליון</button>
+    </div>
+    <div id="file-chips" class="info-chips"></div>
   </div>
+  <div style="display:flex;justify-content:flex-end">
+    <button class="btn hidden" id="btn-start-discovery">התחל גילוי סטטיסטי ←</button>
+  </div>
+</div>
 
-  <!-- Config -->
-  <div class="card hidden" id="config-card">
-    <div class="card-title">⚙️ הגדרות ניתוח</div>
-    <div class="controls-row">
-      <div class="ctrl">
-        <label>סף חריג (מרחק סטנדרטי σ): <strong id="thresh-val">2.5</strong></label>
-        <input type="range" id="thresh" min="1.5" max="4" step="0.5" value="2.5"
-          oninput="document.getElementById('thresh-val').textContent=this.value">
+<!-- ══ STEP 2: DISCOVERY ══ -->
+<div id="section-discovery" class="hidden">
+  <div class="card">
+    <div class="card-title">🔬 גילוי קשרים סטטיסטיים</div>
+    <p class="desc" id="disco-desc">מחפש קשרים סטטיסטיים בין עמודות מספריות...</p>
+    <div id="disco-spinner" style="text-align:center;padding:2rem">
+      <span class="spinner"></span> <span style="color:var(--muted);font-size:.9rem">מחשב על דגימה...</span>
+    </div>
+    <div id="disco-results" class="hidden">
+      <div class="top-n-bar">
+        <span>הצג:</span>
+        <button class="n-btn active" data-n="5">5</button>
+        <button class="n-btn" data-n="10">10</button>
+        <button class="n-btn" data-n="20">20</button>
+        <button class="n-btn" data-n="50">50</button>
+        <button class="n-btn" data-n="100">100</button>
+        <button class="n-btn" data-n="all">הכל</button>
+        <input id="n-custom" type="number" min="1" placeholder="מותאם" title="מספר מותאם">
       </div>
-      <div class="ctrl">
-        <label>מספר תרשימים:</label>
-        <input type="number" id="top-n" value="5" min="1" max="15">
-      </div>
-      <div class="ctrl">
-        <label>שיטת זיהוי:</label>
-        <select id="method">
-          <option value="euclidean">מרחק אוקלידי (Z-score)</option>
-          <option value="iqr">IQR (רבעוני)</option>
-          <option value="mahal">מהלנוביס (שומר צורת ענן)</option>
-        </select>
-      </div>
-      <button class="btn" id="btn-run" onclick="runAnalysis()">הרץ ניתוח 🔎</button>
+      <div id="disco-grid" class="disco-grid"></div>
     </div>
   </div>
+</div>
 
-  <!-- Results -->
-  <div class="card hidden" id="results-card">
-    <div class="card-title">📈 תוצאות</div>
-    <div class="chips" id="summary-chips"></div>
-    <div id="charts-grid"></div>
-    <div class="no-results hidden" id="no-results"></div>
+<!-- ══ STEP 3: SELECT PAIRS ══ -->
+<div id="section-select" class="hidden">
+  <div class="card">
+    <div class="card-title">✅ בחירת זוגות לניתוח</div>
+    <div id="selected-list" class="selected-list"></div>
+
+    <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:.5rem">הוסף זוג ידנית:</div>
+    <div class="manual-row">
+      <div class="ctrl">
+        <label for="m-col-a">עמודה א׳</label>
+        <select class="sel" id="m-col-a"></select>
+      </div>
+      <div class="ctrl">
+        <label for="m-col-b">עמודה ב׳</label>
+        <select class="sel" id="m-col-b"></select>
+      </div>
+      <button class="btn-outline btn-sm" id="btn-add-manual" style="margin-bottom:0">הוסף זוג</button>
+    </div>
+    <div id="manual-warn" class="hidden" style="font-size:.8rem;color:var(--amber);margin-top:.4rem"></div>
   </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <button class="btn-outline btn-sm" onclick="goBack()">← חזרה לגילוי</button>
+    <button class="btn" id="btn-run-analysis">הרץ ניתוח מלא (100% נתונים) →</button>
+  </div>
+</div>
+
+<!-- ══ STEP 4: PROGRESS ══ -->
+<div id="section-progress" class="hidden">
+  <div class="card" style="text-align:center;padding:2.5rem">
+    <div class="ub-icon"><span class="spinner" style="width:36px;height:36px;border-width:4px"></span></div>
+    <div style="font-size:1rem;font-weight:700;color:var(--navy);margin:.8rem 0 .4rem">מנתח 100% מהנתונים...</div>
+    <div id="prog-label" class="progress-label">מכין...</div>
+    <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div></div>
+  </div>
+</div>
+
+<!-- ══ STEP 5: RESULTS ══ -->
+<div id="section-results" class="hidden">
+  <div class="card" style="padding:.9rem 1.2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+      <div class="card-title" style="margin:0">📈 תוצאות הניתוח</div>
+      <button class="btn-outline btn-sm" onclick="resetAll()">ניתוח חדש</button>
+    </div>
+  </div>
+  <div id="results-container"></div>
+</div>
+
 </main>
 
 <footer>
   <span>© 2025 קנדל BI · כל הזכויות שמורות</span>
+  <span>🔒 כל הנתונים מעובדים מקומית בדפדפן בלבד</span>
 </footer>
 
 <script>
-// ── State ──
-let fileData = null;
-const chartInstances = [];
+// ═══════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════
+const MIN_SAMPLE = 2000;
+const MAX_SAMPLE = 30000;
 
-// ── Drop zone ──
+const SEV_THRESHOLDS = { attention: 2.5, anomaly: 3.5, sig: 5.0, critical: 7.0 };
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let fileData       = null;   // { headers, rows, fileName, numCols, wb, sheetNames }
+let discoveredPairs = [];    // sorted by composite score
+let selectedPairs  = [];     // { colA, colB, manual, weakWarn }
+let chartInstances = [];
+let currentTopN    = 5;
+
+// ═══════════════════════════════════════════════════════
+// UTILITY
+// ═══════════════════════════════════════════════════════
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return NaN;
+  if (typeof v === 'number') return isFinite(v) ? v : NaN;
+  const s = String(v).replace(/[\s,،]/g, '').replace('%', '').replace(/[₪$€£]/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? NaN : n;
+}
+
+function mean(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((s, v) => s + v, 0) / arr.length;
+}
+
+function median(arr) {
+  if (!arr.length) return 0;
+  const s = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+function std(arr) {
+  if (arr.length < 2) return 0;
+  const m = mean(arr);
+  return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / (arr.length - 1));
+}
+
+function pearson(xs, ys) {
+  const n = xs.length;
+  if (n < 3) return 0;
+  const mx = mean(xs), my = mean(ys);
+  let num = 0, dx2 = 0, dy2 = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - mx, dy = ys[i] - my;
+    num += dx * dy; dx2 += dx * dx; dy2 += dy * dy;
+  }
+  const denom = Math.sqrt(dx2 * dy2);
+  return denom < 1e-12 ? 0 : num / denom;
+}
+
+function rankArray(arr) {
+  const indexed = arr.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
+  const ranks = new Array(arr.length);
+  let i = 0;
+  while (i < indexed.length) {
+    let j = i;
+    while (j < indexed.length && indexed[j][0] === indexed[i][0]) j++;
+    const r = (i + j - 1) / 2 + 1;
+    for (let k = i; k < j; k++) ranks[indexed[k][1]] = r;
+    i = j;
+  }
+  return ranks;
+}
+
+function spearman(xs, ys) {
+  if (xs.length < 3) return 0;
+  return pearson(rankArray(xs), rankArray(ys));
+}
+
+function madScale(residuals) {
+  const m = median(residuals);
+  const absDevs = residuals.map(r => Math.abs(r - m));
+  const madVal  = median(absDevs);
+  return madVal > 0 ? 1.4826 * madVal : (std(residuals) || 1);
+}
+
+function linReg(xs, ys) {
+  const n = xs.length;
+  if (n < 3) return null;
+  const mx = mean(xs), my = mean(ys);
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - mx;
+    num += dx * (ys[i] - my);
+    den += dx * dx;
+  }
+  if (Math.abs(den) < 1e-12) return null;
+  const slope     = num / den;
+  const intercept = my - slope * mx;
+  return { slope, intercept };
+}
+
+function randomSample(rows, n) {
+  if (rows.length <= n) return rows;
+  const copy  = [...rows];
+  const taken = [];
+  const pool  = copy.length;
+  // Fisher-Yates partial
+  for (let i = 0; i < n; i++) {
+    const j = i + Math.floor(Math.random() * (pool - i));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+    taken.push(copy[i]);
+  }
+  return taken;
+}
+
+function sampleSize(total) {
+  return Math.min(total, Math.max(Math.ceil(total * 0.10), MIN_SAMPLE), MAX_SAMPLE);
+}
+
+function formatNum(v) {
+  if (v === null || v === undefined || (typeof v === 'number' && !isFinite(v))) return '—';
+  if (typeof v !== 'number') v = parseFloat(v);
+  if (isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+  if (abs >= 1e4) return v.toLocaleString('he-IL', {maximumFractionDigits: 0});
+  return parseFloat(v.toFixed(3)).toLocaleString('he-IL', {maximumFractionDigits: 3});
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls)  e.className  = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+// ═══════════════════════════════════════════════════════
+// NUMERIC COLUMN DETECTION  (pure statistics, no keywords)
+// ═══════════════════════════════════════════════════════
+function detectNumericCols(headers, rows) {
+  const cols = [];
+  for (let ci = 0; ci < headers.length; ci++) {
+    const vals = rows.map(r => toNum(r[ci])).filter(v => !isNaN(v));
+    const nonEmpty = rows.filter(r => r[ci] !== '' && r[ci] !== null && r[ci] !== undefined).length;
+    const coverage = nonEmpty > 0 ? vals.length / nonEmpty : 0;
+    if (vals.length < 5 || coverage < 0.5) continue;
+    const sd = std(vals);
+    const isConstant = sd < 1e-10;
+    cols.push({
+      ci,
+      label: String(headers[ci] || `עמודה ${ci + 1}`),
+      valid: vals.length,
+      total: rows.length,
+      constant: isConstant,
+      coverage
+    });
+  }
+  return cols;
+}
+
+// ═══════════════════════════════════════════════════════
+// PAIR VALUE EXTRACTION
+// ═══════════════════════════════════════════════════════
+function getPairValues(colA, colB, rows) {
+  const xs = [], ys = [], idxs = [];
+  for (let i = 0; i < rows.length; i++) {
+    const x = toNum(rows[i][colA.ci]);
+    const y = toNum(rows[i][colB.ci]);
+    if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
+      xs.push(x); ys.push(y); idxs.push(i);
+    }
+  }
+  return { xs, ys, idxs };
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPOSITE DISCOVERY SCORE
+// ═══════════════════════════════════════════════════════
+function compositeScore(rP, rS, n) {
+  const ap = Math.abs(rP), as_ = Math.abs(rS);
+  const strength    = (ap + as_) / 2;
+  // consistency reward is meaningful only when strength is high
+  const consistency = Math.min(ap, as_) / (Math.max(ap, as_) + 0.01);
+  const nBonus      = Math.min(1, Math.log10(Math.max(n, 2)) / 4);
+  return strength * 0.70 + strength * consistency * 0.15 + nBonus * 0.15;
+}
+
+function strengthLabel(score) {
+  if (score >= 0.70) return { text: 'קשר סטטיסטי חזק מאוד',  cls: 'str-very-strong' };
+  if (score >= 0.50) return { text: 'קשר סטטיסטי חזק',       cls: 'str-strong' };
+  if (score >= 0.30) return { text: 'קשר סטטיסטי בינוני',    cls: 'str-moderate' };
+  return               { text: 'קשר סטטיסטי חלש',            cls: 'str-weak' };
+}
+
+function severityInfo(score) {
+  if (score >= SEV_THRESHOLDS.critical)  return { label: 'חריג קריטי',      cls: 'critical', icon: '⚠' };
+  if (score >= SEV_THRESHOLDS.sig)       return { label: 'חריג משמעותי',    cls: 'sig',      icon: '◆◆' };
+  if (score >= SEV_THRESHOLDS.anomaly)   return { label: 'חריג',            cls: 'anomaly',  icon: '◆' };
+  if (score >= SEV_THRESHOLDS.attention) return { label: 'שים לב',          cls: 'attention', icon: '▲' };
+  return                                  { label: 'תקין',                   cls: 'normal',   icon: '●' };
+}
+
+// ═══════════════════════════════════════════════════════
+// FILE LOADING
+// ═══════════════════════════════════════════════════════
 const dz = document.getElementById('dz');
 const fi = document.getElementById('fi');
+
 window.addEventListener('dragover', e => e.preventDefault());
 window.addEventListener('drop',     e => e.preventDefault());
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); loadFile(e.dataTransfer.files[0]); });
-fi.addEventListener('change', e => loadFile(e.target.files[0]));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+dz.addEventListener('click', () => fi.click());
+fi.addEventListener('change', e => handleFile(e.target.files[0]));
 
-// ── Chart.js defaults ──
-Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
-Chart.defaults.font.size = 11;
-
-// ── File loading ──
-function loadFile(file) {
+function handleFile(file) {
   if (!file) return;
-  dz.querySelector('.ub-icon').innerHTML = '<div class="spinner"></div>';
-  dz.querySelector('.ub-text').textContent = 'טוען קובץ...';
-
+  setDzLoading();
   const reader = new FileReader();
   reader.onload = ev => {
     try {
-      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', raw:true});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true});
-      if (!raw.length) throw new Error('הקובץ ריק');
-      const headers = (raw[0] || []).map(h => String(h || '').trim());
-      const rows = raw.slice(1).filter(r => r.some(c => c !== '' && c !== null));
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', raw: true });
+      const sheetNames = wb.SheetNames;
+      fileData = { fileName: file.name, wb, sheetNames, headers: null, rows: null, numCols: null };
 
-      fileData = {headers, rows, fileName: file.name};
-      dz.classList.add('loaded');
-      dz.querySelector('.ub-icon').textContent = '✅';
-      dz.querySelector('.ub-text').textContent =
-        `${file.name} — ${rows.length.toLocaleString()} שורות, ${headers.length} עמודות`;
-      document.getElementById('config-card').classList.remove('hidden');
-    } catch(e) {
-      dz.querySelector('.ub-icon').textContent = '❌';
-      dz.querySelector('.ub-text').textContent = 'שגיאה: ' + e.message;
+      if (sheetNames.length > 1) {
+        showSheetSelector(sheetNames);
+      } else {
+        loadSheet(sheetNames[0]);
+      }
+    } catch (e) {
+      dzError('שגיאה בטעינת הקובץ: ' + e.message);
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-// ── Stat utils ──
-function mean(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
-
-function std(arr) {
-  if (arr.length < 2) return 0;
-  const m = mean(arr);
-  return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
+function setDzLoading() {
+  dz.querySelector('.ub-icon').innerHTML = '<span class="spinner"></span>';
+  dz.querySelector('.ub-text').textContent = 'טוען קובץ...';
 }
 
-function pearsonCorr(xs, ys) {
-  const n = xs.length;
-  if (n < 3) return 0;
-  const mx = mean(xs), my = mean(ys);
-  const sx = std(xs), sy = std(ys);
-  if (sx === 0 || sy === 0) return 0;
-  return xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / (n * sx * sy);
+function dzError(msg) {
+  dz.querySelector('.ub-icon').textContent = '❌';
+  dz.querySelector('.ub-text').textContent = msg;
 }
 
-function iqrBounds(arr) {
-  const s = [...arr].sort((a, b) => a - b);
-  const q1 = s[Math.floor(s.length * 0.25)];
-  const q3 = s[Math.floor(s.length * 0.75)];
-  const iqr = q3 - q1;
-  return [q1 - 1.5 * iqr, q3 + 1.5 * iqr];
-}
-
-function formatNum(v) {
-  if (v === null || v === undefined || isNaN(v)) return '—';
-  const abs = Math.abs(v);
-  if (abs >= 1e6) return (v / 1e6).toFixed(1) + 'M';
-  if (abs >= 1e3) return (v / 1e3).toFixed(1) + 'K';
-  if (Number.isInteger(v)) return v.toLocaleString('he-IL');
-  return parseFloat(v.toFixed(2)).toLocaleString('he-IL');
-}
-
-function toNum(v) {
-  if (typeof v === 'number') return isFinite(v) ? v : NaN;
-  const n = parseFloat(String(v).replace(/,/g, '').trim());
-  return isNaN(n) ? NaN : n;
-}
-
-// ── Column detection ──
-const FIN_KW = ['סכום','תשלום','עלות','מחיר','הכנסה','הוצאה','תקציב',
-  'שכר','עמלה','דמי','חיוב','זיכוי','מחזור','רווח','הפסד',
-  'total','amount','cost','price','revenue','expense','salary','fee','budget'];
-const LBL_KW = ['שם','name','id','מזהה','ספק','לקוח','עובד','client','vendor',
-  'customer','employee','description','תיאור','פירוט','חברה','company','קוד','code'];
-
-const isFinCol = h => FIN_KW.some(k => String(h).toLowerCase().includes(k));
-const isLblCol = h => LBL_KW.some(k => String(h).toLowerCase().includes(k));
-
-function findNumericCols(headers, rows) {
-  return headers.map((h, ci) => {
-    const vals = rows.map(r => toNum(r[ci])).filter(v => !isNaN(v));
-    const total = rows.filter(r => r[ci] !== '' && r[ci] !== null && r[ci] !== undefined).length;
-    if (vals.length < 5 || (total > 0 && vals.length / total < 0.55)) return null;
-    return {ci, label: h || `עמודה ${ci + 1}`, isFinancial: isFinCol(h)};
-  }).filter(Boolean);
-}
-
-function findLabelCol(headers, rows) {
-  // Prefer explicit label keywords
-  for (let ci = 0; ci < headers.length; ci++) {
-    if (isLblCol(headers[ci])) return ci;
-  }
-  // Fallback: first mostly-string column among first 4
-  for (let ci = 0; ci < Math.min(4, headers.length); ci++) {
-    const vals = rows.map(r => r[ci]).filter(v => v !== '' && v !== null);
-    const strCnt = vals.filter(v => isNaN(toNum(v))).length;
-    if (vals.length > 0 && strCnt / vals.length > 0.7) return ci;
-  }
-  return -1;
-}
-
-// ── Pair value extraction (aligned rows) ──
-function getPairValues(colA, colB, rows) {
-  const xs = [], ys = [], indices = [];
-  rows.forEach((row, ri) => {
-    const x = toNum(row[colA.ci]);
-    const y = toNum(row[colB.ci]);
-    if (!isNaN(x) && !isNaN(y)) { xs.push(x); ys.push(y); indices.push(ri); }
+function showSheetSelector(names) {
+  const sel = document.getElementById('sheet-sel');
+  sel.innerHTML = '';
+  names.forEach(n => {
+    const o = document.createElement('option');
+    o.textContent = n; // safe: textContent
+    o.value = n;
+    sel.appendChild(o);
   });
-  return {xs, ys, indices};
+  document.getElementById('sheet-row').classList.remove('hidden');
+  dz.querySelector('.ub-icon').textContent = '📋';
+  dz.querySelector('.ub-text').textContent = `נמצאו ${names.length} גיליונות — בחר גיליון`;
+  document.getElementById('btn-load-sheet').onclick = () => loadSheet(sel.value);
 }
 
-// ── Outlier detection ──
-function detectOutliers(xs, ys, method, threshold) {
-  const n = xs.length;
-  if (method === 'iqr') {
-    const [xlo, xhi] = iqrBounds(xs);
-    const [ylo, yhi] = iqrBounds(ys);
-    return xs.map((x, i) => x < xlo || x > xhi || ys[i] < ylo || ys[i] > yhi);
+function loadSheet(sheetName) {
+  const ws  = fileData.wb.Sheets[sheetName];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+  if (!raw.length) { dzError('הגיליון ריק'); return; }
+
+  const headers = (raw[0] || []).map(h => String(h ?? '').trim());
+  const rows    = raw.slice(1).filter(r => r.some(c => c !== '' && c !== null));
+  const numCols = detectNumericCols(headers, rows);
+
+  fileData.headers = headers;
+  fileData.rows    = rows;
+  fileData.numCols = numCols;
+  fileData.sheetName = sheetName;
+
+  const activeCols    = numCols.filter(c => !c.constant);
+  const constantCols  = numCols.filter(c => c.constant);
+  const pairCount     = activeCols.length * (activeCols.length - 1) / 2;
+
+  dz.classList.add('loaded');
+  dz.querySelector('.ub-icon').textContent = '✅';
+  dz.querySelector('.ub-text').textContent =
+    `${fileData.fileName} (${sheetName}) — ${rows.length.toLocaleString()} שורות, ${headers.length} עמודות`;
+
+  const chips = document.getElementById('file-chips');
+  chips.innerHTML = '';
+  addChip(chips, `${rows.length.toLocaleString()} שורות`, 'chip');
+  addChip(chips, `${headers.length} עמודות`, 'chip');
+  addChip(chips, `${activeCols.length} עמודות מספריות`, activeCols.length >= 2 ? 'chip ok' : 'chip warn');
+  addChip(chips, `${pairCount} זוגות אפשריים`, 'chip');
+  if (constantCols.length)
+    addChip(chips, `${constantCols.length} עמודות קבועות (יוחרגו)`, 'chip warn');
+
+  if (activeCols.length < 2) {
+    addChip(chips, 'נדרשות לפחות 2 עמודות מספריות שונות', 'chip warn');
+    return;
   }
-  if (method === 'mahal') {
-    // Mahalanobis: accounts for correlation between x and y
-    const mx = mean(xs), my = mean(ys);
-    const sx = std(xs), sy = std(ys);
-    if (sx === 0 || sy === 0) return xs.map(() => false);
-    const r  = pearsonCorr(xs, ys);
-    const det = 1 - r * r || 1e-9;
-    return xs.map((x, i) => {
-      const zx = (x - mx) / sx;
-      const zy = (ys[i] - my) / sy;
-      const d2 = (zx * zx - 2 * r * zx * zy + zy * zy) / det;
-      return Math.sqrt(d2) > threshold;
+
+  document.getElementById('btn-start-discovery').classList.remove('hidden');
+}
+
+function addChip(parent, text, cls) {
+  const c = el('span', cls);
+  c.textContent = text;
+  parent.appendChild(c);
+}
+
+// ═══════════════════════════════════════════════════════
+// STEP MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function setStep(n) {
+  [1,2,3,4,5].forEach(i => {
+    const si = document.getElementById(`si-${i}`);
+    si.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+    if (i < 5) {
+      const ss = document.getElementById(`ss-${i}`);
+      ss.className = 'step-sep' + (i < n ? ' done' : '');
+    }
+  });
+  ['upload','discovery','select','progress','results'].forEach((s, idx) => {
+    const sec = document.getElementById(`section-${s}`);
+    sec.classList.toggle('hidden', idx + 1 !== n);
+  });
+}
+
+function goBack() {
+  setStep(2);
+  renderDiscovery();
+}
+
+function resetAll() {
+  fileData = null;
+  discoveredPairs = [];
+  selectedPairs = [];
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+  document.getElementById('results-container').innerHTML = '';
+  document.getElementById('file-chips').innerHTML = '';
+  document.getElementById('btn-start-discovery').classList.add('hidden');
+  dz.className = '';
+  dz.querySelector('.ub-icon').textContent = '📊';
+  dz.querySelector('.ub-text').innerHTML =
+    'לחץ לבחירת קובץ, או גרור לכאן<br><small>Excel (.xlsx, .xls) · CSV</small>';
+  document.getElementById('sheet-row').classList.add('hidden');
+  fi.value = '';
+  setStep(1);
+}
+
+// ═══════════════════════════════════════════════════════
+// STAGE 1: DISCOVERY
+// ═══════════════════════════════════════════════════════
+document.getElementById('btn-start-discovery').onclick = () => {
+  setStep(2);
+  runDiscovery();
+};
+
+function runDiscovery() {
+  document.getElementById('disco-spinner').classList.remove('hidden');
+  document.getElementById('disco-results').classList.add('hidden');
+
+  const { rows, numCols } = fileData;
+  const activeCols = numCols.filter(c => !c.constant);
+  const n       = sampleSize(rows.length);
+  const sample  = randomSample(rows, n);
+
+  const desc = document.getElementById('disco-desc');
+  desc.textContent = `דוגם ${n.toLocaleString()} שורות מתוך ${rows.length.toLocaleString()} לגילוי מהיר...`;
+
+  setTimeout(() => {
+    const pairs = [];
+    for (let i = 0; i < activeCols.length - 1; i++) {
+      for (let j = i + 1; j < activeCols.length; j++) {
+        const A = activeCols[i], B = activeCols[j];
+        const { xs, ys } = getPairValues(A, B, sample);
+        if (xs.length < 10) continue;
+        const rP  = pearson(xs, ys);
+        const rS  = spearman(xs, ys);
+        const score = compositeScore(rP, rS, xs.length);
+        pairs.push({ colA: A, colB: B, rP, rS, score, n: xs.length });
+      }
+    }
+    pairs.sort((a, b) => b.score - a.score);
+    discoveredPairs = pairs;
+
+    desc.textContent =
+      `נמצאו ${pairs.length} זוגות. להלן הקשרים הסטטיסטיים החזקים ביותר שנמצאו בנתונים:`;
+
+    document.getElementById('disco-spinner').classList.add('hidden');
+    document.getElementById('disco-results').classList.remove('hidden');
+    renderDiscovery();
+    setupNButtons();
+  }, 80);
+}
+
+function setupNButtons() {
+  document.querySelectorAll('.n-btn').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.n-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('n-custom').value = '';
+      currentTopN = b.dataset.n === 'all' ? Infinity : parseInt(b.dataset.n);
+      renderDiscovery();
+    };
+  });
+  document.getElementById('n-custom').oninput = function() {
+    const v = parseInt(this.value);
+    if (!isNaN(v) && v > 0) {
+      document.querySelectorAll('.n-btn').forEach(x => x.classList.remove('active'));
+      currentTopN = v;
+      renderDiscovery();
+    }
+  };
+}
+
+function renderDiscovery() {
+  const grid  = document.getElementById('disco-grid');
+  grid.innerHTML = '';
+  const shown = discoveredPairs.slice(0, currentTopN === Infinity ? undefined : currentTopN);
+
+  shown.forEach((p, idx) => {
+    const card = buildDiscoCard(p, idx);
+    grid.appendChild(card);
+  });
+
+  setStep(2);
+  document.getElementById('section-select').classList.remove('hidden');
+  buildManualDropdowns();
+  renderSelectedList();
+}
+
+function buildDiscoCard(p, idx) {
+  const isSelected = selectedPairs.some(s => sameKey(s, p));
+  const str        = strengthLabel(p.score);
+
+  const card = el('div', 'disco-card' + (isSelected ? ' selected' : ''));
+  card.dataset.idx = idx;
+
+  const info = el('div', 'disco-info');
+
+  // Pair header
+  const pairDiv = el('div', 'disco-pair');
+  pairDiv.appendChild(el('span', '', p.colA.label));
+  pairDiv.appendChild(el('span', '', ' ↔ '));
+  pairDiv.appendChild(el('span', '', p.colB.label));
+  const badge = el('span', 'disco-strength ' + str.cls, str.text);
+  pairDiv.appendChild(badge);
+  info.appendChild(pairDiv);
+
+  // Meta
+  const dir = p.rP > 0.05 ? 'חיובי' : p.rP < -0.05 ? 'שלילי' : 'ניטרלי';
+  const meta = el('div', 'disco-meta');
+  meta.textContent = `${p.n.toLocaleString()} תצפיות תקינות · כיוון קשר: ${dir}`;
+  info.appendChild(meta);
+
+  // Tech toggle
+  const toggle = el('button', 'tech-toggle', 'פרטים טכניים');
+  const tech   = el('div', 'tech-details');
+
+  const techP = el('p');
+  techP.textContent =
+    `Pearson r = ${p.rP.toFixed(3)} · Spearman ρ = ${p.rS.toFixed(3)} · ` +
+    `ציון מורכב: ${p.score.toFixed(3)}`;
+  tech.appendChild(techP);
+
+  toggle.onclick = () => {
+    const open = tech.classList.toggle('open');
+    toggle.textContent = open ? 'הסתר פרטים' : 'פרטים טכניים';
+  };
+  info.appendChild(toggle);
+  info.appendChild(tech);
+  card.appendChild(info);
+
+  // Action buttons
+  const actions = el('div', 'disco-actions');
+  if (!isSelected) {
+    const btnAdd = el('button', 'btn btn-sm', '+ בחר');
+    btnAdd.onclick = () => {
+      addPair(p.colA, p.colB, false, false);
+      renderDiscovery();
+    };
+    actions.appendChild(btnAdd);
+  } else {
+    const btnRm = el('button', 'btn-danger btn-sm', '✕ הסר');
+    btnRm.onclick = () => {
+      removePair(p.colA, p.colB);
+      renderDiscovery();
+    };
+    actions.appendChild(btnRm);
+  }
+  card.appendChild(actions);
+  return card;
+}
+
+// ═══════════════════════════════════════════════════════
+// PAIR MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function pairKey(colA, colB) {
+  return `${colA.ci}__${colB.ci}`;
+}
+function sameKey(a, b) {
+  return (a.colA.ci === b.colA.ci && a.colB.ci === b.colB.ci) ||
+         (a.colA.ci === b.colB.ci && a.colB.ci === b.colA.ci);
+}
+function addPair(colA, colB, manual, weakWarn) {
+  if (selectedPairs.some(s => sameKey(s, { colA, colB }))) return;
+  selectedPairs.push({ colA, colB, manual: !!manual, weakWarn: !!weakWarn });
+  renderSelectedList();
+}
+function removePair(colA, colB) {
+  selectedPairs = selectedPairs.filter(s => !sameKey(s, { colA, colB }));
+  renderSelectedList();
+}
+
+function buildManualDropdowns() {
+  const selA = document.getElementById('m-col-a');
+  const selB = document.getElementById('m-col-b');
+  const activeCols = fileData.numCols.filter(c => !c.constant);
+  [selA, selB].forEach(s => {
+    s.innerHTML = '';
+    activeCols.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.ci;
+      o.textContent = c.label; // safe
+      s.appendChild(o);
     });
+  });
+  if (activeCols.length > 1) selB.selectedIndex = 1;
+}
+
+document.getElementById('btn-add-manual').onclick = () => {
+  const activeCols = fileData.numCols.filter(c => !c.constant);
+  const ciA = parseInt(document.getElementById('m-col-a').value);
+  const ciB = parseInt(document.getElementById('m-col-b').value);
+  if (ciA === ciB) {
+    showManualWarn('יש לבחור שתי עמודות שונות.');
+    return;
   }
-  // Default: euclidean z-score distance
-  const mx = mean(xs), my = mean(ys);
-  const sx = std(xs), sy = std(ys);
-  if (sx === 0 || sy === 0) return xs.map(() => false);
-  return xs.map((x, i) => {
-    const zx = (x - mx) / sx;
-    const zy = (ys[i] - my) / sy;
-    return Math.sqrt(zx * zx + zy * zy) > threshold;
-  });
-}
+  const colA = activeCols.find(c => c.ci === ciA);
+  const colB = activeCols.find(c => c.ci === ciB);
+  if (!colA || !colB) return;
 
-function computeDistances(xs, ys) {
-  const mx = mean(xs), my = mean(ys);
-  const sx = std(xs) || 1, sy = std(ys) || 1;
-  return xs.map((x, i) => {
-    const zx = (x - mx) / sx;
-    const zy = (ys[i] - my) / sy;
-    return Math.sqrt(zx * zx + zy * zy);
-  });
-}
-
-// ── Pair scoring ──
-function scorePair(colA, colB, rows, method, threshold) {
-  const {xs, ys, indices} = getPairValues(colA, colB, rows);
-  if (xs.length < 8) return null;
-  if (std(xs) === 0 || std(ys) === 0) return null;
-
-  const outlierMask = detectOutliers(xs, ys, method, threshold);
-  const distances   = computeDistances(xs, ys);
-  const nOut  = outlierMask.filter(Boolean).length;
-  const ratio = nOut / xs.length;
-
-  if (nOut === 0 || ratio > 0.3) return null;
-
-  // Score 1: ratio sweet-spot 2%–12%
-  let ratioScore;
-  if      (ratio >= 0.02 && ratio <= 0.12) ratioScore = 1 - Math.abs(ratio - 0.06) / 0.06;
-  else if (ratio < 0.02)                    ratioScore = ratio / 0.02 * 0.4;
-  else                                      ratioScore = Math.max(0, 0.5 - (ratio - 0.12) * 4);
-  ratioScore = Math.max(0, Math.min(1, ratioScore));
-
-  // Score 2: correlation (moderate is interesting)
-  const corr = pearsonCorr(xs, ys);
-  const absCorr = Math.abs(corr);
-  const corrScore = absCorr > 0.08 && absCorr < 0.99
-    ? absCorr * (absCorr < 0.85 ? 1 : (1 - (absCorr - 0.85) * 6))
-    : absCorr * 0.1;
-
-  // Score 3: separation between outliers and cloud
-  const outDists  = distances.filter((_, i) => outlierMask[i]);
-  const normDists = distances.filter((_, i) => !outlierMask[i]);
-  const avgOut  = outDists.length  ? mean(outDists)  : 0;
-  const avgNorm = normDists.length ? mean(normDists) : 1;
-  const separation = Math.min(avgOut / (avgNorm + 0.5), 5) / 5;
-
-  // Score 4: financial bonus
-  const finBonus = (colA.isFinancial || colB.isFinancial) ? 0.18 : 0;
-
-  const score = ratioScore * 0.35 + corrScore * 0.25 + separation * 0.40 + finBonus;
-  return {score, xs, ys, indices, outlierMask, distances, corr, nOut, ratio};
-}
-
-// ── Insight text ──
-function generateInsight(res, xLabel, yLabel, labelColIdx, rows) {
-  const {xs, ys, indices, outlierMask, distances, corr, nOut} = res;
-  const pct = Math.round(nOut / xs.length * 100);
-
-  // Sort outliers by distance descending
-  const outlierEntries = indices
-    .map((ri, li) => ({ri, li, d: distances[li], x: xs[li], y: ys[li], isOut: outlierMask[li]}))
-    .filter(e => e.isOut)
-    .sort((a, b) => b.d - a.d);
-
-  const top = outlierEntries[0];
-
-  const getLabel = (ri) =>
-    labelColIdx >= 0 && rows[ri] ? String(rows[ri][labelColIdx] || '').trim() : '';
-
-  let html = `<div class="ins-row"><span class="ins-icon">📊</span><span>
-    נמצאו <strong>${nOut} חריגים</strong> מתוך ${xs.length.toLocaleString()} רשומות (${pct}%) —
-    עמודות: <strong>${xLabel}</strong> מול <strong>${yLabel}</strong>.
-  </span></div>`;
-
-  if (top) {
-    const lbl = getLabel(top.ri);
-    html += `<div class="ins-row"><span class="ins-icon">🔴</span><span>
-      החריג הבולט ביותר${lbl ? `: <strong>${lbl}</strong>` : ''} —
-      ${xLabel}: <strong>${formatNum(top.x)}</strong>,
-      ${yLabel}: <strong>${formatNum(top.y)}</strong>
-      <span style="color:var(--muted)">(מרחק: ${top.d.toFixed(1)}σ)</span>.
-    </span></div>`;
+  // Check if already selected
+  if (selectedPairs.some(s => sameKey(s, { colA, colB }))) {
+    showManualWarn('זוג זה כבר נבחר.');
+    return;
   }
 
-  const absCorr = Math.abs(corr);
-  const corrLabel = absCorr > 0.7 ? 'חזק' : absCorr > 0.35 ? 'בינוני' : 'חלש';
-  const corrDir   = corr > 0.05 ? 'חיובי' : corr < -0.05 ? 'שלילי' : '';
-  html += `<div class="ins-row"><span class="ins-icon">📐</span><span>
-    מתאם ${corrDir ? corrDir + ' ' : ''}${corrLabel} בין העמודות (r = ${corr.toFixed(2)}).
-    ${absCorr > 0.3 ? 'ניתן לצפות לקשר ליניארי — חריגים ממנו בולטים במיוחד.' : ''}
-  </span></div>`;
-
-  // Label tags for top outliers
-  if (labelColIdx >= 0) {
-    const tags = outlierEntries.slice(0, 6).map(e => getLabel(e.ri)).filter(Boolean);
-    if (tags.length) {
-      html += `<div class="outlier-tags">${tags.map(t => `<span class="outlier-tag">${t}</span>`).join('')}</div>`;
+  // Quick strength check from discovery or compute
+  let weakWarn = false;
+  const existing = discoveredPairs.find(p => sameKey(p, { colA, colB }));
+  if (existing) {
+    weakWarn = existing.score < 0.30;
+  } else {
+    const { xs, ys } = getPairValues(colA, colB, fileData.rows);
+    if (xs.length >= 5) {
+      const rP = pearson(xs, ys);
+      const rS = spearman(xs, ys);
+      weakWarn = compositeScore(rP, rS, xs.length) < 0.30;
     }
   }
 
-  return html;
+  if (weakWarn) {
+    showManualWarn(
+      'זוג זה נוסף ידנית, אך לא נמצא קשר סטטיסטי משמעותי. ניתן להמשיך בניתוח, ' +
+      'אך תוצאות זיהוי החריגים עלולות להיות פחות אמינות.'
+    );
+  } else {
+    clearManualWarn();
+  }
+
+  addPair(colA, colB, true, weakWarn);
+};
+
+function showManualWarn(msg) {
+  const w = document.getElementById('manual-warn');
+  w.textContent = '⚠ ' + msg;
+  w.classList.remove('hidden');
+}
+function clearManualWarn() {
+  document.getElementById('manual-warn').classList.add('hidden');
 }
 
-// ── Render single chart card ──
-function renderChartCard(res, xLabel, yLabel, rank) {
-  const card = document.createElement('div');
-  card.className = 'chart-card';
+function renderSelectedList() {
+  const container = document.getElementById('selected-list');
+  container.innerHTML = '';
+  const btn = document.getElementById('btn-run-analysis');
 
-  const isTop = rank === 1;
-  card.innerHTML = `
-    <div class="chart-header">
-      <div class="chart-pair">${xLabel} &nbsp;↔&nbsp; ${yLabel}</div>
-      <span class="rank-badge${isTop ? ' top' : ''}">${isTop ? '⭐ ' : ''}מקום ${rank}</span>
-    </div>
-    <div class="chart-wrap"><canvas></canvas></div>
-    <div class="insight">${res.insight}</div>
-  `;
+  if (!selectedPairs.length) {
+    const empty = el('div', 'desc', 'לא נבחרו זוגות עדיין. בחר לפחות זוג אחד מהגילוי או הוסף ידנית.');
+    container.appendChild(empty);
+    btn.disabled = true;
+    return;
+  }
 
-  const {xs, ys, outlierMask} = res;
-  const ctx = card.querySelector('canvas').getContext('2d');
-  const normalPts = [], outlierPts = [];
-  xs.forEach((x, i) => {
-    (outlierMask[i] ? outlierPts : normalPts).push({x, y: ys[i]});
+  selectedPairs.forEach((p, idx) => {
+    const item = el('div', 'sel-item' + (p.manual ? ' manual' : '') + (p.weakWarn ? ' weak-warn' : ''));
+    const label = el('span');
+    label.textContent = `${p.colA.label} ↔ ${p.colB.label}`;
+    if (p.manual)   { const t = el('span', '', ' [ידני]');   t.style.opacity = '.7'; item.appendChild(t); }
+    if (p.weakWarn) { const t = el('span', '', ' ⚠ קשר חלש'); t.style.fontSize = '.73rem'; label.appendChild(t); }
+    const rmBtn = el('button', 'btn-danger btn-sm', '✕');
+    rmBtn.onclick = () => { removePair(p.colA, p.colB); renderDiscovery(); };
+    item.appendChild(label);
+    item.appendChild(rmBtn);
+    container.appendChild(item);
   });
 
-  const chart = new Chart(ctx, {
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════
+// STAGE 3: FULL ANALYSIS
+// ═══════════════════════════════════════════════════════
+document.getElementById('btn-run-analysis').onclick = () => {
+  if (!selectedPairs.length) return;
+  setStep(4);
+  runFullAnalysis();
+};
+
+async function runFullAnalysis() {
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+  document.getElementById('results-container').innerHTML = '';
+
+  const pairs = [...selectedPairs];
+  const progFill  = document.getElementById('prog-fill');
+  const progLabel = document.getElementById('prog-label');
+
+  const results = [];
+  for (let i = 0; i < pairs.length; i++) {
+    const p = pairs[i];
+    progLabel.textContent = `מנתח זוג ${i + 1} מתוך ${pairs.length}: ${p.colA.label} ↔ ${p.colB.label}`;
+    progFill.style.width = ((i / pairs.length) * 100) + '%';
+    await tick();
+
+    const res = analyzeOnePair(p.colA, p.colB, p.manual, p.weakWarn);
+    if (res) results.push(res);
+  }
+
+  progFill.style.width = '100%';
+  progLabel.textContent = 'מציג תוצאות...';
+  await tick();
+
+  setStep(5);
+  results.forEach(r => {
+    const card = renderResultCard(r);
+    document.getElementById('results-container').appendChild(card);
+  });
+}
+
+function tick() {
+  return new Promise(resolve => setTimeout(resolve, 30));
+}
+
+function analyzeOnePair(colA, colB, manual, weakWarn) {
+  const { xs, ys, idxs } = getPairValues(colA, colB, fileData.rows);
+  const n = xs.length;
+  if (n < 5) return null;
+
+  const reg = linReg(xs, ys);
+  if (!reg) return null;
+
+  const { slope, intercept } = reg;
+  const expected  = xs.map(x => slope * x + intercept);
+  const residuals = ys.map((y, i) => y - expected[i]);
+
+  const scale    = madScale(residuals);
+  const aniScores = residuals.map(r => Math.abs(r) / scale);
+
+  const rP = pearson(xs, ys);
+  const r2 = rP * rP;
+  const rS = spearman(xs, ys);
+
+  const missing = fileData.rows.length - n;
+
+  return {
+    colA, colB, xs, ys, idxs, expected, residuals,
+    aniScores, reg, rP, r2, rS, n, missing, manual, weakWarn, scale
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER RESULT CARD
+// ═══════════════════════════════════════════════════════
+function renderResultCard(res) {
+  const { colA, colB, xs, ys, expected, aniScores, reg, rP, r2, rS, n, missing, manual, weakWarn } = res;
+
+  const wrap = el('div', 'result-card');
+
+  // Header
+  const hdr = el('div', 'result-header');
+  const pairLabel = el('span', 'result-pair');
+  pairLabel.textContent = `${colA.label} ↔ ${colB.label}`;
+  hdr.appendChild(pairLabel);
+  hdr.appendChild(el('span', 'result-n', `${n.toLocaleString()} תצפיות תקינות${missing ? ` · ${missing.toLocaleString()} חסרות` : ''}`));
+  if (manual) hdr.appendChild(el('span', 'chip', 'זוג ידני'));
+  wrap.appendChild(hdr);
+
+  // Weak warning
+  if (weakWarn) {
+    const wb = el('div', 'weak-banner');
+    wb.appendChild(el('span', '', '⚠ '));
+    wb.appendChild(el('span', '',
+      'זוג זה נוסף ידנית, אך לא נמצא קשר סטטיסטי משמעותי. ' +
+      'תוצאות זיהוי החריגים עלולות להיות פחות אמינות.'
+    ));
+    wrap.appendChild(wb);
+  }
+
+  // Model info
+  const mi = el('div', 'model-info');
+  appendModelInfo(mi, 'מתאם פירסון', rP.toFixed(3));
+  appendModelInfo(mi, 'מתאם ספירמן', rS.toFixed(3));
+  appendModelInfo(mi, 'R²', r2.toFixed(3));
+  const dir = slope > 0 ? 'חיובי' : 'שלילי';
+  appendModelInfo(mi, 'כיוון', dir);
+  wrap.appendChild(mi);
+
+  // Legend
+  const legend = buildLegend();
+  wrap.appendChild(legend);
+
+  // Chart
+  const chartDiv = el('div', 'chart-wrap');
+  const canvas   = document.createElement('canvas');
+  chartDiv.appendChild(canvas);
+  wrap.appendChild(chartDiv);
+
+  // Anomaly table
+  const anomalies = xs.map((x, i) => ({
+    x, y: ys[i], exp: expected[i], res: res.residuals[i],
+    score: aniScores[i], idx: res.idxs[i],
+    sev: severityInfo(aniScores[i])
+  })).filter(p => p.score >= SEV_THRESHOLDS.attention)
+     .sort((a, b) => b.score - a.score);
+
+  wrap.appendChild(buildAnomalySection(anomalies, colA, colB, n));
+
+  // Draw chart (after appended so canvas has dimensions)
+  requestAnimationFrame(() => {
+    drawChart(canvas, res, colA.label, colB.label);
+  });
+
+  return wrap;
+}
+
+function appendModelInfo(parent, label, value) {
+  const s = el('span');
+  s.appendChild(el('span', '', label + ': '));
+  s.appendChild(el('strong', '', value));
+  parent.appendChild(s);
+}
+
+function buildLegend() {
+  const legend = el('div', 'chart-legend');
+  const items = [
+    { shape: 'line', color: '', label: 'קו מגמה (רגרסיה)' },
+    { shape: 'dot',  color: 'rgba(100,116,139,.55)', label: 'תקין' },
+    { shape: 'dot',  color: '#b45309', label: 'שים לב' },
+    { shape: 'dot',  color: '#c2410c', label: 'חריג' },
+    { shape: 'dot',  color: '#b91c1c', label: 'חריג משמעותי' },
+    { shape: 'dot',  color: '#7f1d1d', label: 'חריג קריטי' },
+  ];
+  items.forEach(it => {
+    const item = el('div', 'leg-item');
+    if (it.shape === 'line') {
+      item.appendChild(el('div', 'leg-line'));
+    } else {
+      const dot = el('div', 'leg-dot');
+      dot.style.background = it.color;
+      item.appendChild(dot);
+    }
+    item.appendChild(el('span', '', it.label));
+    legend.appendChild(item);
+  });
+  return legend;
+}
+
+function buildAnomalySection(anomalies, colA, colB, n) {
+  const sec = el('div');
+
+  const title = el('div', 'card-title', `🔴 חריגים שזוהו (${anomalies.length})`);
+  title.style.cssText = 'font-size:.9rem;margin-top:.8rem;margin-bottom:.5rem';
+  sec.appendChild(title);
+
+  if (!anomalies.length) {
+    sec.appendChild(el('div', 'desc', 'לא זוהו חריגים משמעותיים בנתונים לזוג זה.'));
+    return sec;
+  }
+
+  const tableWrap = el('div', 'anomaly-wrap');
+  const table     = document.createElement('table');
+
+  // Header
+  const thead = document.createElement('thead');
+  const htr   = document.createElement('tr');
+  ['#', colA.label, colB.label, 'ערך צפוי', 'סטייה', 'ציון', 'סטטוס', 'הסבר'].forEach(h => {
+    const th = el('th', '', h);
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  anomalies.slice(0, 50).forEach((row, i) => {
+    const tr = document.createElement('tr');
+
+    // Row index
+    appendTd(tr, String(row.idx + 1));
+    // x value
+    appendTd(tr, formatNum(row.x));
+    // y actual
+    appendTd(tr, formatNum(row.y));
+    // expected
+    appendTd(tr, formatNum(row.exp));
+    // deviation
+    const diff = row.y - row.exp;
+    const diffTd = el('td', '', (diff >= 0 ? '+' : '') + formatNum(diff));
+    diffTd.style.color = diff > 0 ? 'var(--red)' : 'var(--blue)';
+    tr.appendChild(diffTd);
+    // score
+    appendTd(tr, row.score.toFixed(1) + 'σ');
+    // severity badge
+    const sevTd = document.createElement('td');
+    const badge = el('span', 'sv-badge ' + row.sev.cls, row.sev.icon + ' ' + row.sev.label);
+    sevTd.appendChild(badge);
+    tr.appendChild(sevTd);
+    // explanation
+    const expTd = document.createElement('td');
+    expTd.appendChild(buildExplanation(colA.label, colB.label, row.exp, row.y));
+    tr.appendChild(expTd);
+
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+  sec.appendChild(tableWrap);
+
+  if (anomalies.length > 50) {
+    const note = el('div', 'desc', `מוצגים 50 מתוך ${anomalies.length} חריגים.`);
+    note.style.marginTop = '.4rem';
+    sec.appendChild(note);
+  }
+
+  return sec;
+}
+
+function appendTd(tr, text) {
+  tr.appendChild(el('td', '', text));
+}
+
+function buildExplanation(colALabel, colBLabel, expVal, actVal) {
+  const span = document.createElement('span');
+  span.style.fontSize = '.76rem';
+  const diff = actVal - expVal;
+  const dir  = diff > 0 ? 'גבוה' : 'נמוך';
+  span.textContent =
+    `ערך צפוי: ${formatNum(expVal)}. הערך בפועל ${dir} ב-${formatNum(Math.abs(diff))}.`;
+  return span;
+}
+
+// ═══════════════════════════════════════════════════════
+// CHART DRAWING
+// ═══════════════════════════════════════════════════════
+function drawChart(canvas, res, xLabel, yLabel) {
+  const { xs, ys, aniScores, reg, n } = res;
+
+  // Color by severity
+  const pointColors = aniScores.map(s => {
+    if (s >= SEV_THRESHOLDS.critical)  return 'rgba(127,29,29,0.9)';
+    if (s >= SEV_THRESHOLDS.sig)       return 'rgba(185,28,28,0.9)';
+    if (s >= SEV_THRESHOLDS.anomaly)   return 'rgba(194,65,12,0.9)';
+    if (s >= SEV_THRESHOLDS.attention) return 'rgba(180,83,9,0.9)';
+    return 'rgba(100,116,139,0.45)';
+  });
+  const pointRadii = aniScores.map(s =>
+    s >= SEV_THRESHOLDS.sig ? 7 :
+    s >= SEV_THRESHOLDS.anomaly ? 6 :
+    s >= SEV_THRESHOLDS.attention ? 5 : 3.5
+  );
+
+  // Regression line
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const lineData = [
+    { x: xMin, y: reg.slope * xMin + reg.intercept },
+    { x: xMax, y: reg.slope * xMax + reg.intercept }
+  ];
+
+  const chart = new Chart(canvas.getContext('2d'), {
     type: 'scatter',
     data: {
       datasets: [
         {
-          label: `רגיל (${normalPts.length})`,
-          data: normalPts,
-          backgroundColor: 'rgba(30,106,191,0.4)',
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          label: 'תצפיות',
+          data: xs.map((x, i) => ({ x, y: ys[i] })),
+          backgroundColor: pointColors,
+          pointRadius: pointRadii,
+          pointHoverRadius: pointRadii.map(r => r + 2),
+          type: 'scatter',
           order: 2,
         },
         {
-          label: `חריג (${outlierPts.length})`,
-          data: outlierPts,
-          backgroundColor: 'rgba(198,40,40,0.82)',
-          borderColor: 'rgba(198,40,40,1)',
+          label: 'קו רגרסיה',
+          data: lineData,
+          type: 'line',
+          borderColor: 'rgba(100,116,139,0.7)',
           borderWidth: 1.5,
-          pointRadius: 7,
-          pointHoverRadius: 9,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
           order: 1,
         }
       ]
@@ -471,120 +1258,52 @@ function renderChartCard(res, xLabel, yLabel, rank) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: {duration: 400},
+      animation: { duration: 300 },
       plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          align: 'end',
-          labels: {font: {size: 11}, usePointStyle: true, padding: 10}
-        },
+        legend: { display: false },
         tooltip: {
           callbacks: {
             label: ctx => {
-              const {x, y} = ctx.parsed;
-              return `${xLabel}: ${formatNum(x)}  |  ${yLabel}: ${formatNum(y)}`;
+              if (ctx.datasetIndex === 1) return null;
+              const i = ctx.dataIndex;
+              const score = aniScores[i];
+              const sev   = severityInfo(score);
+              return [
+                `${xLabel}: ${formatNum(xs[i])}`,
+                `${yLabel}: ${formatNum(ys[i])}`,
+                `צפוי: ${formatNum(res.expected[i])}`,
+                `סטייה: ${score.toFixed(1)}σ · ${sev.label}`,
+              ];
             }
           }
         }
       },
       scales: {
         x: {
-          title: {display: true, text: xLabel, font: {size: 11, weight: '600'}},
-          ticks: {font: {size: 10}, maxTicksLimit: 7}
+          title: { display: true, text: xLabel, font: { size: 11, weight: '600' } },
+          ticks: { font: { size: 10 }, maxTicksLimit: 7 }
         },
         y: {
-          title: {display: true, text: yLabel, font: {size: 11, weight: '600'}},
-          ticks: {font: {size: 10}, maxTicksLimit: 7}
+          title: { display: true, text: yLabel, font: { size: 11, weight: '600' } },
+          ticks: { font: { size: 10 }, maxTicksLimit: 7 }
         }
       }
     }
   });
   chartInstances.push(chart);
-  return card;
 }
 
-// ── Main analysis ──
-function runAnalysis() {
-  if (!fileData) return;
+// ═══════════════════════════════════════════════════════
+// WIRING
+// ═══════════════════════════════════════════════════════
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.font.size   = 11;
 
-  const btn = document.getElementById('btn-run');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> מחשב...';
-
-  // Destroy previous charts
-  chartInstances.forEach(c => c.destroy());
-  chartInstances.length = 0;
-
-  setTimeout(() => {
-    try {
-      const {headers, rows} = fileData;
-      const threshold = parseFloat(document.getElementById('thresh').value) || 2.5;
-      const topN      = Math.max(1, parseInt(document.getElementById('top-n').value) || 5);
-      const method    = document.getElementById('method').value;
-
-      const numCols    = findNumericCols(headers, rows);
-      const labelColIdx = findLabelCol(headers, rows);
-
-      const chipsEl = document.getElementById('summary-chips');
-      const grid    = document.getElementById('charts-grid');
-      const noRes   = document.getElementById('no-results');
-      grid.innerHTML = '';
-      noRes.classList.add('hidden');
-      document.getElementById('results-card').classList.remove('hidden');
-
-      if (numCols.length < 2) {
-        chipsEl.innerHTML = '<span class="chip warn">לא נמצאו עמודות מספריות — בדוק שהקובץ מכיל נתוני מספרים</span>';
-        noRes.textContent = 'נדרשות לפחות 2 עמודות מספריות.';
-        noRes.classList.remove('hidden');
-        return;
-      }
-
-      // Evaluate pairs (cap at first 25 numeric columns → max 300 pairs)
-      const cols = numCols.slice(0, 25);
-      const scored = [];
-      for (let i = 0; i < cols.length - 1; i++) {
-        for (let j = i + 1; j < cols.length; j++) {
-          const res = scorePair(cols[i], cols[j], rows, method, threshold);
-          if (res) scored.push({...res, colA: cols[i], colB: cols[j]});
-        }
-      }
-      scored.sort((a, b) => b.score - a.score);
-
-      const totalPairs = cols.length * (cols.length - 1) / 2;
-      const finCols    = numCols.filter(c => c.isFinancial);
-
-      chipsEl.innerHTML = [
-        `<span class="chip">${numCols.length} עמודות מספריות</span>`,
-        `<span class="chip">${totalPairs} זוגות נבדקו</span>`,
-        scored.length
-          ? `<span class="chip ok">${scored.length} זוגות מעניינים</span>`
-          : `<span class="chip warn">לא נמצאו זוגות מעניינים</span>`,
-        finCols.length
-          ? `<span class="chip">עמודות כספיות: ${finCols.map(c => c.label).join(', ')}</span>`
-          : '',
-        labelColIdx >= 0
-          ? `<span class="chip">זיהוי לפי: ${headers[labelColIdx]}</span>`
-          : '',
-      ].filter(Boolean).join('');
-
-      if (!scored.length) {
-        noRes.textContent = 'לא נמצאו זוגות עמודות מעניינים. נסה להוריד את סף החריג, או לבדוק שיש עמודות עם נתונים מגוונים.';
-        noRes.classList.remove('hidden');
-        return;
-      }
-
-      scored.slice(0, topN).forEach((res, rank) => {
-        res.insight = generateInsight(res, res.colA.label, res.colB.label, labelColIdx, rows);
-        grid.appendChild(renderChartCard(res, res.colA.label, res.colB.label, rank + 1));
-      });
-
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'הרץ ניתוח 🔎';
-    }
-  }, 60);
-}
+document.getElementById('btn-run-analysis').addEventListener('click', () => {
+  if (!selectedPairs.length) return;
+  setStep(4);
+  runFullAnalysis();
+});
 </script>
 </body>
 </html>

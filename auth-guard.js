@@ -16,7 +16,8 @@ const PUBLIC_PAGES = [
   'article-professional-unit-trust.html','article-roi-controls.html',
   'article-sla-contract.html','article-tender-controls.html',
   'article-vendor-transparency.html',
-  'login.html','register.html','reset-password.html','verify-email.html'
+  'login.html','register.html','reset-password.html','verify-email.html',
+  'tool-anomaly-visual.html','tool-list-compare.html'
 ];
 
 function _currentPage() {
