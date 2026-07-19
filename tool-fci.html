@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>קנדל BI — בקרת כספים חכמה (FCI)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --navy:#0d1f3c;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f5f7fa;--card:#fff;--border:#dde3ed;
+  --text:#1a2340;--muted:#6b7a99;
+  --risk-low:#22c55e;--risk-med:#f59e0b;--risk-high:#ef4444;
+  --radius:10px;--shadow:0 2px 12px rgba(13,31,60,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl}
+
+/* NAV */
+nav{position:fixed;top:0;right:0;left:0;z-index:100;background:var(--navy);height:60px;display:flex;align-items:center;padding:0 5vw;gap:1rem}
+.nav-logo{color:#fff;font-weight:800;font-size:1.1rem;text-decoration:none}
+.nav-logo span{color:var(--accent)}
+.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:.9rem;margin-right:auto}
+.nav-back:hover{color:#fff}
+
+/* QA BANNER */
+#qa-banner{background:#fffbeb;border-bottom:2px solid #f5d48a;padding:8px 5vw;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-family:'Heebo',sans-serif;direction:rtl}
+
+/* SPACER */
+.top-spacer{height:60px}
+
+/* PAGE HERO */
+.page-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a3a6e 100%);color:#fff;padding:2rem 5vw 1.5rem;text-align:right}
+.page-hero h1{font-size:clamp(1.4rem,3vw,2rem);font-weight:800;margin-bottom:.4rem}
+.page-hero p{color:rgba(255,255,255,.75);font-size:.95rem}
+
+/* STEP BAR */
+.step-bar{background:#fff;border-bottom:1px solid var(--border);padding:.75rem 5vw;display:flex;gap:0;overflow-x:auto;position:sticky;top:60px;z-index:90}
+.step{display:flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border-radius:20px;font-size:.82rem;color:var(--muted);white-space:nowrap;cursor:default;transition:all .2s}
+.step.active{background:#e8f0fb;color:var(--blue);font-weight:700}
+.step.done{color:var(--blue);opacity:.6}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--muted);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step.active .step-num{background:var(--blue);color:#fff}
+.step.done .step-num{background:#d1e7ff;color:var(--blue)}
+.step-sep{color:var(--border);padding:0 .2rem;font-size:1rem}
+
+/* MAIN */
+.main{padding:2rem 5vw;max-width:1100px;margin:0 auto}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.5rem}
+.card-title{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:3rem 2rem;text-align:center;cursor:pointer;transition:.2s;background:#fafbfd}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:#f0f5ff}
+.upload-zone input{display:none}
+.upload-icon{font-size:2.5rem;margin-bottom:.75rem}
+.upload-zone h3{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.3rem}
+.upload-zone p{font-size:.85rem;color:var(--muted)}
+.file-info{background:#f0f5ff;border:1px solid #c8dbf7;border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;margin-top:1rem}
+.file-info-name{font-weight:700;color:var(--navy);flex:1;font-size:.9rem}
+.file-info-size{color:var(--muted);font-size:.8rem}
+
+/* MAPPING TABLE */
+.map-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.map-table th{background:#f5f7fa;padding:.5rem .75rem;text-align:right;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border)}
+.map-table td{padding:.45rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.map-table tr:last-child td{border-bottom:none}
+.field-req{color:var(--risk-high);font-size:.7rem;font-weight:700;margin-right:.25rem}
+.field-opt{color:var(--muted);font-size:.7rem}
+.map-select{width:100%;padding:.3rem .5rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff;color:var(--text)}
+.map-select:focus{outline:none;border-color:var(--blue)}
+.auto-tag{background:#d1e7ff;color:var(--blue);font-size:.7rem;font-weight:700;border-radius:4px;padding:.1rem .35rem;margin-right:.3rem}
+
+/* QUALITY */
+.quality-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+.q-stat{background:#f5f7fa;border-radius:8px;padding:1rem;text-align:center}
+.q-stat-val{font-size:1.6rem;font-weight:800;color:var(--navy)}
+.q-stat-label{font-size:.78rem;color:var(--muted);margin-top:.25rem}
+.q-stat.warn .q-stat-val{color:var(--risk-med)}
+.q-stat.bad .q-stat-val{color:var(--risk-high)}
+
+/* ISSUES LIST */
+.issue-row{display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #f0f2f5;font-size:.85rem}
+.issue-row:last-child{border-bottom:none}
+.issue-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+.issue-icon.warn{background:#fff3cd;color:#856404}
+.issue-icon.info{background:#d1e7dd;color:#0f5132}
+
+/* CONFIG */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.config-grid{grid-template-columns:1fr}}
+.config-item label{display:block;font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:.3rem}
+.config-item input[type=number],.config-item input[type=text]{width:100%;padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.9rem}
+.config-item input:focus{outline:none;border-color:var(--blue)}
+.config-item .hint{font-size:.75rem;color:var(--muted);margin-top:.25rem}
+.toggle-row{display:flex;align-items:center;gap:.75rem;padding:.5rem 0}
+.toggle-row label{font-size:.88rem;color:var(--text);flex:1}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.2rem;border-radius:8px;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:.2s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#155fa0}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:#fff;border:1.5px solid var(--blue);color:var(--blue)}
+.btn-outline:hover{background:#f0f5ff}
+.btn-sm{padding:.35rem .75rem;font-size:.82rem}
+.btn-danger{background:#fff;border:1.5px solid var(--risk-high);color:var(--risk-high)}
+.btn-row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+
+/* PROGRESS */
+.progress-wrap{background:#f0f2f5;border-radius:20px;height:8px;margin:1rem 0}
+.progress-bar{background:linear-gradient(90deg,var(--blue),var(--accent));height:8px;border-radius:20px;transition:width .3s}
+
+/* RESULTS TABS */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.5rem;gap:0}
+.tab{padding:.6rem 1.2rem;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow)}
+.kpi-val{font-size:1.7rem;font-weight:800;color:var(--navy);line-height:1.2}
+.kpi-label{font-size:.77rem;color:var(--muted);margin-top:.3rem}
+.kpi.risk-kpi .kpi-val{color:var(--risk-high)}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)}
+.chart-card h3{font-size:.88rem;font-weight:700;color:var(--muted);margin-bottom:1rem}
+.chart-wrap{position:relative;height:220px}
+
+/* FINDINGS */
+.findings-toolbar{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.findings-toolbar input{flex:1;min-width:160px;padding:.4rem .75rem;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.85rem}
+.findings-toolbar select{padding:.4rem .6rem;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.85rem;background:#fff}
+.findings-count{color:var(--muted);font-size:.83rem}
+
+/* FINDING CARD */
+.finding-card{border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:.75rem;background:var(--card);display:flex;gap:1rem;align-items:flex-start}
+.finding-card.collapsed .finding-body{display:none}
+.risk-badge{flex-shrink:0;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800}
+.risk-badge.low{background:#dcfce7;color:#166534}
+.risk-badge.med{background:#fef3c7;color:#92400e}
+.risk-badge.high{background:#fee2e2;color:#991b1b}
+.finding-main{flex:1;min-width:0}
+.finding-header{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;cursor:pointer}
+.finding-title{font-weight:700;font-size:.9rem;color:var(--navy)}
+.finding-type-tag{background:#e8f0fb;color:var(--blue);font-size:.72rem;font-weight:700;border-radius:4px;padding:.1rem .35rem}
+.finding-meta{font-size:.8rem;color:var(--muted);margin-top:.25rem}
+.finding-body{margin-top:.75rem;border-top:1px solid #f0f2f5;padding-top:.75rem}
+.finding-detail-grid{display:grid;grid-template-columns:auto 1fr;gap:.25rem .75rem;font-size:.82rem;margin-bottom:.75rem}
+.finding-detail-grid dt{color:var(--muted);font-weight:600}
+.finding-detail-grid dd{color:var(--text)}
+.status-select{padding:.25rem .5rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.8rem;background:#fff}
+.status-new{color:#1e6abf;font-weight:700}
+.status-review{color:#92400e;font-weight:700}
+.status-resolved{color:#166534;font-weight:700}
+.status-ignored{color:var(--muted)}
+
+/* SUPPLIER TABLE */
+.sup-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.sup-table th{background:#f5f7fa;padding:.5rem .75rem;text-align:right;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap}
+.sup-table th:hover{color:var(--blue)}
+.sup-table td{padding:.45rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.sup-table tr:hover td{background:#fafbfe}
+.risk-pill{display:inline-block;padding:.15rem .45rem;border-radius:20px;font-size:.72rem;font-weight:700}
+.risk-pill.low{background:#dcfce7;color:#166534}
+.risk-pill.med{background:#fef3c7;color:#92400e}
+.risk-pill.high{background:#fee2e2;color:#991b1b}
+
+/* ANALYZING OVERLAY */
+#analyzing-overlay{display:none;position:fixed;inset:0;background:rgba(13,31,60,.55);z-index:200;align-items:center;justify-content:center}
+#analyzing-overlay.show{display:flex}
+.analyzing-box{background:#fff;border-radius:16px;padding:2.5rem 3rem;text-align:center;max-width:380px;width:90%}
+.analyzing-box h3{font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:.5rem}
+.analyzing-box p{font-size:.88rem;color:var(--muted);margin-bottom:1.5rem}
+.spin{width:48px;height:48px;border:5px solid #e8f0fb;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1.5rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EXPORT ROW */
+.export-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+
+/* HIDDEN */
+.hidden{display:none!important}
+
+/* STEP SECTIONS */
+.step-section{display:none}
+.step-section.active{display:block}
+
+/* ALERT */
+.alert{padding:.75rem 1rem;border-radius:8px;font-size:.85rem;margin-bottom:1rem}
+.alert-info{background:#e8f0fb;border:1px solid #c8dbf7;color:#0d3c7a}
+.alert-warn{background:#fff3cd;border:1px solid #ffd97d;color:#7a5200}
+
+/* SCROLLABLE TABLE WRAPPER */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">קנדל <span>BI</span></a>
+  <a class="nav-back" href="tools.html">← כל הכלים</a>
+</nav>
+<div class="top-spacer"></div>
+
+<div id="qa-banner" style="background:#fffbeb;border-bottom:2px solid #f5d48a;padding:8px 5vw;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-family:'Heebo',sans-serif;direction:rtl">
+  <span>⚠️</span>
+  <span style="font-size:.85rem;color:#7a5200;flex:1;line-height:1.5"><strong>כלי זה לא עבר עדיין בקרת איכות מלאה</strong> — יש לבדוק ולאמת את התוצאות לפני הסתמכות עליהם. נתקלתם בבעיה? נשמח לשמוע: <a href="tel:050-6914898" style="color:#b87400;font-weight:700;text-decoration:none">050-6914898</a></span>
+  <button onclick="document.getElementById('qa-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#b87400;font-size:1.1rem;padding:0;line-height:1;flex-shrink:0">✕</button>
+</div>
+
+<div class="page-hero">
+  <h1>בקרת כספים חכמה (FCI)</h1>
+  <p>ניתוח נתונים פיננסיים, זיהוי חריגות וניהול ממצאים — כל העיבוד מתבצע בדפדפן בלבד, הנתונים אינם עוזבים את המכשיר שלכם</p>
+</div>
+
+<div class="step-bar" id="step-bar">
+  <div class="step active" id="sbar-1"><span class="step-num">1</span>העלאה</div>
+  <span class="step-sep">›</span>
+  <div class="step" id="sbar-2"><span class="step-num">2</span>מיפוי</div>
+  <span class="step-sep">›</span>
+  <div class="step" id="sbar-3"><span class="step-num">3</span>איכות</div>
+  <span class="step-sep">›</span>
+  <div class="step" id="sbar-4"><span class="step-num">4</span>הגדרות</div>
+  <span class="step-sep">›</span>
+  <div class="step" id="sbar-5"><span class="step-num">5</span>ניתוח</div>
+  <span class="step-sep">›</span>
+  <div class="step" id="sbar-6"><span class="step-num">6</span>תוצאות</div>
+</div>
+
+<div class="main">
+
+<!-- ══ STEP 1: UPLOAD ══ -->
+<div class="step-section active" id="sec-1">
+  <div class="card">
+    <div class="card-title">📂 העלאת קובץ נתונים</div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls">
+      <div class="upload-icon">📊</div>
+      <h3>גררו קובץ לכאן, או לחצו לבחירה</h3>
+      <p>תומך בפורמטים: CSV, Excel (.xlsx, .xls) • גודל מקסימלי: 50MB</p>
+    </div>
+    <div id="file-info-box" class="hidden">
+      <div class="file-info">
+        <span style="font-size:1.5rem">📄</span>
+        <span class="file-info-name" id="fi-name"></span>
+        <span class="file-info-size" id="fi-size"></span>
+        <button class="btn btn-outline btn-sm" onclick="resetUpload()">החלף</button>
+      </div>
+      <div class="alert alert-info" style="margin-top:.75rem" id="fi-preview-msg"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-to-map" disabled onclick="goStep(2)">המשך למיפוי עמודות ›</button>
+    </div>
+  </div>
+  <div class="alert alert-info">
+    <strong>פרטיות:</strong> כל עיבוד הנתונים מתבצע בדפדפן שלכם בלבד. אין שרת, אין ענן — הנתונים אינם עוזבים את המכשיר.
+  </div>
+</div>
+
+<!-- ══ STEP 2: MAPPING ══ -->
+<div class="step-section" id="sec-2">
+  <div class="card">
+    <div class="card-title">🗺️ מיפוי עמודות</div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">מפו את עמודות הקובץ שלכם לשדות הסטנדרטיים. שדות המסומנים ב-<span style="color:var(--risk-high);font-weight:700">*</span> חובה.</p>
+    <div class="tbl-wrap">
+      <table class="map-table" id="map-table">
+        <thead><tr><th>שדה סטנדרטי</th><th>עמודה מהקובץ</th><th>דוגמה</th></tr></thead>
+        <tbody id="map-tbody"></tbody>
+      </table>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline btn-sm" onclick="goStep(1)">← חזרה</button>
+      <button class="btn btn-primary" id="btn-to-quality" onclick="goStep(3)">המשך לדוח איכות ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 3: QUALITY ══ -->
+<div class="step-section" id="sec-3">
+  <div class="card">
+    <div class="card-title">🔍 דוח איכות נתונים</div>
+    <div class="quality-grid" id="quality-grid"></div>
+    <div id="quality-issues"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline btn-sm" onclick="goStep(2)">← חזרה</button>
+      <button class="btn btn-primary" onclick="goStep(4)">המשך להגדרות ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 4: CONFIG ══ -->
+<div class="step-section" id="sec-4">
+  <div class="card">
+    <div class="card-title">⚙️ הגדרות ניתוח</div>
+    <div class="config-grid" id="config-grid">
+      <div class="config-item">
+        <label>סף כפילויות — ימים להשוואת תאריכים</label>
+        <input type="number" id="cfg-dup-days" value="7" min="0" max="90">
+        <div class="hint">עסקאות לאותו ספק ואותו סכום בטווח X ימים — יסומנו כחשודות</div>
+      </div>
+      <div class="config-item">
+        <label>סף פיצול תשלומים (% מסכום עסקה)</label>
+        <input type="number" id="cfg-split-pct" value="90" min="50" max="100">
+        <div class="hint">עסקאות לאותו ספק בפרק זמן קצר שסכומן מצטבר מעל X% מסכום אחר</div>
+      </div>
+      <div class="config-item">
+        <label>סף ניתוח סטטיסטי — Z-Score</label>
+        <input type="number" id="cfg-zscore" value="3.5" min="1" max="10" step="0.1">
+        <div class="hint">ציון Z מתוקן גבוה מ-X מסמן עסקה כחריגה סטטיסטית</div>
+      </div>
+      <div class="config-item">
+        <label>מינימום עסקאות לניתוח ספק</label>
+        <input type="number" id="cfg-min-tx" value="3" min="1" max="20">
+        <div class="hint">ספקים עם פחות עסקאות לא יכללו בניתוח הסטטיסטי</div>
+      </div>
+      <div class="config-item">
+        <label>ימי ביניים חשודים בתזמון</label>
+        <input type="number" id="cfg-timing-days" value="3" min="1" max="30">
+        <div class="hint">תשלומים הסמוכים לסוף תקופה (שנה/רבעון) ב-X ימים</div>
+      </div>
+      <div class="config-item">
+        <label>סף סכום גבוה (ייחסית לממוצע)</label>
+        <input type="number" id="cfg-high-mult" value="5" min="1" max="50" step="0.5">
+        <div class="hint">עסקה מעל X כפול הממוצע הכללי תסומן כסכום גבוה</div>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0">
+    <div style="font-weight:700;font-size:.88rem;color:var(--navy);margin-bottom:.5rem">בדיקות פעילות</div>
+    <div class="toggle-row"><input type="checkbox" id="chk-dup" checked><label for="chk-dup">זיהוי כפילויות (מדויקות + קרובות)</label></div>
+    <div class="toggle-row"><input type="checkbox" id="chk-split" checked><label for="chk-split">זיהוי פיצול תשלומים</label></div>
+    <div class="toggle-row"><input type="checkbox" id="chk-anomaly" checked><label for="chk-anomaly">זיהוי חריגות סטטיסטיות (Z-Score)</label></div>
+    <div class="toggle-row"><input type="checkbox" id="chk-timing" checked><label for="chk-timing">ניתוח תזמון (עסקאות סמוך לסוף תקופה)</label></div>
+    <div class="toggle-row"><input type="checkbox" id="chk-roundnum" checked><label for="chk-roundnum">זיהוי סכומים עגולים חשודים</label></div>
+    <div class="btn-row">
+      <button class="btn btn-outline btn-sm" onclick="goStep(3)">← חזרה</button>
+      <button class="btn btn-primary" onclick="runAnalysis()">הפעל ניתוח ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 5: placeholder (auto-skip) ══ -->
+<div class="step-section" id="sec-5"></div>
+
+<!-- ══ STEP 6: RESULTS ══ -->
+<div class="step-section" id="sec-6">
+  <div class="export-row">
+    <button class="btn btn-outline btn-sm" onclick="exportFindings()">⬇ ייצוא ממצאים (Excel)</button>
+    <button class="btn btn-outline btn-sm" onclick="exportSuppliers()">⬇ ייצוא ספקים (Excel)</button>
+    <button class="btn btn-outline btn-sm" onclick="goStep(1)" style="margin-right:auto">ניתוח חדש</button>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('dashboard')">📊 לוח מחוונים</div>
+    <div class="tab" onclick="switchTab('findings')">🔎 ממצאים</div>
+    <div class="tab" onclick="switchTab('suppliers')">🏢 ספקים</div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="tab-pane active" id="tab-dashboard">
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>הוצאות לפי תקופה</h3>
+        <div class="chart-wrap"><canvas id="chart-timeline"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>התפלגות ציון סיכון</h3>
+        <div class="chart-wrap"><canvas id="chart-risk"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 10 ספקים מובילים בהיקף</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-suppliers"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FINDINGS TAB -->
+  <div class="tab-pane" id="tab-findings">
+    <div class="findings-toolbar">
+      <input type="text" id="find-search" placeholder="חיפוש ממצאים..." oninput="renderFindings()">
+      <select id="find-type" onchange="renderFindings()">
+        <option value="">כל הסוגים</option>
+        <option value="כפיל">כפיל</option>
+        <option value="פיצול">פיצול תשלום</option>
+        <option value="חריגה">חריגה סטטיסטית</option>
+        <option value="תזמון">תזמון חשוד</option>
+        <option value="סכום עגול">סכום עגול</option>
+      </select>
+      <select id="find-risk" onchange="renderFindings()">
+        <option value="">כל רמות הסיכון</option>
+        <option value="high">גבוה (≥70)</option>
+        <option value="med">בינוני (40-69)</option>
+        <option value="low">נמוך (&lt;40)</option>
+      </select>
+      <select id="find-status" onchange="renderFindings()">
+        <option value="">כל הסטטוסים</option>
+        <option value="new">חדש</option>
+        <option value="review">בבדיקה</option>
+        <option value="resolved">טופל</option>
+        <option value="ignored">התעלמות</option>
+      </select>
+      <span class="findings-count" id="findings-count"></span>
+    </div>
+    <div id="findings-list"></div>
+  </div>
+
+  <!-- SUPPLIERS TAB -->
+  <div class="tab-pane" id="tab-suppliers">
+    <div class="findings-toolbar">
+      <input type="text" id="sup-search" placeholder="חיפוש ספק..." oninput="renderSuppliers()">
+      <select id="sup-sort" onchange="renderSuppliers()">
+        <option value="amount">לפי היקף</option>
+        <option value="risk">לפי סיכון</option>
+        <option value="tx">לפי מס׳ עסקאות</option>
+        <option value="findings">לפי מס׳ ממצאים</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table class="sup-table">
+        <thead>
+          <tr>
+            <th>ספק</th>
+            <th>עסקאות</th>
+            <th>היקף כולל</th>
+            <th>ממוצע עסקה</th>
+            <th>ממצאים</th>
+            <th>ציון סיכון</th>
+          </tr>
+        </thead>
+        <tbody id="sup-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ANALYZING OVERLAY -->
+<div id="analyzing-overlay">
+  <div class="analyzing-box">
+    <div class="spin"></div>
+    <h3>מנתח נתונים...</h3>
+    <p id="analyzing-msg">בודק כפילויות ועסקאות חשודות</p>
+    <div class="progress-wrap"><div class="progress-bar" id="analyzing-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// GLOBALS
+// ══════════════════════════════════════════════════
+let rawRows = [];       // array of objects from file
+let headers = [];       // original column names
+let mappedCols = {};    // { standardField: originalColName }
+let qualityReport = {}; // quality stats
+let findings = [];      // all finding objects
+let supplierStats = {}; // { name: { amount, tx, findings, risk } }
+let analysisRows = [];  // cleaned rows after mapping
+
+const STANDARD_FIELDS = [
+  { key:'transaction_date', label:'תאריך עסקה', required:true,
+    keywords:['date','תאריך','transaction_date','תאריך עסקה','תאריך_עסקה','tarih','дата'] },
+  { key:'amount', label:'סכום', required:true,
+    keywords:['amount','סכום','total','סה"כ','sum','value','ערך','debit','credit','זכות','חובה'] },
+  { key:'supplier_name', label:'שם ספק', required:true,
+    keywords:['supplier','ספק','vendor','שם ספק','שם_ספק','name','ספקים','kontrahent'] },
+  { key:'invoice_number', label:'מספר חשבונית', required:false,
+    keywords:['invoice','חשבונית','מספר חשבונית','invoice_number','inv','חשב'] },
+  { key:'transaction_id', label:'מזהה עסקה', required:false,
+    keywords:['id','transaction_id','מזהה','reference','ref','מס','number','מספר'] },
+  { key:'description', label:'תיאור', required:false,
+    keywords:['description','תיאור','details','פירוט','remarks','הערות','narration'] },
+  { key:'department', label:'מחלקה', required:false,
+    keywords:['department','מחלקה','dept','unit','יחידה','אגף'] },
+  { key:'category', label:'קטגוריה', required:false,
+    keywords:['category','קטגוריה','type','סוג','cost_center','מרכז עלות'] },
+  { key:'supplier_id', label:'מזהה ספק', required:false,
+    keywords:['supplier_id','מזהה ספק','vendor_id','ספק_id'] },
+  { key:'purchase_order', label:'מספר הזמנת רכש', required:false,
+    keywords:['po','purchase_order','הזמנה','order','הזמנת רכש'] },
+  { key:'approver', label:'מאשר', required:false,
+    keywords:['approver','מאשר','approved_by','אישור','authorized','מורשה'] },
+  { key:'payment_date', label:'תאריך תשלום', required:false,
+    keywords:['payment_date','תאריך תשלום','paid_date','value_date'] },
+];
+
+// ══════════════════════════════════════════════════
+// STEP NAVIGATION
+// ══════════════════════════════════════════════════
+function goStep(n){
+  document.querySelectorAll('.step-section').forEach((s,i)=>{
+    s.classList.toggle('active', i===n-1);
+  });
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.remove('active','done');
+    if(i/2+1 < n) s.classList.add('done');
+    else if(i/2+1 === n) s.classList.add('active');
+  });
+  // step-specific init
+  if(n===3) buildQuality();
+  if(n===6) initResults();
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════════════
+// FILE UPLOAD
+// ══════════════════════════════════════════════════
+const uploadZone = document.getElementById('upload-zone');
+const fileInput  = document.getElementById('file-input');
+
+uploadZone.addEventListener('dragover', e=>{ e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', ()=> uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e=>{ e.preventDefault(); uploadZone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e=> handleFile(e.target.files[0]));
+
+function handleFile(file){
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      let wb;
+      if(ext==='csv'){
+        wb = XLSX.read(e.target.result, {type:'string'});
+      } else {
+        wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      }
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rawRows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      headers = rawRows.length ? Object.keys(rawRows[0]) : [];
+      if(!rawRows.length){ alert('הקובץ ריק — לא נמצאו שורות נתונים'); return; }
+      showFileInfo(file, rawRows.length);
+    } catch(err){
+      alert('שגיאה בקריאת הקובץ: ' + err.message);
+    }
+  };
+  if(ext==='csv') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function showFileInfo(file, rowCount){
+  document.getElementById('fi-name').textContent = file.name;
+  document.getElementById('fi-size').textContent = fmtSize(file.size);
+  document.getElementById('fi-preview-msg').textContent =
+    `נטענו ${rowCount.toLocaleString()} שורות ו-${headers.length} עמודות בהצלחה`;
+  document.getElementById('file-info-box').classList.remove('hidden');
+  document.getElementById('upload-zone').classList.add('hidden');
+  document.getElementById('btn-to-map').disabled = false;
+  buildMapping();
+}
+
+function resetUpload(){
+  rawRows=[]; headers=[]; mappedCols={};
+  document.getElementById('file-info-box').classList.add('hidden');
+  document.getElementById('upload-zone').classList.remove('hidden');
+  document.getElementById('btn-to-map').disabled = true;
+  fileInput.value='';
+}
+
+function fmtSize(b){
+  if(b<1024) return b+'B';
+  if(b<1048576) return (b/1024).toFixed(1)+'KB';
+  return (b/1048576).toFixed(1)+'MB';
+}
+
+// ══════════════════════════════════════════════════
+// COLUMN MAPPING
+// ══════════════════════════════════════════════════
+function buildMapping(){
+  const tbody = document.getElementById('map-tbody');
+  tbody.innerHTML='';
+  const sample = rawRows.slice(0,3);
+
+  // auto-detect
+  const autoMap = autoDetect();
+
+  STANDARD_FIELDS.forEach(field=>{
+    const tr = document.createElement('tr');
+    const selOpts = ['<option value="">— לא ממופה —</option>',
+      ...headers.map(h=>`<option value="${esc(h)}">${esc(h)}</option>`)].join('');
+    const sampleVal = autoMap[field.key] ?
+      (sample.map(r=>r[autoMap[field.key]]).filter(Boolean)[0] || '') : '';
+    const autoTag = autoMap[field.key] ? '<span class="auto-tag">זוהה אוטומטית</span>' : '';
+
+    tr.innerHTML = `
+      <td><strong>${esc(field.label)}</strong>${field.required?'<span class="field-req">*</span>':'<span class="field-opt"> (אופציונלי)</span>'}${autoTag}</td>
+      <td><select class="map-select" data-field="${esc(field.key)}" onchange="mappedCols['${esc(field.key)}']=this.value">
+        ${selOpts}
+      </select></td>
+      <td style="color:var(--muted);font-size:.8rem;max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(String(sampleVal))}</td>`;
+    tbody.appendChild(tr);
+
+    const sel = tr.querySelector('select');
+    if(autoMap[field.key]){
+      sel.value = autoMap[field.key];
+      mappedCols[field.key] = autoMap[field.key];
+    }
+  });
+}
+
+function autoDetect(){
+  const map = {};
+  const headerLC = headers.map(h=>h.toLowerCase().replace(/[\s_-]/g,''));
+  STANDARD_FIELDS.forEach(field=>{
+    const kws = field.keywords.map(k=>k.toLowerCase().replace(/[\s_-]/g,''));
+    for(let i=0;i<headerLC.length;i++){
+      if(kws.some(k=> headerLC[i]===k || headerLC[i].includes(k) || k.includes(headerLC[i]))){
+        if(!Object.values(map).includes(headers[i])){
+          map[field.key]=headers[i];
+          break;
+        }
+      }
+    }
+  });
+  return map;
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════════════════
+// QUALITY REPORT
+// ══════════════════════════════════════════════════
+function buildQuality(){
+  // sync mappedCols from selects
+  document.querySelectorAll('.map-select').forEach(sel=>{
+    mappedCols[sel.dataset.field] = sel.value;
+  });
+
+  const required = STANDARD_FIELDS.filter(f=>f.required).map(f=>f.key);
+  const missing = required.filter(k=>!mappedCols[k]);
+
+  if(missing.length){
+    document.getElementById('quality-grid').innerHTML =
+      `<div class="alert alert-warn" style="grid-column:1/-1">נא למפות את השדות הנדרשים: ${missing.map(k=>STANDARD_FIELDS.find(f=>f.key===k).label).join(', ')}</div>`;
+    document.getElementById('quality-issues').innerHTML='';
+    return;
+  }
+
+  // build analysis rows
+  analysisRows = rawRows.map((row,i)=>{
+    const r = { _idx:i };
+    STANDARD_FIELDS.forEach(f=>{
+      if(mappedCols[f.key]) r[f.key] = row[mappedCols[f.key]];
+    });
+    r._amount = parseFloat(String(r.amount||'').replace(/[,\s₪$€£]/g,'')) || 0;
+    r._date = parseDate(r.transaction_date);
+    return r;
+  });
+
+  const n = analysisRows.length;
+  const noDate = analysisRows.filter(r=>!r._date).length;
+  const noAmt  = analysisRows.filter(r=>r._amount===0).length;
+  const noSup  = analysisRows.filter(r=>!r.supplier_name||String(r.supplier_name).trim()==='').length;
+  const dupCount = countExactDups();
+
+  qualityReport = { n, noDate, noAmt, noSup, dupExact:dupCount };
+
+  const grid = document.getElementById('quality-grid');
+  grid.innerHTML='';
+  const stats = [
+    { val:n, label:'סה"כ שורות', cls:'' },
+    { val:noDate, label:'ללא תאריך תקין', cls:noDate>0?'warn':'' },
+    { val:noAmt,  label:'סכום אפס/חסר', cls:noAmt>0?'warn':'' },
+    { val:noSup,  label:'שם ספק חסר', cls:noSup>0?'warn':'' },
+    { val:dupCount, label:'כפילויות מדויקות (חשד)', cls:dupCount>0?'bad':'' },
+    { val:Math.round((n-noDate-noAmt-noSup)/n*100)+'%', label:'שלמות נתונים (הערכה)', cls:'' },
+  ];
+  stats.forEach(s=>{
+    const d = document.createElement('div');
+    d.className='q-stat '+(s.cls||'');
+    d.innerHTML=`<div class="q-stat-val">${typeof s.val==='number'?s.val.toLocaleString():s.val}</div><div class="q-stat-label">${s.label}</div>`;
+    grid.appendChild(d);
+  });
+
+  const issues = [];
+  if(noDate>0) issues.push({type:'warn',msg:`${noDate} שורות ללא תאריך תקין — לא יכללו בניתוח תזמון`});
+  if(noAmt>0)  issues.push({type:'warn',msg:`${noAmt} שורות עם סכום אפס או חסר`});
+  if(noSup>0)  issues.push({type:'warn',msg:`${noSup} שורות ללא שם ספק — יסווגו כ"לא ידוע"`});
+  if(dupCount>0) issues.push({type:'warn',msg:`${dupCount} שורות עם סכום+ספק+תאריך זהים לחלוטין לשורה אחרת`});
+  if(issues.length===0) issues.push({type:'info',msg:'איכות הנתונים תקינה — לא אותרו בעיות מרכזיות'});
+
+  const issueDiv = document.getElementById('quality-issues');
+  issueDiv.innerHTML = issues.map(iss=>`
+    <div class="issue-row">
+      <div class="issue-icon ${iss.type}">${iss.type==='warn'?'⚠':'✓'}</div>
+      <span>${esc(iss.msg)}</span>
+    </div>`).join('');
+}
+
+function countExactDups(){
+  const seen = {};
+  let count=0;
+  analysisRows.forEach(r=>{
+    const key = `${norm(r.supplier_name)}|${r._amount}|${r._date?r._date.toDateString():''}`;
+    if(seen[key]) count++;
+    else seen[key]=1;
+  });
+  return count;
+}
+
+function parseDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  // Excel serial
+  if(typeof v==='number' && v>10000 && v<100000){
+    const d = new Date((v-25569)*86400000);
+    return isNaN(d)?null:d;
+  }
+  const s = String(v).trim();
+  const fmts = [
+    /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/, // yyyy-mm-dd
+    /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/,  // dd-mm-yyyy
+    /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,         // dd.mm.yyyy
+  ];
+  for(const re of fmts){
+    const m = s.match(re);
+    if(m){
+      const [,a,b,c]=m;
+      const y=parseInt(a)>31?parseInt(a):parseInt(c);
+      const mo=parseInt(a)>31?parseInt(b)-1:parseInt(b)-1;
+      const dy=parseInt(a)>31?parseInt(c):parseInt(a);
+      const d=new Date(y,mo,dy);
+      if(!isNaN(d)) return d;
+    }
+  }
+  const d=new Date(s);
+  return isNaN(d)?null:d;
+}
+
+function norm(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+
+// ══════════════════════════════════════════════════
+// ANALYSIS ENGINE
+// ══════════════════════════════════════════════════
+async function runAnalysis(){
+  const cfg = getConfig();
+  showOverlay(true,'מכין נתונים...',5);
+  await delay(30);
+
+  findings=[];
+  const rows = analysisRows;
+
+  // 1. EXACT DUPLICATES
+  if(cfg.dupEnabled){
+    setOverlay('בודק כפילויות מדויקות...',15);
+    await delay(20);
+    const seen={};
+    rows.forEach((r,i)=>{
+      const key=`${norm(r.supplier_name)}|${r._amount}|${r._date?r._date.toDateString():''}`;
+      if(seen[key]!==undefined){
+        findings.push({
+          id:'dup_'+i, type:'כפיל', subtype:'כפיל מדויק',
+          risk: Math.min(30, Math.round(20 + (r._amount>10000?10:5))),
+          row: r, matchRow: rows[seen[key]],
+          title:`עסקה כפולה — ${norm(r.supplier_name)||'?'}`,
+          detail:`סכום ${fmtAmt(r._amount)} זהה לשורה ${seen[key]+1} — אותו ספק ותאריך`,
+          status:'new', notes:'',
+          fields:{ ספק: r.supplier_name, סכום: fmtAmt(r._amount), תאריך: fmtDate(r._date), 'שורה כפולה': seen[key]+1 }
+        });
+      } else { seen[key]=i; }
+    });
+
+    // NEAR DUPLICATES (same supplier, same amount ±5%, within N days)
+    setOverlay('בודק כפילויות קרובות...',25);
+    await delay(20);
+    const bySupplier={};
+    rows.forEach((r,i)=>{ const k=norm(r.supplier_name); if(!bySupplier[k]) bySupplier[k]=[]; bySupplier[k].push({r,i}); });
+    Object.values(bySupplier).forEach(arr=>{
+      for(let a=0;a<arr.length-1;a++){
+        for(let b=a+1;b<arr.length;b++){
+          const ra=arr[a].r, rb=arr[b].r, ia=arr[a].i, ib=arr[b].i;
+          if(!ra._date||!rb._date) continue;
+          const daysDiff=Math.abs(ra._date-rb._date)/(86400000);
+          if(daysDiff>cfg.dupDays) continue;
+          const amtDiff=Math.abs(ra._amount-rb._amount)/Math.max(ra._amount,rb._amount,1);
+          if(amtDiff>0.05||ra._amount===0) continue;
+          // avoid duplicate of exact dup finding
+          const exactKey=`${norm(ra.supplier_name)}|${ra._amount}|${ra._date.toDateString()}`;
+          if(ra._amount===rb._amount && ra._date.toDateString()===rb._date.toDateString()) continue;
+          findings.push({
+            id:'neardup_'+ia+'_'+ib, type:'כפיל', subtype:'כפיל קרוב',
+            risk: Math.min(25, Math.round(15 + (1-amtDiff)*10)),
+            row:ra, matchRow:rb,
+            title:`עסקה קרובה לכפיל — ${norm(ra.supplier_name)||'?'}`,
+            detail:`סכומים דומים (${fmtAmt(ra._amount)} ו-${fmtAmt(rb._amount)}) בפרק ${Math.round(daysDiff)} ימים`,
+            status:'new', notes:'',
+            fields:{ ספק: ra.supplier_name, 'סכום א': fmtAmt(ra._amount), 'סכום ב': fmtAmt(rb._amount), 'הפרש ימים': Math.round(daysDiff), 'שורות': `${ia+1}, ${ib+1}` }
+          });
+        }
+      }
+    });
+  }
+
+  // 2. SPLITTING
+  if(cfg.splitEnabled){
+    setOverlay('בודק פיצול תשלומים...',40);
+    await delay(20);
+    const bySupplier2={};
+    rows.forEach((r,i)=>{ const k=norm(r.supplier_name); if(!bySupplier2[k]) bySupplier2[k]=[]; bySupplier2[k].push({r,i}); });
+    Object.values(bySupplier2).forEach(arr=>{
+      arr.sort((a,b)=>(a.r._date||0)-(b.r._date||0));
+      for(let a=0;a<arr.length;a++){
+        const base=arr[a].r;
+        if(base._amount<100) continue;
+        let sum=0; const group=[a];
+        for(let b=a+1;b<arr.length;b++){
+          const rb=arr[b].r;
+          if(!base._date||!rb._date) continue;
+          const d=Math.abs(rb._date-base._date)/(86400000);
+          if(d>cfg.dupDays*2) break;
+          sum+=rb._amount; group.push(b);
+        }
+        if(group.length>=3 && sum>=base._amount*(cfg.splitPct/100)){
+          findings.push({
+            id:'split_'+arr[a].i,type:'פיצול',subtype:'פיצול תשלום',
+            risk: Math.min(20, Math.round(12+(group.length-3)*2)),
+            row:base,
+            title:`חשד לפיצול תשלום — ${norm(base.supplier_name)||'?'}`,
+            detail:`${group.length} תשלומים לאותו ספק בפרק זמן קצר, סכום מצטבר ${fmtAmt(sum)} (${Math.round(sum/base._amount*100)}% מהעסקה הראשית)`,
+            status:'new',notes:'',
+            fields:{ספק:base.supplier_name,'עסקה בסיס':fmtAmt(base._amount),'מס׳ עסקאות':group.length,'סכום מצטבר':fmtAmt(sum),'שורה':arr[a].i+1}
+          });
+        }
+      }
+    });
+  }
+
+  // 3. STATISTICAL ANOMALY (Modified Z-Score per supplier)
+  if(cfg.anomalyEnabled){
+    setOverlay('מחשב חריגות סטטיסטיות...',60);
+    await delay(20);
+    const bySupplier3={};
+    rows.forEach((r,i)=>{ const k=norm(r.supplier_name); if(!bySupplier3[k]) bySupplier3[k]=[]; bySupplier3[k].push({r,i}); });
+    Object.entries(bySupplier3).forEach(([sup,arr])=>{
+      if(arr.length<cfg.minTx) return;
+      const amounts=arr.map(x=>x.r._amount).filter(a=>a>0);
+      if(amounts.length<cfg.minTx) return;
+      const med=median(amounts);
+      const mad=madVal(amounts,med)||1;
+      arr.forEach(({r,i})=>{
+        if(r._amount<=0) return;
+        const mzs=0.6745*Math.abs(r._amount-med)/mad;
+        if(mzs>cfg.zscore){
+          const riskPts = Math.min(25, Math.round(10 + Math.min(mzs-cfg.zscore,5)*3));
+          findings.push({
+            id:'anom_'+i,type:'חריגה',subtype:'חריגה סטטיסטית',
+            risk:riskPts, row:r,
+            title:`חריגה סטטיסטית — ${norm(r.supplier_name)||'?'}`,
+            detail:`ציון Z מתוקן: ${mzs.toFixed(2)} (סף: ${cfg.zscore}) — הסכום חריג ביחס לממוצע ${fmtAmt(med)} לספק זה`,
+            status:'new',notes:'',
+            fields:{ספק:r.supplier_name,סכום:fmtAmt(r._amount),'ממוצע ספק':fmtAmt(med),'Z-Score מתוקן':mzs.toFixed(2),שורה:i+1}
+          });
+        }
+      });
+    });
+
+    // Global high amount
+    const allAmounts=rows.map(r=>r._amount).filter(a=>a>0);
+    if(allAmounts.length){
+      const gAvg=allAmounts.reduce((a,b)=>a+b,0)/allAmounts.length;
+      rows.forEach((r,i)=>{
+        if(r._amount>gAvg*cfg.highMult){
+          if(!findings.find(f=>f.id==='anom_'+i)){
+            findings.push({
+              id:'high_'+i,type:'חריגה',subtype:'סכום גבוה חריג',
+              risk:Math.min(20,Math.round(10+(r._amount/gAvg-cfg.highMult)*2)),row:r,
+              title:`סכום גבוה במיוחד — ${norm(r.supplier_name)||'?'}`,
+              detail:`${fmtAmt(r._amount)} — פי ${(r._amount/gAvg).toFixed(1)} מהממוצע הכללי ${fmtAmt(gAvg)}`,
+              status:'new',notes:'',
+              fields:{ספק:r.supplier_name,סכום:fmtAmt(r._amount),'ממוצע כללי':fmtAmt(gAvg),'יחס':((r._amount/gAvg).toFixed(1)+'x'),שורה:i+1}
+            });
+          }
+        }
+      });
+    }
+  }
+
+  // 4. TIMING (near period-end)
+  if(cfg.timingEnabled){
+    setOverlay('בודק תזמון עסקאות...',75);
+    await delay(20);
+    rows.forEach((r,i)=>{
+      if(!r._date) return;
+      const d=r._date;
+      const isYearEnd = d.getMonth()===11 && d.getDate()>=31-cfg.timingDays;
+      const isYearStart= d.getMonth()===0 && d.getDate()<=cfg.timingDays;
+      const isQEnd = [2,5,8,11].includes(d.getMonth()) && d.getDate()>=28-cfg.timingDays;
+      if(isYearEnd||isYearStart||isQEnd){
+        const reason=isYearEnd?'סוף שנה':isYearStart?'תחילת שנה':'סוף רבעון';
+        findings.push({
+          id:'timing_'+i,type:'תזמון',subtype:'תזמון חשוד',
+          risk:Math.min(15,10+(r._amount>50000?5:0)),row:r,
+          title:`תזמון חשוד — ${reason}`,
+          detail:`עסקה ב-${fmtDate(d)} (${reason}) — ₪${fmtAmt(r._amount)}`,
+          status:'new',notes:'',
+          fields:{ספק:r.supplier_name,סכום:fmtAmt(r._amount),תאריך:fmtDate(d),סיבה:reason,שורה:i+1}
+        });
+      }
+    });
+  }
+
+  // 5. ROUND NUMBERS
+  if(cfg.roundEnabled){
+    setOverlay('בודק סכומים עגולים...',85);
+    await delay(20);
+    rows.forEach((r,i)=>{
+      if(r._amount<1000) return;
+      if(r._amount%1000===0 && r._amount>=5000){
+        findings.push({
+          id:'round_'+i,type:'סכום עגול',subtype:'סכום עגול חשוד',
+          risk:8,row:r,
+          title:`סכום עגול — ${fmtAmt(r._amount)}`,
+          detail:`סכום עגול לחלוטין (${fmtAmt(r._amount)}) עשוי להצביע על הערכה ולא חשבונית ממשית`,
+          status:'new',notes:'',
+          fields:{ספק:r.supplier_name,סכום:fmtAmt(r._amount),תאריך:fmtDate(r._date),שורה:i+1}
+        });
+      }
+    });
+  }
+
+  // 6. RISK SCORING — combine component scores
+  findings.forEach(f=>{
+    const dupBonus   = f.type==='כפיל' ? (f.subtype==='כפיל מדויק'?30:20) : 0;
+    const splitBonus = f.type==='פיצול' ? 20 : 0;
+    const anomBonus  = f.type==='חריגה' ? Math.min(25,f.risk) : 0;
+    const timingBonus= f.type==='תזמון' ? 15 : 0;
+    const roundBonus = f.type==='סכום עגול' ? 10 : 0;
+    f.risk = Math.min(100, dupBonus+splitBonus+anomBonus+timingBonus+roundBonus);
+  });
+
+  // 7. SUPPLIER STATS
+  setOverlay('מחשב סטטיסטיקות ספקים...',92);
+  await delay(20);
+  supplierStats={};
+  rows.forEach(r=>{
+    const k=r.supplier_name ? String(r.supplier_name).trim() : 'לא ידוע';
+    if(!supplierStats[k]) supplierStats[k]={name:k,amount:0,tx:0,findings:0,maxRisk:0};
+    supplierStats[k].amount+=r._amount;
+    supplierStats[k].tx++;
+  });
+  findings.forEach(f=>{
+    const k=f.row.supplier_name ? String(f.row.supplier_name).trim() : 'לא ידוע';
+    if(supplierStats[k]){ supplierStats[k].findings++; supplierStats[k].maxRisk=Math.max(supplierStats[k].maxRisk,f.risk); }
+  });
+
+  setOverlay('מסיים...',99);
+  await delay(100);
+  showOverlay(false);
+  goStep(6);
+}
+
+function getConfig(){
+  return {
+    dupDays:    +document.getElementById('cfg-dup-days').value||7,
+    splitPct:   +document.getElementById('cfg-split-pct').value||90,
+    zscore:     +document.getElementById('cfg-zscore').value||3.5,
+    minTx:      +document.getElementById('cfg-min-tx').value||3,
+    timingDays: +document.getElementById('cfg-timing-days').value||3,
+    highMult:   +document.getElementById('cfg-high-mult').value||5,
+    dupEnabled:    document.getElementById('chk-dup').checked,
+    splitEnabled:  document.getElementById('chk-split').checked,
+    anomalyEnabled:document.getElementById('chk-anomaly').checked,
+    timingEnabled: document.getElementById('chk-timing').checked,
+    roundEnabled:  document.getElementById('chk-roundnum').checked,
+  };
+}
+
+// overlay helpers
+function showOverlay(show,msg,pct){
+  const o=document.getElementById('analyzing-overlay');
+  o.classList.toggle('show',show);
+  if(show){ setOverlay(msg,pct); }
+}
+function setOverlay(msg,pct){
+  if(msg) document.getElementById('analyzing-msg').textContent=msg;
+  if(pct!==undefined) document.getElementById('analyzing-bar').style.width=pct+'%';
+}
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// math utils
+function median(arr){
+  const s=[...arr].sort((a,b)=>a-b);
+  const m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
+}
+function madVal(arr,med){
+  const devs=arr.map(a=>Math.abs(a-med));
+  return median(devs);
+}
+
+// ══════════════════════════════════════════════════
+// RESULTS
+// ══════════════════════════════════════════════════
+let chartTimeline=null, chartRisk=null, chartSup=null;
+
+function initResults(){
+  buildKPIs();
+  buildCharts();
+  renderFindings();
+  renderSuppliers();
+}
+
+function buildKPIs(){
+  const totalAmt=analysisRows.reduce((s,r)=>s+r._amount,0);
+  const highRisk=findings.filter(f=>f.risk>=70).length;
+  const medRisk=findings.filter(f=>f.risk>=40&&f.risk<70).length;
+  const uniqSup=Object.keys(supplierStats).length;
+
+  const kpis=[
+    {val:analysisRows.length.toLocaleString(),label:'עסקאות שנותחו'},
+    {val:fmtAmt(totalAmt),label:'היקף כולל'},
+    {val:findings.length.toLocaleString(),label:'ממצאים',cls:''},
+    {val:highRisk.toLocaleString(),label:'ממצאים בסיכון גבוה',cls:highRisk>0?'risk-kpi':''},
+    {val:uniqSup.toLocaleString(),label:'ספקים'},
+    {val:medRisk.toLocaleString(),label:'ממצאים בסיכון בינוני'},
+  ];
+  document.getElementById('kpi-grid').innerHTML=kpis.map(k=>
+    `<div class="kpi ${k.cls||''}"><div class="kpi-val">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function buildCharts(){
+  // TIMELINE
+  const byMonth={};
+  analysisRows.forEach(r=>{
+    if(!r._date) return;
+    const k=`${r._date.getFullYear()}-${String(r._date.getMonth()+1).padStart(2,'0')}`;
+    byMonth[k]=(byMonth[k]||0)+r._amount;
+  });
+  const months=Object.keys(byMonth).sort();
+  const timeData=months.map(m=>byMonth[m]);
+
+  if(chartTimeline) chartTimeline.destroy();
+  chartTimeline=new Chart(document.getElementById('chart-timeline'),{
+    type:'line',
+    data:{labels:months,datasets:[{label:'הוצאות',data:timeData,fill:true,tension:.3,borderColor:'#1e6abf',backgroundColor:'rgba(30,106,191,.1)',pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmtAmt(v)}}}}
+  });
+
+  // RISK DISTRIBUTION
+  const low=findings.filter(f=>f.risk<40).length;
+  const med=findings.filter(f=>f.risk>=40&&f.risk<70).length;
+  const high=findings.filter(f=>f.risk>=70).length;
+  if(chartRisk) chartRisk.destroy();
+  chartRisk=new Chart(document.getElementById('chart-risk'),{
+    type:'doughnut',
+    data:{labels:['סיכון נמוך','סיכון בינוני','סיכון גבוה'],datasets:[{data:[low,med,high],backgroundColor:['#22c55e','#f59e0b','#ef4444']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',rtl:true,labels:{font:{family:'Heebo'}}}}}
+  });
+
+  // TOP SUPPLIERS
+  const top10=Object.values(supplierStats).sort((a,b)=>b.amount-a.amount).slice(0,10);
+  if(chartSup) chartSup.destroy();
+  chartSup=new Chart(document.getElementById('chart-suppliers'),{
+    type:'bar',
+    data:{labels:top10.map(s=>s.name),datasets:[{label:'היקף',data:top10.map(s=>s.amount),backgroundColor:'#1e6abf'}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmtAmt(v)}}}}
+  });
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['dashboard','findings','suppliers'];
+    t.classList.toggle('active',names[i]===name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// FINDINGS RENDER
+function renderFindings(){
+  const q=(document.getElementById('find-search').value||'').toLowerCase();
+  const typeF=document.getElementById('find-type').value;
+  const riskF=document.getElementById('find-risk').value;
+  const statF=document.getElementById('find-status').value;
+
+  let list=findings.filter(f=>{
+    if(typeF && !f.type.includes(typeF) && !f.subtype.includes(typeF)) return false;
+    if(riskF==='high' && f.risk<70) return false;
+    if(riskF==='med' && (f.risk<40||f.risk>=70)) return false;
+    if(riskF==='low' && f.risk>=40) return false;
+    if(statF && f.status!==statF) return false;
+    if(q && !f.title.toLowerCase().includes(q) && !(f.detail||'').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>b.risk-a.risk);
+
+  document.getElementById('findings-count').textContent=`${list.length} מתוך ${findings.length} ממצאים`;
+  const el=document.getElementById('findings-list');
+  if(!list.length){ el.innerHTML='<div class="alert alert-info">לא נמצאו ממצאים התואמים לסינון</div>'; return; }
+  el.innerHTML=list.map(f=>renderFindingCard(f)).join('');
+}
+
+function renderFindingCard(f){
+  const cls=f.risk>=70?'high':f.risk>=40?'med':'low';
+  const statusLabels={new:'חדש',review:'בבדיקה',resolved:'טופל',ignored:'התעלמות'};
+  const details=Object.entries(f.fields||{}).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join('');
+  return `<div class="finding-card collapsed" id="fc-${esc(f.id)}">
+    <div class="risk-badge ${cls}">${f.risk}</div>
+    <div class="finding-main">
+      <div class="finding-header" onclick="toggleFinding('${esc(f.id)}')">
+        <span class="finding-title">${esc(f.title)}</span>
+        <span class="finding-type-tag">${esc(f.subtype||f.type)}</span>
+      </div>
+      <div class="finding-meta">${esc(f.detail||'')}</div>
+      <div class="finding-body">
+        <dl class="finding-detail-grid">${details}</dl>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <label style="font-size:.8rem;color:var(--muted)">סטטוס:</label>
+          <select class="status-select" onchange="setStatus('${esc(f.id)}',this.value)">
+            <option value="new" ${f.status==='new'?'selected':''}>חדש</option>
+            <option value="review" ${f.status==='review'?'selected':''}>בבדיקה</option>
+            <option value="resolved" ${f.status==='resolved'?'selected':''}>טופל</option>
+            <option value="ignored" ${f.status==='ignored'?'selected':''}>התעלמות</option>
+          </select>
+          <span class="status-${f.status}">${statusLabels[f.status]||f.status}</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleFinding(id){
+  const el=document.getElementById('fc-'+id);
+  if(el) el.classList.toggle('collapsed');
+}
+
+function setStatus(id,status){
+  const f=findings.find(x=>x.id===id);
+  if(f){ f.status=status; renderFindings(); }
+}
+
+// SUPPLIERS RENDER
+function renderSuppliers(){
+  const q=(document.getElementById('sup-search').value||'').toLowerCase();
+  const sort=document.getElementById('sup-sort').value;
+  let list=Object.values(supplierStats).filter(s=>!q||s.name.toLowerCase().includes(q));
+  list.sort((a,b)=>b[{amount:'amount',risk:'maxRisk',tx:'tx',findings:'findings'}[sort]]-a[{amount:'amount',risk:'maxRisk',tx:'tx',findings:'findings'}[sort]]);
+  const tbody=document.getElementById('sup-tbody');
+  tbody.innerHTML=list.map(s=>{
+    const cls=s.maxRisk>=70?'high':s.maxRisk>=40?'med':'low';
+    return `<tr>
+      <td><strong>${esc(s.name)}</strong></td>
+      <td>${s.tx.toLocaleString()}</td>
+      <td>${fmtAmt(s.amount)}</td>
+      <td>${fmtAmt(s.amount/s.tx)}</td>
+      <td>${s.findings}</td>
+      <td><span class="risk-pill ${cls}">${s.maxRisk}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════
+function exportFindings(){
+  const data=findings.map(f=>({
+    'מזהה': f.id,
+    'סוג': f.type,
+    'תת-סוג': f.subtype||'',
+    'כותרת': f.title,
+    'פירוט': f.detail||'',
+    'ציון סיכון': f.risk,
+    'ספק': f.row.supplier_name||'',
+    'סכום': f.row._amount||0,
+    'תאריך': fmtDate(f.row._date),
+    'סטטוס': f.status,
+    'הערות': f.notes||'',
+    'שורה': (f.row._idx||0)+1,
+  }));
+  dlXLSX(data,'ממצאי_FCI');
+}
+
+function exportSuppliers(){
+  const data=Object.values(supplierStats).map(s=>({
+    'שם ספק': s.name,
+    'מס׳ עסקאות': s.tx,
+    'היקף כולל': s.amount,
+    'ממוצע עסקה': Math.round(s.amount/s.tx),
+    'מס׳ ממצאים': s.findings,
+    'ציון סיכון מקסימלי': s.maxRisk,
+  }));
+  dlXLSX(data,'ספקים_FCI');
+}
+
+function dlXLSX(data,name){
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'נתונים');
+  XLSX.writeFile(wb,name+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ══════════════════════════════════════════════════
+// FORMATTERS
+// ══════════════════════════════════════════════════
+function fmtAmt(v){
+  if(!v&&v!==0) return '—';
+  return Number(v).toLocaleString('he-IL',{maximumFractionDigits:0});
+}
+function fmtDate(d){
+  if(!d) return '—';
+  return d.toLocaleDateString('he-IL');
+}
+
+// ══════════════════════════════════════════════════
+// AUTH GUARD (optional — allow guest access for demo)
+// ══════════════════════════════════════════════════
+(async()=>{
+  try{
+    const SUPABASE_URL='https://jixaskajgkorrjhxiflc.supabase.co';
+    const SUPABASE_KEY='sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
+    window._sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
