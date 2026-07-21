@@ -140,6 +140,7 @@
     .wa-option-title{font-weight:700;font-size:0.85rem;display:block}
     .wa-option-sub{font-size:0.73rem;color:#6b7a99;margin-top:2px;display:block;line-height:1.4}
   </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -594,6 +595,7 @@
 
 <script>
 const UK="kbi_users",SK="kbi_session";
+const _sb=supabase.createClient('https://jixaskajgkorrjhxiflc.supabase.co','sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X');
 const SHEETS_URL='https://script.google.com/macros/s/AKfycby1tlOkvMLIwPt_Jb_voDGj56MF2KOL63uGcq8uPnfdqqnBPghmbbJLXVjkVN1RJasrDg/exec';
 // Cookie + localStorage + memory fallback
 let _mu={},_ms=null;
@@ -633,15 +635,26 @@ function setErr(id,msg){const el=document.getElementById(id);el.classList.add('e
 function clrErr(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('err');const e=el.parentNode.querySelector('.ferr');if(e)e.remove()}
 function clrAll(ids){ids.forEach(clrErr)}
 
-function updateUI(){
+async function updateUI(){
   const s=getSession();
   const bar=document.getElementById('user-bar');
   const btn=document.getElementById('nav-auth-btn');
-  if(s){
+  let displayName=s?.name||null;
+
+  if(!displayName){
+    try{
+      const {data:{session}}=await _sb.auth.getSession();
+      if(session){
+        displayName=session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'משתמש';
+      }
+    }catch(e){}
+  }
+
+  if(displayName){
     bar.classList.add('show');
-    document.getElementById('user-name-display').textContent=s.name;
-    document.getElementById('user-dropdown-name').textContent=s.name;
-    btn.textContent=s.name.split(' ')[0]+' ▾';
+    document.getElementById('user-name-display').textContent=displayName;
+    document.getElementById('user-dropdown-name').textContent=displayName;
+    btn.textContent=displayName.split(' ')[0]+' ▾';
     btn.onclick=(e)=>{e.stopPropagation();toggleUserDropdown()};
   } else {
     bar.classList.remove('show');
@@ -665,7 +678,7 @@ function forgotPassword(){
     ? `לאיפוס הסיסמה לחשבון ${email} — שלח מייל ל־info@kandelbi.org עם כתובת המייל שנרשמת.`
     : 'שלח מייל ל־info@kandelbi.org עם כתובת המייל שנרשמת ונאפס עבורך את הסיסמה.');
 }
-function logout(){clearSess();updateUI();showOK('יצאת מהחשבון בהצלחה.')}
+async function logout(){clearSess();try{await _sb.auth.signOut();}catch(e){}updateUI();showOK('יצאת מהחשבון בהצלחה.')}
 
 document.addEventListener('click',()=>closeUserDropdown());
 
@@ -841,6 +854,8 @@ function searchCards(q){
     c.style.setProperty('display', show ? 'flex' : 'none', 'important');
   });
 }
+
+_sb.auth.onAuthStateChange(()=>updateUI());
 
 document.addEventListener("DOMContentLoaded",function(){
   updateUI();

@@ -128,7 +128,7 @@ tr:last-child td{border-bottom:none}
 <div style="height:64px"></div>
 <div id="qa-banner" style="background:#fffbeb;border-bottom:2px solid #f5d48a;padding:8px 5vw;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-family:'Heebo',sans-serif;direction:rtl">
   <span>⚠️</span>
-  <span style="font-size:0.85rem;color:#7a5200;flex:1;line-height:1.5"><strong>כלי זה לא עבר עדיין בקרת איכות מלאה</strong> — יש לבדוק ולאמת את התוצאות לפני הסתמכות עליהם. נתקלתם בבעיה? נשמח לשמוע: <a href="tel:050-6914898" style="color:#b87400;font-weight:700;text-decoration:none">050-6914898</a></span>
+  <span style="font-size:0.85rem;color:#7a5200;flex:1;line-height:1.5"><strong>כלי זה לא עבר עדיין בקרת איכות מלאה</strong> — יש לבדוק ולאמת את התוצאות לפני הסתמכות עליהן. נתקלתם בבעיה? נשמח לשמוע: <a href="tel:050-6914898" style="color:#b87400;font-weight:700;text-decoration:none">050-6914898</a></span>
   <button onclick="document.getElementById('qa-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#b87400;font-size:1.1rem;padding:0;line-height:1;flex-shrink:0">✕</button>
 </div>
 <main>
@@ -143,6 +143,14 @@ tr:last-child td{border-bottom:none}
     <div class="inst-step"><div class="inst-num">3</div><span>הגדר <strong>לפי מה לקבץ</strong> — לדוגמה: "שירות" + "ספק" יחשב סיכום נפרד לכל שירות+ספק</span></div>
     <div class="inst-step"><div class="inst-num">4</div><span>הוסף <strong>תנאי סינון</strong> אופציונליים — לדוגמה: רק שורות שאושרו, רק חודש מסוים</span></div>
     <div class="inst-step"><div class="inst-num">5</div><span>קבל דוח: אילו שורות תואמות, אילו שונות, מה חסר ומה עודף</span></div>
+  </div>
+  <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px solid rgba(255,255,255,0.15);display:flex;flex-direction:column;gap:5px">
+    <div style="font-weight:700;font-size:0.82rem;color:var(--accent);margin-bottom:2px">ℹ️ כיצד הנתונים מעובדים</div>
+    <div style="font-size:0.82rem;color:rgba(255,255,255,0.78);line-height:1.6">
+      <span style="color:rgba(255,255,255,0.5)">הפרש = </span><strong>סכום סיכום פחות סכום פירוט</strong> — ערך חיובי פירושו שהסיכום גבוה מהפירוט; שלילי — שהסיכום נמוך יותר.<br>
+      <span style="color:rgba(255,255,255,0.5)">ערכים ריקים</span> נחשבים אפס · <span style="color:rgba(255,255,255,0.5)">פסיקים וסימן ₪</span> מוסרים אוטומטית · <span style="color:rgba(255,255,255,0.5)">ערך שאינו מספר</span> נחשב אפס · מספרים שליליים מותרים<br>
+      <span style="color:rgba(255,255,255,0.5)">התאמת טקסט</span>: רווחים מובילים/נגררים מוסרים אוטומטית · הבחנה בין אותיות גדולות וקטנות · שורות לאותו מפתח מצטברות לפני ההשוואה
+    </div>
   </div>
 </div>
 
@@ -220,7 +228,7 @@ tr:last-child td{border-bottom:none}
   <div class="form-group" style="max-width:200px">
     <label>סף סטייה מקסימלי (₪):</label>
     <input type="number" id="tolerance" value="0.01" step="0.01" min="0" placeholder="0.01"/>
-    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">הפרש קטן מסף זה ייחשב כהתאמה</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">הפרש קטן מסף זה או שווה לו ייחשב כהתאמה (כולל הגבול)</div>
   </div>
 
   <button class="btn-primary" id="btn-run" onclick="runComparison()">⚖️ הרץ השוואה</button>
@@ -599,7 +607,7 @@ function renderResults(data){
   // Headers
   const groupHeaders=groupCols.map(g=>`<th>${g.label}</th>`).join('');
   document.getElementById('result-head').innerHTML=
-    `${groupHeaders}<th class="num">סכום פירוט ₪</th><th class="num">סכום סיכום ₪</th><th class="num">הפרש ₪</th><th>סטטוס</th>`;
+    `${groupHeaders}<th class="num">סכום פירוט ₪</th><th class="num">סכום סיכום ₪</th><th class="num" title="הפרש = סכום סיכום פחות סכום פירוט. ערך חיובי = סיכום גבוה יותר">הפרש ₪ (סיכום − פירוט)</th><th>סטטוס</th>`;
 
   // Rows
   document.getElementById('result-body').innerHTML=data.map(r=>{
