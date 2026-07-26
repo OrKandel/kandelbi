@@ -104,9 +104,9 @@ tr:last-child td{border-bottom:none}
 .b-missing{background:#fff3e0;color:var(--orange)}
 .b-extra{background:#f3e8ff;color:#7c3aed}
 .num{text-align:left;font-family:'Heebo';font-weight:600}
-.diff-pos{color:var(--red);font-weight:700}
-.diff-neg{color:var(--orange);font-weight:700}
-.diff-ok{color:var(--green);font-weight:700}
+.diff-pos{color:var(--red);font-weight:700;background:#fef2f2}
+.diff-neg{color:var(--orange);font-weight:700;background:#fff3e0}
+.diff-ok{color:var(--green);font-weight:700;background:#f0fdf4}
 .hidden{display:none}
 .alert{padding:12px 16px;border-radius:10px;font-size:0.88rem;font-weight:600;margin-bottom:1rem}
 .alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue)}
@@ -225,8 +225,14 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+  <div class="form-group" style="max-width:200px;margin-bottom:1.2rem">
+    <label>יחידת מידה (תופיע בעמודות הסכום):</label>
+    <input type="text" id="unit-label" value="₪" placeholder="₪" style="max-width:120px"/>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">לדוגמה: ₪, שעות, יח׳, ק"ג — ריק = ללא יחידה</div>
+  </div>
+
   <div class="form-group" style="max-width:200px">
-    <label>סף סטייה מקסימלי (₪):</label>
+    <label>סף סטייה מקסימלי:</label>
     <input type="number" id="tolerance" value="0.01" step="0.01" min="0" placeholder="0.01"/>
     <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">הפרש קטן מסף זה או שווה לו ייחשב כהתאמה (כולל הגבול)</div>
   </div>
@@ -264,12 +270,13 @@ tr:last-child td{border-bottom:none}
 </main>
 
 <script>
-let detailData={headers:[],rows:[]};
-let summaryData={headers:[],rows:[]};
+let detailData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
+let summaryData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
 let groupCols=[]; // [{detailCol, summaryCol, label}]
 let conditionCount=0;
 let allResults=[];
 const tolerance=()=>parseFloat(document.getElementById('tolerance').value)||0.01;
+const getUnit=()=>(document.getElementById('unit-label')?.value||'').trim();
 
 // ── SHEET & HEADER ROW HELPERS ──
 function sheetSelectorHtml(wb, selId, onchangeFn){
@@ -398,7 +405,7 @@ function loadFile(inputId, dzId, dataObj, wrapId, shSelId, shOnchange, hdrSelId,
 }
 
 function clearRecDetail(){
-  detailData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
+  Object.assign(detailData,{headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0});
   document.getElementById('rec-detail-chip').innerHTML='';
   document.getElementById('rec-detail-sheet-sel-wrap').innerHTML='';
   const dz=document.getElementById('dz-detail');
@@ -408,7 +415,7 @@ function clearRecDetail(){
   document.getElementById('config-card').classList.add('hidden');
 }
 function clearRecSummary(){
-  summaryData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
+  Object.assign(summaryData,{headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0});
   document.getElementById('rec-summary-chip').innerHTML='';
   document.getElementById('rec-summary-sheet-sel-wrap').innerHTML='';
   const dz=document.getElementById('dz-summary');
@@ -425,6 +432,34 @@ function checkReady(){
   if(!detailData.headers.length||!summaryData.headers.length) return;
   buildConfig();
   document.getElementById('config-card').classList.remove('hidden');
+  autoAddFirstGroup();
+}
+
+// Bug 1: auto-populate first group pair without requiring a click
+function autoAddFirstGroup(){
+  if(groupCols.length>0) return;
+  const dH=detailData.headers, sH=summaryData.headers;
+  const dAmt=parseInt(document.getElementById('detail-amount').value)||0;
+  const sAmt=parseInt(document.getElementById('summary-amount').value)||0;
+  // Try matching column names (case-insensitive)
+  for(let di=0;di<dH.length;di++){
+    if(di===dAmt) continue;
+    const dn=String(dH[di]||'').trim().toLowerCase(); if(!dn) continue;
+    for(let si=0;si<sH.length;si++){
+      if(si===sAmt) continue;
+      if(dn===String(sH[si]||'').trim().toLowerCase()){
+        const label=dH[di]+(dH[di]!==sH[si]?' / '+sH[si]:'');
+        groupCols.push({di,si,label}); renderGroupTags(); return;
+      }
+    }
+  }
+  // Fallback: first non-amount column from each
+  const di=dH.findIndex((_,i)=>i!==dAmt&&String(dH[i]||'').trim());
+  const si=sH.findIndex((_,i)=>i!==sAmt&&String(sH[i]||'').trim());
+  if(di>=0&&si>=0){
+    const label=dH[di]+(dH[di]!==sH[si]?' / '+sH[si]:'');
+    groupCols.push({di,si,label}); renderGroupTags();
+  }
 }
 
 function buildConfig(){
@@ -510,7 +545,10 @@ function applyConditions(rows){
 // ── PARSE NUMBER ──
 function parseNum(v){
   if(v===''||v===null||v===undefined) return 0;
-  const n=parseFloat(String(v).replace(/[,₪\s]/g,''));
+  let s=String(v).trim();
+  // Bug 5: accounting format (5) = -5
+  if(/^\([\d,.\s]+\)$/.test(s)) s='-'+s.slice(1,-1);
+  const n=parseFloat(s.replace(/[,₪\s]/g,''));
   return isNaN(n)?0:n;
 }
 
@@ -555,8 +593,8 @@ function runComparison(){
     const d=detailGroups[key];
     const s=summaryGroups[key];
     const keyVals=d?.keyVals||s?.keyVals||[];
-    const detailSum=d?.sum||null;
-    const summarySum=s?.sum||null;
+    const detailSum=d!=null?d.sum:null;
+    const summarySum=s!=null?s.sum:null;
     const diff=detailSum!==null&&summarySum!==null?summarySum-detailSum:null;
 
     let status;
@@ -582,9 +620,7 @@ function renderResults(data){
   data.forEach(r=>cnt[r.status]++);
 
   // KPIs
-  const totalDetailSum=allResults.filter(r=>r.detailSum!==null).reduce((s,r)=>s+r.detailSum,0);
-  const totalSummarySum=allResults.filter(r=>r.summarySum!==null).reduce((s,r)=>s+r.summarySum,0);
-  const totalDiff=totalSummarySum-totalDetailSum;
+  const totalDiff=allResults.filter(r=>r.diff!==null).reduce((s,r)=>s+r.diff,0);
 
   document.getElementById('kpi-bar').innerHTML=`
     <div class="kpi ${cnt.diff===0&&cnt.missing===0&&cnt.extra===0?'ok':'err'}">
@@ -600,14 +636,16 @@ function renderResults(data){
       <span class="kpi-val">${cnt.extra}</span><span class="kpi-lbl">עודף בסיכום</span>
     </div>
     <div class="kpi ${Math.abs(totalDiff)<=tolerance()?'ok':'err'}">
-      <span class="kpi-val">${fmtNum(totalDiff)}</span><span class="kpi-lbl">סה"כ הפרש ₪</span>
+      <span class="kpi-val">${fmtNum(totalDiff)}</span><span class="kpi-lbl">סה"כ הפרש${getUnit()?' '+getUnit():''}</span>
     </div>
   `;
 
   // Headers
+  const unit=getUnit();
+  const uSfx=unit?' '+unit:'';
   const groupHeaders=groupCols.map(g=>`<th>${g.label}</th>`).join('');
   document.getElementById('result-head').innerHTML=
-    `${groupHeaders}<th class="num">סכום פירוט ₪</th><th class="num">סכום סיכום ₪</th><th class="num" title="הפרש = סכום סיכום פחות סכום פירוט. ערך חיובי = סיכום גבוה יותר">הפרש ₪ (סיכום − פירוט)</th><th>סטטוס</th>`;
+    `${groupHeaders}<th class="num">סכום פירוט${uSfx}</th><th class="num">סכום סיכום${uSfx}</th><th class="num" title="הפרש = סכום סיכום פחות סכום פירוט. ערך חיובי = סיכום גבוה יותר">הפרש${uSfx} (סיכום − פירוט)</th><th>סטטוס</th>`;
 
   // Rows
   document.getElementById('result-body').innerHTML=data.map(r=>{
@@ -634,12 +672,13 @@ function filterResults(status,btn){
 }
 
 function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
-function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
+function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{rightToLeft:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
 function _xlsAutoW(hdrs,rows){return hdrs.map((h,ci)=>{const max=rows.reduce((mx,r)=>Math.max(mx,String(r[ci]??'').length),0);return Math.min(Math.max(String(h||'').length+3,max+3,9),48);});}
 function exportResults(){
   const groupHeaders=groupCols.map(g=>g.label);
   const nGroup=groupHeaders.length;
-  const hdrs=[...groupHeaders,'סכום פירוט ₪','סכום סיכום ₪','הפרש ₪','סטטוס'];
+  const u=getUnit(), uSuf=u?' '+u:'';
+  const hdrs=[...groupHeaders,`סכום פירוט${uSuf}`,`סכום סיכום${uSuf}`,`הפרש${uSuf}`,'סטטוס'];
   const statusColIdx=hdrs.length-1;
   const dataRows=allResults.map(r=>[
     ...r.keyVals,
@@ -667,12 +706,16 @@ function exportResults(){
 }
 
 function resetTool(){
-  detailData={headers:[],rows:[]};
-  summaryData={headers:[],rows:[]};
+  Object.assign(detailData,{headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0});
+  Object.assign(summaryData,{headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0});
   groupCols=[];
   allResults=[];
   document.getElementById('fi-detail').value='';
   document.getElementById('fi-summary').value='';
+  document.getElementById('rec-detail-chip').innerHTML='';
+  document.getElementById('rec-summary-chip').innerHTML='';
+  document.getElementById('rec-detail-sheet-sel-wrap').innerHTML='';
+  document.getElementById('rec-summary-sheet-sel-wrap').innerHTML='';
   ['dz-detail','dz-summary'].forEach(id=>{
     const dz=document.getElementById(id);
     dz.classList.remove('loaded');
