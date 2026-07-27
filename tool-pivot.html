@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-FR9DZSW3M4');</script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>טבלת ציר דינמית — קנדל BI</title>
+<meta name="description" content="צור טבלת ציר מכל קובץ אקסל — קבץ לפי שורות ועמודות, בחר ערך ופעולת חישוב. עובד ישירות בדפדפן ללא שרת."/>
+<meta name="keywords" content="טבלת ציר, pivot table, אקסל, ניתוח נתונים, סיכום אקסל, BI"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-pivot.html"/>
+<meta property="og:title" content="טבלת ציר דינמית — קנדל BI"/>
+<meta property="og:description" content="צור טבלת ציר מכל קובץ אקסל. קבץ לפי שורות ועמודות. עובד בדפדפן ללא שרת."/>
+<meta property="og:url" content="https://kandelbi.org/tool-pivot.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--orange:#e67e22;--shadow:0 4px 24px rgba(13,31,60,0.10);
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+main{max-width:1200px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-box:hover{border-color:var(--blue);background:#eef3fb}.upload-box.loaded{border-color:var(--green);background:#edf7f3}
+.ub-icon{font-size:2rem;margin-bottom:6px}.ub-text{font-weight:700;font-size:0.9rem}.ub-sub{font-size:0.75rem;color:var(--muted);margin-top:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.file-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.chip .x{cursor:pointer;color:var(--muted);font-weight:700}.chip .x:hover{color:var(--red)}
+.config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin-bottom:1rem}
+.form-group{margin-bottom:0.9rem}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.form-group select,.form-group input[type=text],.form-group input[type=number]{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;outline:none;background:var(--white)}
+.form-group select:focus,.form-group input:focus{border-color:var(--blue)}
+.conditions-wrap{background:var(--bg);border-radius:10px;padding:1rem;border:1px solid var(--border)}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tag-item{display:flex;align-items:center;gap:4px;background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue);border-radius:20px;padding:4px 10px;font-size:0.8rem;font-weight:600}
+.tag-x{cursor:pointer;font-size:0.9rem;color:var(--muted);margin-right:2px}.tag-x:hover{color:var(--red)}
+.add-col-row{display:flex;gap:8px;margin-top:4px}
+.add-col-row select{flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.85rem;outline:none;background:var(--white)}
+.btn-add-tag{background:var(--blue);color:#fff;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:0.85rem;font-weight:700;font-family:inherit;flex-shrink:0}
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--navy2)}.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+.kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center}
+.kpi-val{font-weight:900;font-size:1.5rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.72rem;color:var(--muted);margin-top:3px}
+.pivot-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:600px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.8rem}
+th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:1;user-select:none}
+th.sortable{cursor:pointer}th.sortable:hover{background:var(--navy2)}
+th.active-sort{background:var(--blue)}
+th.th-total{background:#152b50}
+td{padding:7px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:#f5f7fc}
+tr.total-row td{font-weight:800;background:#f0f3f8;border-top:2px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.num{text-align:left;font-variant-numeric:tabular-nums}
+.num-neg{color:var(--red)}.num-pos{color:var(--green)}.cell-null{color:#ccc}
+.hidden{display:none}
+.alert{padding:12px 16px;border-radius:10px;font-size:0.88rem;font-weight:600;margin-bottom:1rem}
+.alert-warn{background:#fff8ed;border:1px solid #f5d48a;color:#7a5200}
+.alert-info{background:#eef3fb;border:1px solid #c8d9f2;color:var(--blue)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="auth-guard.js"></script>
+</head>
+<body>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים לשימוש</a></li>
+    <li><a href="services.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">שירותים</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<div id="qa-banner" style="background:#fffbeb;border-bottom:2px solid #f5d48a;padding:8px 5vw;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-family:'Heebo',sans-serif;direction:rtl">
+  <span>⚠️</span>
+  <span style="font-size:0.85rem;color:#7a5200;flex:1;line-height:1.5"><strong>כלי זה לא עבר עדיין בקרת איכות מלאה</strong> — יש לבדוק ולאמת את התוצאות לפני הסתמכות עליהן. נתקלתם בבעיה? נשמח לשמוע: <a href="tel:050-6914898" style="color:#b87400;font-weight:700;text-decoration:none">050-6914898</a></span>
+  <button onclick="document.getElementById('qa-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#b87400;font-size:1.1rem;padding:0;line-height:1;flex-shrink:0">✕</button>
+</div>
+<main>
+<div class="tool-title">🔄 טבלת ציר דינמית</div>
+<div class="tool-sub">קבץ לפי שורות ועמודות — שורה אחת לכל ערך, עמודה אחת לכל ציר</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה קובץ אקסל — גדול ככל שיהיה (xlsx / csv)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>הוסף <strong>עמודות שורה</strong> — הערכים שלהן יהפכו לשורות בתוצאה (לדוגמה: מחלקה, ספק, קוד)</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>בחר <strong>עמודת ציר</strong> (אופציונלי) — כל ערך ייהפך לעמודה נפרדת (לדוגמה: חודש, שנה, גיליון מקור)</span></div>
+    <div class="inst-step"><div class="inst-num">4</div><span>בחר <strong>עמודת ערך</strong> ו<strong>פעולת חישוב</strong> — מה לחשב בכל תא</span></div>
+    <div class="inst-step"><div class="inst-num">5</div><span>ייצא את הטבלה לאקסל עם עמודת סה"כ לכל שורה ושורת סה"כ בסוף</span></div>
+  </div>
+</div>
+
+<!-- Upload -->
+<div class="card">
+  <div class="card-title">📂 העלאת קובץ</div>
+  <div class="upload-box" id="dz" onclick="document.getElementById('fi').click()">
+    <div class="ub-icon">📊</div>
+    <div class="ub-text">לחץ לבחירת קובץ או גרור לכאן</div>
+    <div class="ub-sub">xlsx / xls / csv</div>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden/>
+  <div class="file-chips" id="file-chip"></div>
+  <div id="sheet-sel-wrap"></div>
+  <div id="hdr-sel-wrap"></div>
+</div>
+
+<!-- Config -->
+<div class="card hidden" id="config-card">
+  <div class="card-title">⚙️ הגדרות טבלת הציר</div>
+
+  <!-- Row grouping columns -->
+  <div style="margin-bottom:1.4rem">
+    <label style="font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">📋 עמודות שורה — הערכים יהפכו לשורות בטבלה:</label>
+    <div class="conditions-wrap">
+      <div class="tags-wrap" id="row-tags"><span style="font-size:0.78rem;color:var(--muted)">טרם נבחרו עמודות שורה</span></div>
+      <div class="add-col-row">
+        <select id="add-row-col"><option value="">— בחר עמודה —</option></select>
+        <button class="btn-add-tag" onclick="addRowCol()">+ הוסף</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-grid">
+    <div class="form-group">
+      <label>🔄 עמודת ציר (אופציונלי — ערכים יהפכו לעמודות):</label>
+      <select id="col-pivot" onchange="runPivot()"><option value="-1">— ללא ציר (שורות בלבד) —</option></select>
+    </div>
+    <div class="form-group">
+      <label>💰 עמודת ערך:</label>
+      <select id="col-value" onchange="runPivot()"></select>
+    </div>
+    <div class="form-group">
+      <label>🔢 פעולת חישוב:</label>
+      <select id="agg-func" onchange="runPivot()">
+        <option value="sum">סכום</option>
+        <option value="count">ספירה (מספר שורות)</option>
+        <option value="avg">ממוצע</option>
+        <option value="max">מקסימום</option>
+        <option value="min">מינימום</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group" style="max-width:420px;margin-bottom:1.2rem">
+    <label>🔍 סינון חופשי (מחפש בכל עמודות השורה):</label>
+    <input type="text" id="filter-text" placeholder="הקלד לסינון..." oninput="runPivot()"/>
+  </div>
+
+  <button class="btn-primary" onclick="runPivot()">⚙️ הרץ טבלת ציר</button>
+</div>
+
+<!-- Results -->
+<div class="card hidden" id="results-card">
+  <div class="card-title">📊 תוצאות</div>
+  <div class="kpi-bar" id="kpi-bar"></div>
+  <div id="col-warning" class="alert alert-warn hidden"></div>
+  <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+    <button class="btn-accent" onclick="exportPivot()">⬇ ייצא לאקסל</button>
+    <button class="btn-primary" style="background:#6b7a99" onclick="resetTool()">🔄 התחל מחדש</button>
+  </div>
+  <div class="pivot-wrap">
+    <table>
+      <thead id="pivot-head"></thead>
+      <tbody id="pivot-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div style="max-width:960px;margin:2.5rem auto 0;padding:1.2rem 5vw;border-top:1px solid #dce3ef;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+  <span style="font-size:0.85rem;color:#6b7a99;">רוצה <strong style="color:#1a1a2e;">כלי שתפור להתקשרות הספציפית שלך</strong>? בחודש הבא כבר תוכל להשתמש בו. &nbsp;<a href="contact.html" style="color:#1e6abf;font-weight:700;">צור קשר ←</a></span>
+  <span style="font-size:0.78rem;color:#9aa5bb;">© 2025 קנדל BI | כל הזכויות שמורות | חל איסור על העתקת הכלים</span>
+</div>
+</main>
+
+<script>
+const MAX_PIVOT_COLS = 60;
+
+let rawData = [], headers = [], rowColDefs = [];
+// {idx, label}
+let fileState = {wb:null, allRows:null, selectedSheet:null, headerRowIdx:0};
+let lastPivot = null; // {resultRows, colKeys, pivotIdx, valColIdx, fn}
+let sortState = {colKey: null, asc: true};
+
+// ── FILE LOAD / SHEET / HEADER HELPERS ──
+
+function unmergeSheet(ws) {
+  if (!ws || !ws['!merges'] || !ws['!merges'].length) return ws;
+  const out = Object.assign({}, ws);
+  const rowCols = {};
+  Object.keys(ws).forEach(k => {
+    if (k[0] === '!') return;
+    try { const {r,c}=XLSX.utils.decode_cell(k); if(ws[k]&&ws[k].v!==''&&ws[k].v!=null)(rowCols[r]||(rowCols[r]=new Set())).add(c); } catch(e){}
+  });
+  ws['!merges'].forEach(m => {
+    const src = ws[XLSX.utils.encode_cell({r:m.s.r,c:m.s.c})];
+    if (!src) return;
+    for (let r = m.s.r+1; r <= m.e.r; r++) {
+      const cols = rowCols[r];
+      if (!cols || ![...cols].some(c => c < m.s.c || c > m.e.c)) continue;
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({r,c});
+        if (!out[addr] || out[addr].v === '' || out[addr].v == null) out[addr] = {...src};
+      }
+    }
+  });
+  return out;
+}
+
+function getRowsFromWb(wb, sheetName) {
+  if (sheetName === '__ALL__') {
+    let all = [];
+    wb.SheetNames.forEach((n,i) => {
+      const r = XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[n]),{header:1,defval:'',raw:false}).filter(row=>row.some(c=>c!==''));
+      if (i === 0) all.push(...r); else all.push(...r.slice(1));
+    });
+    return all;
+  }
+  return XLSX.utils.sheet_to_json(unmergeSheet(wb.Sheets[sheetName]||wb.Sheets[wb.SheetNames[0]]),{header:1,defval:'',raw:false}).filter(r=>r.some(c=>c!==''));
+}
+
+function sheetSelectorHtml(wb, selId, onchangeFn) {
+  if (!wb || !wb.SheetNames || wb.SheetNames.length <= 1) return '';
+  const opts = wb.SheetNames.map((name,i) => {
+    const ws = wb.Sheets[name];
+    const ref = ws['!ref'] || 'A1';
+    const range = XLSX.utils.decode_range(ref);
+    const rows = range.e.r - range.s.r + 1;
+    return `<option value="${name}"${i===0?' selected':''}>${name} (${rows} שורות)</option>`;
+  });
+  opts.push(`<option value="__ALL__">⊞ כל הגיליונות יחד (${wb.SheetNames.length} — מבנה זהה)</option>`);
+  return `<div style="background:#eef3fb;border:1px solid #c8d9f2;border-radius:7px;padding:8px 12px;margin-top:0.5rem;font-size:0.82rem">
+    <div style="font-weight:700;color:#1e6abf;margin-bottom:5px">📋 בחר גיליון:</div>
+    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #c8d9f2;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+  </div>`;
+}
+
+function headerRowSelectorHtml(allRows, selId, onchangeFn, currentIdx) {
+  if (!allRows || allRows.length <= 1) return '';
+  const n = Math.min(allRows.length, 20);
+  const opts = Array.from({length:n}, (_,i) => {
+    const preview = (allRows[i]||[]).slice(0,5).map(c=>String(c||'').slice(0,18)).filter(Boolean).join(' | ');
+    return `<option value="${i}"${(currentIdx||0)===i?' selected':''}>שורה ${i+1}${i===0?' (ברירת מחדל)':''}: ${preview.replace(/</g,'&lt;')}</option>`;
+  });
+  return `<div style="background:#fff8ed;border:1px solid #f5d48a;border-radius:7px;padding:8px 12px;margin-top:0.5rem;font-size:0.82rem">
+    <div style="font-weight:700;color:#b87400;margin-bottom:5px">⚠️ שורת הכותרות:</div>
+    <select id="${selId}" onchange="${onchangeFn}(this.value)" style="width:100%;padding:5px 8px;border:1.5px solid #f5d48a;border-radius:6px;font-family:inherit;font-size:0.82rem;background:#fff">${opts.join('')}</select>
+    <div style="font-size:0.74rem;color:#6b7a99;margin-top:3px">בחר שורה עם שמות עמודות אם הכותרות אינן בשורה הראשונה</div>
+  </div>`;
+}
+
+function applySheet(sheetName) {
+  const allRows = getRowsFromWb(fileState.wb, sheetName);
+  while (allRows.length && allRows[0].every(c=>!c)) allRows.shift();
+  fileState.allRows = allRows; fileState.selectedSheet = sheetName; fileState.headerRowIdx = 0;
+  headers = allRows[0] || [];
+  rawData = allRows.slice(1).filter(r=>r.some(c=>c!==''));
+  document.getElementById('sheet-sel-wrap').innerHTML =
+    sheetSelectorHtml(fileState.wb, 'sheet-sel', 'applySheet') +
+    headerRowSelectorHtml(allRows, 'hdr-sel', 'applyHeader', 0);
+  buildConfig();
+}
+
+function applyHeader(idx) {
+  if (!fileState.allRows) return;
+  fileState.headerRowIdx = +idx;
+  headers = fileState.allRows[+idx] || [];
+  rawData = fileState.allRows.slice(+idx+1).filter(r=>r.some(c=>c!==''));
+  buildConfig();
+}
+
+// File input
+document.getElementById('fi').addEventListener('change', e => loadFile(e.target.files[0]));
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+function loadFile(file) {
+  if (!file) return;
+  dz.classList.remove('drag','loaded');
+  dz.querySelector('.ub-icon').innerHTML = '<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
+  dz.querySelector('.ub-text').textContent = 'טוען קובץ...';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', cellDates:true, raw:false});
+    fileState.wb = wb;
+    const allRows = getRowsFromWb(wb, wb.SheetNames[0]);
+    while (allRows.length && allRows[0].every(c=>!c)) allRows.shift();
+    fileState.allRows = allRows; fileState.selectedSheet = wb.SheetNames[0]; fileState.headerRowIdx = 0;
+    headers = allRows[0] || [];
+    rawData = allRows.slice(1).filter(r=>r.some(c=>c!==''));
+
+    document.getElementById('file-chip').innerHTML =
+      `<div class="chip">📄 ${file.name.replace(/</g,'&lt;')} <span class="x" onclick="clearFile()">✕</span></div>`;
+    document.getElementById('sheet-sel-wrap').innerHTML =
+      sheetSelectorHtml(wb, 'sheet-sel', 'applySheet') +
+      headerRowSelectorHtml(allRows, 'hdr-sel', 'applyHeader', 0);
+
+    dz.classList.add('loaded');
+    dz.querySelector('.ub-icon').textContent = '✅';
+    dz.querySelector('.ub-text').textContent = file.name + ' (' + rawData.length.toLocaleString('he') + ' שורות)';
+    buildConfig();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearFile() {
+  Object.assign(fileState, {wb:null, allRows:null, selectedSheet:null, headerRowIdx:0});
+  rawData = []; headers = []; rowColDefs = []; lastPivot = null;
+  document.getElementById('file-chip').innerHTML = '';
+  document.getElementById('sheet-sel-wrap').innerHTML = '';
+  document.getElementById('hdr-sel-wrap').innerHTML = '';
+  document.getElementById('fi').value = '';
+  dz.classList.remove('loaded');
+  dz.querySelector('.ub-icon').textContent = '📊';
+  dz.querySelector('.ub-text').textContent = 'לחץ לבחירת קובץ או גרור לכאן';
+  document.getElementById('config-card').classList.add('hidden');
+  document.getElementById('results-card').classList.add('hidden');
+}
+
+// ── CONFIG BUILD ──
+
+function buildConfig() {
+  rowColDefs = [];
+  const opts = headers.map((h,i) => `<option value="${i}">${h || '(עמודה '+(i+1)+')'}</option>`).join('');
+  document.getElementById('add-row-col').innerHTML = '<option value="">— בחר עמודה —</option>' + opts;
+  document.getElementById('col-pivot').innerHTML = '<option value="-1">— ללא ציר (שורות בלבד) —</option>' + opts;
+  document.getElementById('col-value').innerHTML = opts;
+
+  // Auto-guess value column
+  const valKws = ['סכום','amount','סה"כ','total','מחיר','price','שכר','ערך','value'];
+  const guess = headers.findIndex(h => valKws.some(k => String(h).toLowerCase().includes(k)));
+  if (guess >= 0) document.getElementById('col-value').value = guess;
+
+  renderRowTags();
+  document.getElementById('config-card').classList.remove('hidden');
+}
+
+// ── ROW COLS ──
+
+function addRowCol() {
+  const sel = document.getElementById('add-row-col');
+  const idx = sel.value;
+  if (idx === '') { alert('בחר עמודה'); return; }
+  const idxN = parseInt(idx);
+  if (rowColDefs.some(d => d.idx === idxN)) { sel.value = ''; return; }
+  rowColDefs.push({idx: idxN, label: String(headers[idxN] || '(עמודה '+(idxN+1)+')')});
+  sel.value = '';
+  renderRowTags();
+  runPivot();
+}
+
+function removeRowCol(i) {
+  rowColDefs.splice(i, 1);
+  renderRowTags();
+  runPivot();
+}
+
+function renderRowTags() {
+  const wrap = document.getElementById('row-tags');
+  if (!rowColDefs.length) {
+    wrap.innerHTML = '<span style="font-size:0.78rem;color:var(--muted)">טרם נבחרו עמודות שורה — הוסף לפחות אחת</span>';
+  } else {
+    wrap.innerHTML = rowColDefs.map((d,i) =>
+      `<div class="tag-item"><span>${d.label}</span><span class="tag-x" onclick="removeRowCol(${i})">✕</span></div>`
+    ).join('');
+  }
+}
+
+// ── AGGREGATION ──
+
+function parseNum(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  let s = String(v).trim();
+  if (/^\([\d,.\s]+\)$/.test(s)) s = '-' + s.slice(1,-1);
+  const n = parseFloat(s.replace(/[,₪\s]/g,''));
+  return isNaN(n) ? null : n;
+}
+
+function aggBucket(bucket, fn) {
+  if (!bucket) return null;
+  if (fn === 'count') return bucket.count;
+  if (!bucket.vals.length) return null;
+  const v = bucket.vals;
+  switch(fn) {
+    case 'sum': return v.reduce((a,b) => a+b, 0);
+    case 'avg': return v.reduce((a,b) => a+b, 0) / v.length;
+    case 'max': return Math.max(...v);
+    case 'min': return Math.min(...v);
+  }
+  return null;
+}
+
+function aggMerge(buckets, fn) {
+  if (fn === 'count') return Object.values(buckets).reduce((s,b) => s+b.count, 0);
+  const all = Object.values(buckets).flatMap(b => b.vals);
+  if (!all.length) return null;
+  switch(fn) {
+    case 'sum': return all.reduce((a,b) => a+b, 0);
+    case 'avg': return all.reduce((a,b) => a+b, 0) / all.length;
+    case 'max': return Math.max(...all);
+    case 'min': return Math.min(...all);
+  }
+  return null;
+}
+
+function fmtNum(v, fn) {
+  if (v === null || v === undefined) return '';
+  if (fn === 'count') return v.toLocaleString('he');
+  return v.toLocaleString('he', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ── PIVOT COMPUTATION ──
+
+function runPivot() {
+  if (!rawData.length || !rowColDefs.length) return;
+
+  const pivotIdx = parseInt(document.getElementById('col-pivot').value);
+  const valColIdx = parseInt(document.getElementById('col-value').value);
+  const fn = document.getElementById('agg-func').value;
+  const filter = document.getElementById('filter-text').value.toLowerCase().trim();
+
+  const rowIdxs = rowColDefs.map(d => d.idx);
+
+  // Filter
+  let rows = rawData;
+  if (filter) {
+    rows = rows.filter(r => rowIdxs.some(i => String(r[i] ?? '').toLowerCase().includes(filter)));
+  }
+
+  // Build buckets
+  const rowMap = new Map(); // rowKey -> {meta:[], buckets:{colKey: {count,vals}}}
+  const colKeySet = new Set();
+  const hasPivot = pivotIdx >= 0;
+
+  for (const row of rows) {
+    const meta = rowIdxs.map(i => String(row[i] ?? '').trim());
+    const key = meta.join('\x00');
+    const colKey = hasPivot ? String(row[pivotIdx] ?? '').trim() : '__all__';
+    const val = parseNum(row[valColIdx]);
+
+    if (!rowMap.has(key)) rowMap.set(key, {meta, buckets: {}});
+    const entry = rowMap.get(key);
+    if (!entry.buckets[colKey]) entry.buckets[colKey] = {count:0, vals:[]};
+    entry.buckets[colKey].count++;
+    if (val !== null) entry.buckets[colKey].vals.push(val);
+    if (hasPivot) colKeySet.add(colKey);
+  }
+
+  // Sort column keys
+  let colKeys = [];
+  if (hasPivot) {
+    colKeys = [...colKeySet].sort((a,b) => {
+      const na = parseFloat(a.replace(/[^0-9.-]/g,'')), nb = parseFloat(b.replace(/[^0-9.-]/g,''));
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b, 'he');
+    });
+  }
+
+  // Warn if too many columns
+  const warn = document.getElementById('col-warning');
+  if (colKeys.length > MAX_PIVOT_COLS) {
+    warn.textContent = `⚠️ נמצאו ${colKeys.length} ערכים ייחודיים בעמודת הציר — מוצגים ${MAX_PIVOT_COLS} הראשונים בלבד. שקול לסנן את הנתונים.`;
+    warn.classList.remove('hidden');
+    colKeys = colKeys.slice(0, MAX_PIVOT_COLS);
+  } else {
+    warn.classList.add('hidden');
+  }
+
+  // Build result rows
+  const resultRows = [];
+  for (const [, entry] of rowMap) {
+    const r = {meta: entry.meta, cells: {}, buckets: entry.buckets};
+    for (const ck of (colKeys.length ? colKeys : ['__all__'])) {
+      r.cells[ck] = aggBucket(entry.buckets[ck], fn);
+    }
+    r.rowTotal = aggMerge(entry.buckets, fn);
+    resultRows.push(r);
+  }
+
+  lastPivot = {resultRows, colKeys, hasPivot, pivotIdx, valColIdx, fn};
+  sortState = {colKey: null, asc: true};
+  renderPivot(resultRows, colKeys, fn, hasPivot);
+  document.getElementById('results-card').classList.remove('hidden');
+  document.getElementById('results-card').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ── RENDER ──
+
+function sortBy(colKey) {
+  if (!lastPivot) return;
+  if (sortState.colKey === colKey) sortState.asc = !sortState.asc;
+  else { sortState.colKey = colKey; sortState.asc = true; }
+  const sorted = [...lastPivot.resultRows].sort((a,b) => {
+    let va, vb;
+    if (colKey === '__total__') { va = a.rowTotal; vb = b.rowTotal; }
+    else if (colKey === '__row__') { va = a.meta.join(' '); vb = b.meta.join(' '); return sortState.asc ? va.localeCompare(vb,'he') : vb.localeCompare(va,'he'); }
+    else { va = a.cells[colKey]; vb = b.cells[colKey]; }
+    va = va ?? (sortState.asc ? Infinity : -Infinity);
+    vb = vb ?? (sortState.asc ? Infinity : -Infinity);
+    return sortState.asc ? va - vb : vb - va;
+  });
+  renderPivot(sorted, lastPivot.colKeys, lastPivot.fn, lastPivot.hasPivot);
+}
+
+function renderPivot(resultRows, colKeys, fn, hasPivot) {
+  const displayCols = hasPivot ? colKeys : ['__all__'];
+  const rowLabels = rowColDefs.map(d => d.label);
+
+  // KPI
+  const grandTotal = fn === 'count'
+    ? resultRows.reduce((s,r) => s + (r.rowTotal??0), 0)
+    : resultRows.reduce((s,r) => s + (r.rowTotal??0), 0);
+
+  document.getElementById('kpi-bar').innerHTML = `
+    <div class="kpi"><span class="kpi-val">${resultRows.length.toLocaleString('he')}</span><span class="kpi-lbl">שורות בתוצאה</span></div>
+    <div class="kpi"><span class="kpi-val">${displayCols.length.toLocaleString('he')}</span><span class="kpi-lbl">${hasPivot ? 'עמודות ציר' : 'עמודות ערך'}</span></div>
+    <div class="kpi"><span class="kpi-val">${fmtNum(grandTotal, fn)}</span><span class="kpi-lbl">סה"כ כולל</span></div>
+  `;
+
+  // Compute column totals
+  const colTotals = {};
+  for (const ck of displayCols) {
+    if (fn === 'count') {
+      colTotals[ck] = resultRows.reduce((s,r) => s + (r.cells[ck]??0), 0);
+    } else {
+      const vals = resultRows.map(r => r.cells[ck]).filter(v => v !== null);
+      if (!vals.length) { colTotals[ck] = null; continue; }
+      switch(fn) {
+        case 'sum': colTotals[ck] = vals.reduce((a,b)=>a+b,0); break;
+        case 'avg': colTotals[ck] = vals.reduce((a,b)=>a+b,0)/vals.length; break;
+        case 'max': colTotals[ck] = Math.max(...vals); break;
+        case 'min': colTotals[ck] = Math.min(...vals); break;
+      }
+    }
+  }
+
+  // Arrow
+  const arr = k => sortState.colKey === k ? (sortState.asc ? ' ↑' : ' ↓') : '';
+
+  // Head
+  const rowHeaders = rowLabels.map((l,i) =>
+    `<th class="sortable${sortState.colKey==='__row__'&&i===0?' active-sort':''}" onclick="sortBy('__row__')">${l}${i===0?arr('__row__'):''}</th>`
+  ).join('');
+  const colHeaders = hasPivot
+    ? displayCols.map(ck =>
+        `<th class="sortable num${sortState.colKey===ck?' active-sort':''}" onclick="sortBy('${ck.replace(/'/g,"\\'")}'">${ck}${arr(ck)}</th>`
+      ).join('')
+    : `<th class="sortable num${sortState.colKey==='__all__'?' active-sort':''}" onclick="sortBy('__all__')">${headers[parseInt(document.getElementById('col-value').value)]||'ערך'}${arr('__all__')}</th>`;
+
+  document.getElementById('pivot-head').innerHTML =
+    `<tr>${rowHeaders}${colHeaders}<th class="th-total num sortable${sortState.colKey==='__total__'?' active-sort':''}" onclick="sortBy('__total__')">סה"כ${arr('__total__')}</th></tr>`;
+
+  // Body
+  document.getElementById('pivot-body').innerHTML = resultRows.map(r => {
+    const metaCells = r.meta.map(v => `<td>${v || '(ריק)'}</td>`).join('');
+    const valCells = displayCols.map(ck => {
+      const v = r.cells[ck];
+      if (v === null) return `<td class="num cell-null">—</td>`;
+      const cls = v < 0 ? 'num-neg' : '';
+      return `<td class="num ${cls}">${fmtNum(v,fn)}</td>`;
+    }).join('');
+    const tot = r.rowTotal;
+    const totCell = tot === null ? `<td class="num cell-null">—</td>`
+      : `<td class="num${tot<0?' num-neg':''}" style="font-weight:700">${fmtNum(tot,fn)}</td>`;
+    return `<tr>${metaCells}${valCells}${totCell}</tr>`;
+  }).join('') + (() => {
+    // Totals row
+    const metaCells = `<td colspan="${rowLabels.length}" style="font-weight:800">סה"כ</td>`;
+    const valCells = displayCols.map(ck => {
+      const v = colTotals[ck];
+      return v === null ? `<td class="num cell-null">—</td>`
+        : `<td class="num${v<0?' num-neg':''}">${fmtNum(v,fn)}</td>`;
+    }).join('');
+    const grandV = fmtNum(grandTotal, fn);
+    return `<tr class="total-row">${metaCells}${valCells}<td class="num" style="font-weight:800">${grandV}</td></tr>`;
+  })();
+}
+
+// ── EXPORT ──
+
+function xlsBrd() {
+  const c = {rgb:'DDDDDD'};
+  return {top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};
+}
+
+function exportPivot() {
+  if (!lastPivot) return;
+  const {resultRows, colKeys, hasPivot, fn} = lastPivot;
+  const displayCols = hasPivot ? colKeys : ['__all__'];
+  const rowLabels = rowColDefs.map(d => d.label);
+  const valHeader = headers[lastPivot.valColIdx] || 'ערך';
+  const brd = xlsBrd();
+
+  // Build headers row
+  const hdrRow = [
+    ...rowLabels,
+    ...(hasPivot ? displayCols : [valHeader]),
+    'סה"כ'
+  ];
+
+  // Build data rows + totals row
+  const colTotals = {};
+  for (const ck of displayCols) {
+    if (fn === 'count') colTotals[ck] = resultRows.reduce((s,r)=>s+(r.cells[ck]??0),0);
+    else {
+      const vals = resultRows.map(r=>r.cells[ck]).filter(v=>v!==null);
+      if (!vals.length) { colTotals[ck] = null; continue; }
+      switch(fn) {
+        case 'sum': colTotals[ck]=vals.reduce((a,b)=>a+b,0); break;
+        case 'avg': colTotals[ck]=vals.reduce((a,b)=>a+b,0)/vals.length; break;
+        case 'max': colTotals[ck]=Math.max(...vals); break;
+        case 'min': colTotals[ck]=Math.min(...vals); break;
+      }
+    }
+  }
+  const grandTotal = fn === 'count'
+    ? resultRows.reduce((s,r)=>s+(r.rowTotal??0),0)
+    : (() => { const vals=resultRows.map(r=>r.rowTotal).filter(v=>v!==null); return vals.length ? vals.reduce((a,b)=>a+b,0) : null; })();
+
+  const dataRows = resultRows.map(r => [
+    ...r.meta,
+    ...displayCols.map(ck => r.cells[ck] ?? ''),
+    r.rowTotal ?? ''
+  ]);
+  const totRow = ['סה"כ', ...Array(rowLabels.length-1).fill(''),
+    ...displayCols.map(ck => colTotals[ck] ?? ''),
+    grandTotal ?? ''
+  ];
+
+  // Build worksheet
+  const ws = {};
+  const nC = hdrRow.length;
+  const nR = dataRows.length + 1; // +1 for totals
+
+  const hSt = {fill:{fgColor:{rgb:'0D1F3C'},patternType:'solid'},font:{bold:true,color:{rgb:'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};
+  hdrRow.forEach((h, ci) => {
+    ws[XLSX.utils.encode_cell({r:0,c:ci})] = {v:h==null?'':h, t:'s', s:hSt};
+  });
+
+  const isNumCol = ci => ci >= rowLabels.length; // value columns
+
+  dataRows.forEach((row, ri) => {
+    row.forEach((val, ci) => {
+      const bg = ri%2===0 ? 'FFFFFF' : 'F7F9FC';
+      const s = {fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:'222222'}},alignment:{horizontal:isNumCol(ci)?'left':'right',vertical:'center'},border:brd};
+      const addr = XLSX.utils.encode_cell({r:ri+1, c:ci});
+      if (val===''||val===null) ws[addr] = {v:'', t:'z', s};
+      else if (typeof val === 'number') ws[addr] = {v:val, t:'n', s};
+      else ws[addr] = {v:String(val), t:'s', s};
+    });
+  });
+
+  // Totals row
+  const totRi = dataRows.length + 1;
+  totRow.forEach((val, ci) => {
+    const s = {fill:{fgColor:{rgb:'EEF3FB'},patternType:'solid'},font:{bold:true,name:'Calibri',sz:10,color:{rgb:ci===0?'0D1F3C':'1E3A6E'}},alignment:{horizontal:isNumCol(ci)?'left':'right',vertical:'center'},border:{...brd,top:{style:'medium',color:{rgb:'0D1F3C'}}}};
+    const addr = XLSX.utils.encode_cell({r:totRi, c:ci});
+    if (val===''||val===null) ws[addr] = {v:'', t:'z', s};
+    else if (typeof val === 'number') ws[addr] = {v:val, t:'n', s};
+    else ws[addr] = {v:String(val), t:'s', s};
+  });
+
+  ws['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:totRi, c:nC-1}});
+  ws['!rows'] = [{hpx:26}];
+
+  // Auto column widths
+  const allRowsForWidth = [hdrRow, ...dataRows, totRow];
+  ws['!cols'] = hdrRow.map((h,ci) => {
+    const max = allRowsForWidth.reduce((mx,r) => Math.max(mx, String(r[ci]??'').length), 0);
+    return {wch: Math.min(Math.max(String(h||'').length+2, max+2, 8), 40)};
+  });
+
+  ws['!views'] = [{rightToLeft:true, state:'frozen', ySplit:1, topLeftCell:'A2'}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'טבלת ציר');
+  XLSX.writeFile(wb, 'טבלת_ציר.xlsx', {cellStyles:true});
+}
+
+// ── RESET ──
+
+function resetTool() {
+  clearFile();
+  document.getElementById('config-card').classList.add('hidden');
+  document.getElementById('results-card').classList.add('hidden');
+}
+</script>
+</body>
+</html>
