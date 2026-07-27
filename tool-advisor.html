@@ -139,7 +139,7 @@ nav a.cta{background:var(--accent);color:var(--navy);font-weight:800;padding:0.4
 
 <script>
 const PROXY = 'https://gemini-proxy.orkandel11.workers.dev/';
-const MODEL  = 'gemini-2.0-flash';
+const MODEL  = 'llama-3.3-70b-versatile';
 
 // session id — מזהה שיחה ייחודי לכל ביקור
 const SESSION_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -368,7 +368,7 @@ async function sendMsg(){
   showTyping();
 
   try{
-    const reply=await callGemini(imgUsed);
+    const reply=await callAI(imgUsed);
     removeTyping();
     appendMsg('ai',reply);
     history.push({role:'model',parts:[{type:'text',text:reply}]});
@@ -382,25 +382,13 @@ async function sendMsg(){
   document.getElementById('msg-input').focus();
 }
 
-async function callGemini(){
-  // Build Gemini contents array
-  const contents=[];
+async function callAI(){
+  const messages=[{role:'system',content:SYSTEM}];
 
-  // Inject system as first user turn
-  contents.push({
-    role:'user',
-    parts:[{text:SYSTEM+'\n\n---\n\nאנא ענה על שאלות המשתמש.'}]
-  });
-  contents.push({role:'model',parts:[{text:'בשמחה! אני מוכן לעזור למצוא את הכלי המתאים.'}]});
-
-  // Add conversation history
   for(const msg of history){
-    const gemParts=msg.parts.map(p=>{
-      if(p.type==='text') return{text:p.text};
-      if(p.type==='image') return{inline_data:{mime_type:p.mime,data:p.b64}};
-      return null;
-    }).filter(Boolean);
-    contents.push({role:msg.role,parts:gemParts});
+    const role=msg.role==='model'?'assistant':msg.role;
+    const textPart=msg.parts.find(p=>p.type==='text');
+    messages.push({role,content:textPart?textPart.text:''});
   }
 
   const res=await fetch(PROXY,{
@@ -408,17 +396,16 @@ async function callGemini(){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       model:MODEL,
-      payload:{
-        contents,
-        generationConfig:{maxOutputTokens:600,temperature:0.3}
-      }
+      messages,
+      max_tokens:600,
+      temperature:0.3
     })
   });
 
   if(!res.ok) throw new Error('שגיאת שרת '+res.status);
   const json=await res.json();
   if(json.error) throw new Error('שגיאת API: '+(json.error.message||JSON.stringify(json.error)));
-  const text=json.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text=json.choices?.[0]?.message?.content;
   if(!text) throw new Error('תשובה ריקה מהמודל');
   return text.trim();
 }
