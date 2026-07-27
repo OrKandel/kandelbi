@@ -202,17 +202,17 @@ tr:last-child td{border-bottom:none}
   <div style="margin-bottom:1.2rem">
     <label style="font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">🗂️ קבץ לפי (עמודות שלפיהן יחושב סיכום נפרד):</label>
     <div class="conditions-wrap">
-      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px">הוסף עמודות לקיבוץ — לדוגמה: "שירות", "ספק", "חודש"</div>
-      <div class="tags-wrap" id="group-tags"></div>
-      <div class="add-group-row">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px">בחר עמודת קיבוץ ראשונה — לדוגמה: "שירות", "ספק", "חודש"</div>
+      <div class="add-group-row" style="margin-bottom:8px">
         <select id="add-group-detail" style="flex:1">
-          <option value="">— בחר עמודה מהפירוט —</option>
+          <option value="">— עמודת קיבוץ בפירוט —</option>
         </select>
         <select id="add-group-summary" style="flex:1">
           <option value="">— עמודה מקבילה בסיכום —</option>
         </select>
-        <button class="btn-add-group" onclick="addGroup()">+ הוסף</button>
       </div>
+      <div id="extra-groups"></div>
+      <button class="btn-add-group" onclick="addGroup()">+ הוסף עמודת קיבוץ נוספת</button>
     </div>
   </div>
 
@@ -272,7 +272,7 @@ tr:last-child td{border-bottom:none}
 <script>
 let detailData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
 let summaryData={headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0};
-let groupCols=[]; // [{detailCol, summaryCol, label}]
+let lastEffectiveCols=[], extraGroupCount=0;
 let conditionCount=0;
 let allResults=[];
 const tolerance=()=>parseFloat(document.getElementById('tolerance').value)||0.01;
@@ -437,29 +437,48 @@ function checkReady(){
 
 // Bug 1: auto-populate first group pair without requiring a click
 function autoAddFirstGroup(){
-  if(groupCols.length>0) return;
   const dH=detailData.headers, sH=summaryData.headers;
   const dAmt=parseInt(document.getElementById('detail-amount').value)||0;
   const sAmt=parseInt(document.getElementById('summary-amount').value)||0;
-  // Try matching column names (case-insensitive)
+  const dSel=document.getElementById('add-group-detail');
+  const sSel=document.getElementById('add-group-summary');
+  if(dSel.value!==''&&sSel.value!=='') return; // already selected
   for(let di=0;di<dH.length;di++){
     if(di===dAmt) continue;
     const dn=String(dH[di]||'').trim().toLowerCase(); if(!dn) continue;
     for(let si=0;si<sH.length;si++){
       if(si===sAmt) continue;
       if(dn===String(sH[si]||'').trim().toLowerCase()){
-        const label=dH[di]+(dH[di]!==sH[si]?' / '+sH[si]:'');
-        groupCols.push({di,si,label}); renderGroupTags(); return;
+        dSel.value=di; sSel.value=si; return;
       }
     }
   }
-  // Fallback: first non-amount column from each
   const di=dH.findIndex((_,i)=>i!==dAmt&&String(dH[i]||'').trim());
   const si=sH.findIndex((_,i)=>i!==sAmt&&String(sH[i]||'').trim());
-  if(di>=0&&si>=0){
-    const label=dH[di]+(dH[di]!==sH[si]?' / '+sH[si]:'');
-    groupCols.push({di,si,label}); renderGroupTags();
+  if(di>=0) dSel.value=di;
+  if(si>=0) sSel.value=si;
+}
+
+function getEffectiveGroupCols(){
+  const result=[];
+  const dVal=document.getElementById('add-group-detail').value;
+  const sVal=document.getElementById('add-group-summary').value;
+  if(dVal!==''&&sVal!==''){
+    const di=parseInt(dVal),si=parseInt(sVal);
+    const dH=detailData.headers,sH=summaryData.headers;
+    result.push({di,si,label:dH[di]+(dH[di]!==sH[si]?' / '+sH[si]:'')});
   }
+  document.querySelectorAll('[id^="extra-group-"]').forEach(row=>{
+    const id=row.id.replace('extra-group-','');
+    const dv=document.getElementById('extra-gd-'+id)?.value;
+    const sv=document.getElementById('extra-gs-'+id)?.value;
+    if(dv&&sv){
+      const di=parseInt(dv),si=parseInt(sv);
+      const dH=detailData.headers,sH=summaryData.headers;
+      result.push({di,si,label:dH[di]+(dH[di]!==sH[si]?' / '+sH[si]:'')});
+    }
+  });
+  return result;
 }
 
 function buildConfig(){
@@ -481,22 +500,13 @@ function buildConfig(){
 
 // ── GROUP COLS ──
 function addGroup(){
-  const dSel=document.getElementById('add-group-detail');
-  const sSel=document.getElementById('add-group-summary');
-  const di=dSel.value, si=sSel.value;
-  if(!di||!si){alert('בחר עמודה מכל טבלה');return;}
-  const label=detailData.headers[di]+(detailData.headers[di]!==summaryData.headers[si]?' / '+summaryData.headers[si]:'');
-  groupCols.push({di:parseInt(di),si:parseInt(si),label});
-  renderGroupTags();
-  dSel.value=''; sSel.value='';
-}
-
-function removeGroup(i){groupCols.splice(i,1);renderGroupTags();}
-
-function renderGroupTags(){
-  document.getElementById('group-tags').innerHTML=groupCols.map((g,i)=>`
-    <div class="tag-item"><span>${g.label}</span><span class="tag-x" onclick="removeGroup(${i})">✕</span></div>
-  `).join('');
+  const id=++extraGroupCount;
+  const dOpts=detailData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const sOpts=summaryData.headers.map((h,i)=>`<option value="${i}">${h||'(עמודה '+(i+1)+')'}</option>`).join('');
+  const row=document.createElement('div');
+  row.className='add-group-row'; row.id='extra-group-'+id; row.style.marginBottom='6px';
+  row.innerHTML=`<select id="extra-gd-${id}" style="flex:1"><option value="">— עמודת קיבוץ בפירוט —</option>${dOpts}</select><select id="extra-gs-${id}" style="flex:1"><option value="">— עמודה מקבילה בסיכום —</option>${sOpts}</select><button class="btn-remove" onclick="document.getElementById('extra-group-${id}').remove()">הסר</button>`;
+  document.getElementById('extra-groups').appendChild(row);
 }
 
 // ── CONDITIONS ──
@@ -559,7 +569,8 @@ function fmtNum(v){
 
 // ── RUN ──
 function runComparison(){
-  if(groupCols.length===0){alert('יש להוסיף לפחות עמודת קיבוץ אחת');return;}
+  lastEffectiveCols=getEffectiveGroupCols();
+  if(lastEffectiveCols.length===0){alert('יש לבחור לפחות עמודת קיבוץ אחת');return;}
   const dAmtIdx=parseInt(document.getElementById('detail-amount').value);
   const sAmtIdx=parseInt(document.getElementById('summary-amount').value);
   const tol=tolerance();
@@ -570,8 +581,8 @@ function runComparison(){
   // קבץ פירוט
   const detailGroups={};
   filteredDetail.forEach(row=>{
-    const key=groupCols.map(g=>String(row[g.di]||'').trim()).join('||');
-    if(!detailGroups[key]) detailGroups[key]={sum:0,count:0,keyVals:groupCols.map(g=>String(row[g.di]||'').trim())};
+    const key=lastEffectiveCols.map(g=>String(row[g.di]||'').trim()).join('||');
+    if(!detailGroups[key]) detailGroups[key]={sum:0,count:0,keyVals:lastEffectiveCols.map(g=>String(row[g.di]||'').trim())};
     detailGroups[key].sum+=parseNum(row[dAmtIdx]);
     detailGroups[key].count++;
   });
@@ -579,8 +590,8 @@ function runComparison(){
   // קבץ סיכום
   const summaryGroups={};
   summaryData.rows.forEach(row=>{
-    const key=groupCols.map(g=>String(row[g.si]||'').trim()).join('||');
-    if(!summaryGroups[key]) summaryGroups[key]={sum:0,count:0,keyVals:groupCols.map(g=>String(row[g.si]||'').trim())};
+    const key=lastEffectiveCols.map(g=>String(row[g.si]||'').trim()).join('||');
+    if(!summaryGroups[key]) summaryGroups[key]={sum:0,count:0,keyVals:lastEffectiveCols.map(g=>String(row[g.si]||'').trim())};
     summaryGroups[key].sum+=parseNum(row[sAmtIdx]);
     summaryGroups[key].count++;
   });
@@ -643,7 +654,7 @@ function renderResults(data){
   // Headers
   const unit=getUnit();
   const uSfx=unit?' '+unit:'';
-  const groupHeaders=groupCols.map(g=>`<th>${g.label}</th>`).join('');
+  const groupHeaders=lastEffectiveCols.map(g=>`<th>${g.label}</th>`).join('');
   document.getElementById('result-head').innerHTML=
     `${groupHeaders}<th class="num">סכום פירוט${uSfx}</th><th class="num">סכום סיכום${uSfx}</th><th class="num" title="הפרש = סכום סיכום פחות סכום פירוט. ערך חיובי = סיכום גבוה יותר">הפרש${uSfx} (סיכום − פירוט)</th><th>סטטוס</th>`;
 
@@ -651,7 +662,7 @@ function renderResults(data){
   document.getElementById('result-body').innerHTML=data.map(r=>{
     const keyCells=r.keyVals.map(v=>`<td>${v||'(ריק)'}</td>`).join('');
     const diff=r.diff;
-    const diffClass=diff===null?'':(diff>0?'diff-pos':diff<0?'diff-neg':'diff-ok');
+    const diffClass=diff===null?'':(r.status==='diff'?'diff-pos':diff===0?'diff-ok':(diff>0?'diff-pos':'diff-neg'));
     const badgeCls=r.status==='ok'?'b-ok':r.status==='diff'?'b-diff':r.status==='missing'?'b-missing':'b-extra';
     const badgeTxt=r.status==='ok'?'✅ התאמה':r.status==='diff'?'⚠️ הפרש':r.status==='missing'?'🔸 חסר בסיכום':'🔹 עודף בסיכום';
     return `<tr data-status="${r.status}">
@@ -672,10 +683,10 @@ function filterResults(status,btn){
 }
 
 function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
-function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{rightToLeft:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
+function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
 function _xlsAutoW(hdrs,rows){return hdrs.map((h,ci)=>{const max=rows.reduce((mx,r)=>Math.max(mx,String(r[ci]??'').length),0);return Math.min(Math.max(String(h||'').length+3,max+3,9),48);});}
 function exportResults(){
-  const groupHeaders=groupCols.map(g=>g.label);
+  const groupHeaders=lastEffectiveCols.map(g=>g.label);
   const nGroup=groupHeaders.length;
   const u=getUnit(), uSuf=u?' '+u:'';
   const hdrs=[...groupHeaders,`סכום פירוט${uSuf}`,`סכום סיכום${uSuf}`,`הפרש${uSuf}`,'סטטוס'];
@@ -708,7 +719,10 @@ function exportResults(){
 function resetTool(){
   Object.assign(detailData,{headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0});
   Object.assign(summaryData,{headers:[],rows:[],wb:null,allRows:null,selectedSheet:null,headerRowIdx:0});
-  groupCols=[];
+  lastEffectiveCols=[]; extraGroupCount=0;
+  document.getElementById('add-group-detail').value='';
+  document.getElementById('add-group-summary').value='';
+  document.getElementById('extra-groups').innerHTML='';
   allResults=[];
   document.getElementById('fi-detail').value='';
   document.getElementById('fi-summary').value='';
