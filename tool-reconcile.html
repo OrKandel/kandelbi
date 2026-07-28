@@ -225,12 +225,6 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <div class="form-group" style="max-width:200px;margin-bottom:1.2rem">
-    <label>יחידת מידה (תופיע בעמודות הסכום):</label>
-    <input type="text" id="unit-label" value="₪" placeholder="₪" style="max-width:120px"/>
-    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">לדוגמה: ₪, שעות, יח׳, ק"ג — ריק = ללא יחידה</div>
-  </div>
-
   <div class="form-group" style="max-width:200px">
     <label>סף סטייה מקסימלי:</label>
     <input type="number" id="tolerance" value="0.01" step="0.01" min="0" placeholder="0.01"/>
@@ -276,7 +270,6 @@ let lastEffectiveCols=[], extraGroupCount=0;
 let conditionCount=0;
 let allResults=[];
 const tolerance=()=>parseFloat(document.getElementById('tolerance').value)||0.01;
-const getUnit=()=>(document.getElementById('unit-label')?.value||'').trim();
 
 // ── SHEET & HEADER ROW HELPERS ──
 function sheetSelectorHtml(wb, selId, onchangeFn){
@@ -634,7 +627,7 @@ function renderResults(data){
   const totalDiff=allResults.filter(r=>r.diff!==null).reduce((s,r)=>s+r.diff,0);
 
   document.getElementById('kpi-bar').innerHTML=`
-    <div class="kpi ${cnt.diff===0&&cnt.missing===0&&cnt.extra===0?'ok':'err'}">
+    <div class="kpi ok">
       <span class="kpi-val">${cnt.ok}/${cnt.all}</span><span class="kpi-lbl">שורות תואמות</span>
     </div>
     <div class="kpi ${cnt.diff>0?'err':'ok'}">
@@ -652,11 +645,9 @@ function renderResults(data){
   `;
 
   // Headers
-  const unit=getUnit();
-  const uSfx=unit?' '+unit:'';
   const groupHeaders=lastEffectiveCols.map(g=>`<th>${g.label}</th>`).join('');
   document.getElementById('result-head').innerHTML=
-    `${groupHeaders}<th class="num">סכום פירוט${uSfx}</th><th class="num">סכום סיכום${uSfx}</th><th class="num" title="הפרש = סכום סיכום פחות סכום פירוט. ערך חיובי = סיכום גבוה יותר">הפרש${uSfx} (סיכום − פירוט)</th><th>סטטוס</th>`;
+    `${groupHeaders}<th class="num">סכום פירוט</th><th class="num">סכום סיכום</th><th class="num" title="הפרש = סכום סיכום פחות סכום פירוט. ערך חיובי = סיכום גבוה יותר">הפרש (סיכום − פירוט)</th><th>סטטוס</th>`;
 
   // Rows
   document.getElementById('result-body').innerHTML=data.map(r=>{
@@ -683,13 +674,12 @@ function filterResults(status,btn){
 }
 
 function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
-function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,rightToLeft:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
+function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{rightToLeft:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
 function _xlsAutoW(hdrs,rows){return hdrs.map((h,ci)=>{const max=rows.reduce((mx,r)=>Math.max(mx,String(r[ci]??'').length),0);return Math.min(Math.max(String(h||'').length+3,max+3,9),48);});}
 function exportResults(){
   const groupHeaders=lastEffectiveCols.map(g=>g.label);
   const nGroup=groupHeaders.length;
-  const u=getUnit(), uSuf=u?' '+u:'';
-  const hdrs=[...groupHeaders,`סכום פירוט${uSuf}`,`סכום סיכום${uSuf}`,`הפרש${uSuf}`,'סטטוס'];
+  const hdrs=[...groupHeaders,'סכום פירוט','סכום סיכום','הפרש','סטטוס'];
   const statusColIdx=hdrs.length-1;
   const dataRows=allResults.map(r=>[
     ...r.keyVals,
@@ -707,7 +697,7 @@ function exportResults(){
         if(val==='הפרש')        return{bg:ri%2===0?'FDECEA':'FADADD',tc:'8B0000',b:true};
         if(val==='חסר בסיכום'||val==='עודף בסיכום') return{bg:ri%2===0?'FFF9C4':'FFF3A0',tc:'7A5500',b:true};
       }
-      if(ci===statusColIdx-1&&allResults[ri]?.status==='diff') return{bg:ri%2===0?'FDECEA':'FADADD',tc:'8B0000',b:true};
+      if(ci===statusColIdx-1&&typeof val==='number'&&Math.abs(val)>tolerance()) return{bg:ri%2===0?'FDECEA':'FADADD',tc:'8B0000',b:true};
       return null;
     }
   });
