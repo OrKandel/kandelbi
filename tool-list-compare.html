@@ -468,8 +468,26 @@ function lev(a,b){
   return 1-dp[m][n]/Math.max(m,n);
 }
 
+// Returns similarity score for a single token pair, handling abbreviations and prefix penalties
+function tokenPairSim(ta,tb){
+  // "מ." (letter+dot) = intentional abbreviation of any word starting with that letter
+  const isDotAbbrev=s=>s.length===2&&s[1]==='.';
+  if(isDotAbbrev(ta)&&tb.length>0&&tb[0]===ta[0])return 0.88;
+  if(isDotAbbrev(tb)&&ta.length>0&&ta[0]===tb[0])return 0.88;
+  const s=lev(ta,tb);
+  // Prefix without dot-abbreviation marker (e.g. "אבי" vs "אבישי") — two distinct names, not a shortening
+  if(ta.length!==tb.length){
+    const shorter=ta.length<tb.length?ta:tb;
+    const longer=ta.length<tb.length?tb:ta;
+    if(shorter.length>1&&longer.startsWith(shorter))return(shorter.length/longer.length)*0.6;
+  }
+  return s;
+}
+
 function tokenSim(a,b){
-  a=String(a).toLowerCase().trim(); b=String(b).toLowerCase().trim();
+  // Normalize hyphens so "בן-דוד" and "בן דוד" tokenize identically
+  a=String(a).toLowerCase().trim().replace(/-/g,' ');
+  b=String(b).toLowerCase().trim().replace(/-/g,' ');
   if(a===b)return 1;
   if(!a||!b)return 0;
   const tokA=a.split(/\s+/).filter(Boolean);
@@ -479,7 +497,7 @@ function tokenSim(a,b){
   let total=0;
   tokA.forEach(ta=>{
     let best=0,bestIdx=-1;
-    tokB.forEach((tb,i)=>{if(!usedB[i]){const s=lev(ta,tb);if(s>best){best=s;bestIdx=i;}}});
+    tokB.forEach((tb,i)=>{if(!usedB[i]){const s=tokenPairSim(ta,tb);if(s>best){best=s;bestIdx=i;}}});
     if(bestIdx>=0)usedB[bestIdx]=true;
     total+=best;
   });
@@ -561,7 +579,7 @@ function filterResults(type,btn){
 }
 
 function _xlsBrd(){const c={rgb:'DDDDDD'};return{top:{style:'thin',color:c},bottom:{style:'thin',color:c},left:{style:'thin',color:c},right:{style:'thin',color:c}};}
-function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{RTL:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
+function _xlsSheet(hdrs,dataRows,opts={}){const ws={};const nC=hdrs.length,nR=dataRows.length;const brd=_xlsBrd();const hSt={fill:{fgColor:{rgb:opts.hFill||'1F3864'},patternType:'solid'},font:{bold:true,color:{rgb:opts.hText||'FFFFFF'},name:'Calibri',sz:11},alignment:{horizontal:'right',vertical:'center'},border:brd};hdrs.forEach((h,ci)=>{ws[XLSX.utils.encode_cell({r:0,c:ci})]={v:h==null?'':h,t:'s',s:hSt};});dataRows.forEach((row,ri)=>{row.forEach((val,ci)=>{const gs=opts.getStyle?opts.getStyle(val,ri,ci):null;const bg=gs?.bg||(ri%2===0?'FFFFFF':'F7F9FC');const s={fill:{fgColor:{rgb:bg},patternType:'solid'},font:{name:'Calibri',sz:10,color:{rgb:gs?.tc||'222222'},bold:!!gs?.b},alignment:{horizontal:'right',vertical:'center'},border:brd};const addr=XLSX.utils.encode_cell({r:ri+1,c:ci});if(val==null||val==='')ws[addr]={v:'',t:'z',s};else if(typeof val==='number')ws[addr]={v:val,t:'n',s};else ws[addr]={v:String(val),t:'s',s};});});ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(nR,1),c:nC-1}});if(opts.colWidths)ws['!cols']=opts.colWidths.map(w=>({wch:w}));ws['!rows']=[{hpx:26}];ws['!views']=[{rightToLeft:true,state:'frozen',ySplit:1,topLeftCell:'A2'}];return ws;}
 function exportResults(){
   const hdrs=['רשימה א\'','הכי קרוב ברשימה ב\'','ציון %','סטטוס'];
   const dataRows=allResults.map(r=>[r.valA,r.bestMatch,r.pct,r.status==='match'?'התאמה מלאה':r.status==='partial'?'התאמה חלקית':'ללא התאמה']);
