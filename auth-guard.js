@@ -17,7 +17,7 @@ const PUBLIC_PAGES = [
   'article-sla-contract.html','article-tender-controls.html',
   'article-vendor-transparency.html',
   'login.html','register.html','reset-password.html','verify-email.html',
-  'tool-anomaly-visual.html','tool-list-compare.html'
+  'tool-anomaly-visual.html','tool-list-compare.html','tool-advisor.html'
 ];
 
 function _currentPage() {
@@ -111,6 +111,17 @@ async function updateNav() {
     if (logoutLink) logoutLink.style.display = 'none';
     if (dashLink)   dashLink.style.display   = 'none';
   }
+}
+
+async function logToolRun(toolKey) {
+  try {
+    const { data:{ user } } = await _sb.auth.getUser();
+    await _sb.from('download_log').insert({
+      user_id:    user?.id    ?? null,
+      user_email: user?.email ?? null,
+      action:     toolKey
+    });
+  } catch(e) {}
 }
 
 async function signOut() {

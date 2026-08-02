@@ -653,6 +653,7 @@ function updateManualSvcSelects(){
 
 // ── MAIN AUDIT ──
 function runFullAudit(){
+  logToolRun('tool-outputs-audit');
   const acsvc=+document.getElementById('col-act-svc').value;
   const acdate=+document.getElementById('col-act-date').value;
   const acqty=+document.getElementById('col-act-qty').value;

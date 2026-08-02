@@ -335,6 +335,7 @@ function fmtDuration(ms){
 }
 
 function runAnalysis(){
+  logToolRun('tool-time-between');
   const ci=parseInt(document.getElementById('col-emp').value);
   const ct=parseInt(document.getElementById('col-ts').value);
   const thVal=parseFloat(document.getElementById('thresh-fast').value);

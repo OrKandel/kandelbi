@@ -268,6 +268,7 @@ function wsToRowsTimeAware(ws) {
 }
 function loadFile(file) {
   if (!file) return;
+  logToolRun('tool-outlier-dashboard');
   dz.classList.remove('drag','loaded');
   dz.querySelector('.uz-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';
   document.getElementById('uz-txt').textContent='טוען קובץ...';

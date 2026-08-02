@@ -1310,6 +1310,7 @@ function rowComputedHours(row, aStart, aEnd) {
 }
 
 function runFullAudit() {
+  logToolRun('tool-hours-audit');
   const sheetNameMode = getSheetNameMode();
   const aEmp   = sheetNameMode ? '_sheetEmp' : +document.getElementById('col-att-emp').value;
   const aDate  = +document.getElementById('col-att-date').value;

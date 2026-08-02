@@ -607,6 +607,7 @@ function renderResults() {
 
 // ── Export ──
 function exportMerged() {
+  logToolRun('tool-merge-files');
   const { headers, rows, rowInfos } = mergedResult;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, buildMergedSheet(headers, rows, rowInfos), 'מאוחד');

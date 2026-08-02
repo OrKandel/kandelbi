@@ -437,6 +437,7 @@ function fmtNum(v, fn) {
 // ── PIVOT COMPUTATION ──
 
 function runPivot() {
+  logToolRun('tool-pivot');
   if (!rawData.length || !rowColDefs.length) return;
 
   const pivotIdx = parseInt(document.getElementById('col-pivot').value);

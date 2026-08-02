@@ -960,6 +960,7 @@ document.getElementById('btn-run-analysis').onclick = () => {
 };
 
 async function runFullAnalysis() {
+  logToolRun('tool-anomaly-visual');
   chartInstances.forEach(c => c.destroy());
   chartInstances = [];
   document.getElementById('results-container').innerHTML = '';

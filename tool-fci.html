@@ -745,6 +745,7 @@ function norm(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
 // ANALYSIS ENGINE
 // ══════════════════════════════════════════════════
 async function runAnalysis(){
+  logToolRun('tool-fci');
   const cfg = getConfig();
   showOverlay(true,'מכין נתונים...',5);
   await delay(30);

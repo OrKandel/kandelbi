@@ -426,6 +426,7 @@ uploadZone.addEventListener('drop', e => {
 fileInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
 
 async function processFile(file) {
+  logToolRun('tool-ml-predict');
   const ext = file.name.split('.').pop().toLowerCase();
   try {
     if (ext === 'csv') {

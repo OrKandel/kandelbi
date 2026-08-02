@@ -562,6 +562,7 @@ function fmtNum(v){
 
 // ── RUN ──
 function runComparison(){
+  logToolRun('tool-reconcile');
   lastEffectiveCols=getEffectiveGroupCols();
   if(lastEffectiveCols.length===0){alert('יש לבחור לפחות עמודת קיבוץ אחת');return;}
   const dAmtIdx=parseInt(document.getElementById('detail-amount').value);

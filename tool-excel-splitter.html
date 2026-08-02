@@ -1311,6 +1311,7 @@ function updateEstRows() {
 
 // ══ PROCESS ══
 async function processFile() {
+  logToolRun('tool-excel-splitter');
   outputFiles = [];
 
   const cols = [...selectedCols].sort((a,b)=>a-b);

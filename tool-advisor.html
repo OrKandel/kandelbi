@@ -147,13 +147,19 @@ const SESSION_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,
 async function saveQuery(question, aiResponse, hasImage){
   try{
     const { data:{ user } } = await _sb.auth.getUser();
+    let userName = null;
+    if(user?.id){
+      const { data: prof } = await _sb.from('profiles').select('name').eq('id', user.id).single();
+      userName = prof?.name ?? null;
+    }
     await _sb.from('advisor_queries').insert({
       question,
       ai_response: aiResponse,
       has_image: hasImage,
       session_id: SESSION_ID,
       user_id: user?.id ?? null,
-      user_email: user?.email ?? null
+      user_email: user?.email ?? null,
+      user_name: userName
     });
   }catch(e){
     // שמירה שקטה — לא מפריעה למשתמש אם נכשלת
