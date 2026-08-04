@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FR9DZSW3M4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FR9DZSW3M4');
+</script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>זיהוי פערים וכפילויות — קנדל BI</title>
+<meta name="description" content="זהה כפילויות ומספרים חסרים ברצף חשבוניות, הזמנות ושיקים. ניתוח מקומי בדפדפן, ללא שרת."/>
+<meta name="keywords" content="זיהוי כפילויות חשבוניות, פערים ברצף מסמכים, ביקורת חשבונות, מספרים חסרים, חשבוניות כפולות"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://kandelbi.org/tool-gap-detector.html"/>
+<meta property="og:title" content="זיהוי פערים וכפילויות — קנדל BI"/>
+<meta property="og:description" content="זהה כפילויות ומספרים חסרים ברצף חשבוניות, הזמנות ושיקים. ניתוח מקומי בדפדפן."/>
+<meta property="og:url" content="https://kandelbi.org/tool-gap-detector.html"/>
+<meta property="og:locale" content="he_IL"/><meta property="og:site_name" content="קנדל BI"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="auth-guard.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3561;--blue:#1e6abf;--accent:#f0a500;
+  --bg:#f0f3f8;--white:#fff;--border:#d5dde8;--text:#1a1a2e;--muted:#6b7a99;
+  --green:#0a7c5e;--red:#d93025;--orange:#e67e22;--yellow:#c49a00
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+main{max-width:1050px;margin:0 auto;padding:2.5rem 5vw 4rem}
+.tool-title{font-size:clamp(1.4rem,3vw,2rem);font-weight:900;color:var(--navy);margin-bottom:0.3rem}
+.tool-sub{color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem}
+.card{background:var(--white);border-radius:16px;border:1px solid var(--border);padding:1.8rem;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(13,31,60,0.08)}
+.card-title{font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:1.2rem}
+.hidden{display:none!important}
+
+/* Stepper */
+.stepper{display:flex;gap:0;margin-bottom:2rem;position:relative}
+.stepper::before{content:'';position:absolute;top:18px;right:20px;left:20px;height:2px;background:var(--border);z-index:0}
+.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1}
+.step-circle{width:36px;height:36px;border-radius:50%;background:var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.9rem;transition:all 0.3s;border:2px solid var(--border)}
+.step.active .step-circle{background:var(--navy);color:#fff;border-color:var(--navy)}
+.step.done .step-circle{background:var(--green);color:#fff;border-color:var(--green)}
+.step-label{font-size:0.75rem;font-weight:600;color:var(--muted);text-align:center}
+.step.active .step-label{color:var(--navy)}
+.step.done .step-label{color:var(--green)}
+
+/* Upload */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:#eef3fb}
+.upload-zone.loaded{border-color:var(--green);background:#edf7f3}
+.uz-icon{font-size:2.5rem;margin-bottom:8px}
+.uz-text{font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.uz-sub{font-size:0.78rem;color:var(--muted)}
+.privacy-note{background:#f0f8ff;border:1px solid #b8d4f0;border-radius:8px;padding:10px 14px;font-size:0.8rem;color:#1a5080;margin-top:1rem;display:flex;gap:8px;align-items:flex-start}
+
+/* Progress */
+.progress-wrap{margin-top:1rem}
+.progress-label{font-size:0.82rem;color:var(--muted);margin-bottom:4px}
+.progress-bar-outer{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-bar-inner{height:100%;background:var(--blue);border-radius:4px;transition:width 0.2s;width:0%}
+
+/* Preview table */
+.preview-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:200px;overflow-y:auto;margin-bottom:1.2rem}
+.preview-wrap table{width:100%;border-collapse:collapse;font-size:0.78rem}
+.preview-wrap th{background:var(--navy);color:#fff;padding:6px 10px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:2}
+.preview-wrap td{padding:5px 10px;border-bottom:1px solid var(--border)}
+.preview-wrap tr:nth-child(even) td{background:#f7f9fc}
+
+/* Mapping grid */
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-bottom:1.2rem}
+.form-group{margin-bottom:0}
+.form-group label{display:block;font-size:0.8rem;font-weight:700;color:var(--navy);margin-bottom:5px}
+.form-group label .req{color:var(--red)}
+.form-group select,.form-group input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.88rem;outline:none;background:var(--white)}
+.form-group select:focus{border-color:var(--blue)}
+.radio-group{display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem}
+.radio-group label{display:flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:600;cursor:pointer}
+.radio-group input[type=radio]{accent-color:var(--navy)}
+
+/* Buttons */
+.btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:var(--navy2)}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-sm{padding:7px 16px;font-size:0.82rem;border-radius:8px;border:none;font-family:inherit;font-weight:700;cursor:pointer;transition:all 0.2s}
+.btn-export{background:var(--green);color:#fff}
+.btn-export:hover{opacity:0.85}
+.btn-export-csv{background:#555;color:#fff;margin-right:6px}
+.btn-accent{background:var(--accent);color:var(--navy);border:none;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer}
+.btn-print{background:var(--navy);color:#fff;padding:10px 22px;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;cursor:pointer;border:none;margin-left:8px}
+
+/* KPI row */
+.kpi-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.kpi{flex:1;min-width:140px;background:var(--bg);border-radius:12px;padding:14px 16px;text-align:center;border:1px solid var(--border)}
+.kpi-val{font-weight:900;font-size:2rem;color:var(--navy);display:block;line-height:1}
+.kpi-lbl{font-size:0.75rem;color:var(--muted);margin-top:4px}
+.kpi.red .kpi-val{color:var(--red)}
+.kpi.orange .kpi-val{color:var(--orange)}
+.kpi.yellow .kpi-val{color:var(--yellow)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1.2rem;border-bottom:2px solid var(--border);padding-bottom:0}
+.tab-btn{padding:8px 16px;border-radius:8px 8px 0 0;border:1.5px solid transparent;background:none;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.2s;color:var(--muted);position:relative;bottom:-2px;border-bottom:2px solid transparent}
+.tab-btn:hover{color:var(--navy)}
+.tab-btn.active{background:var(--white);color:var(--navy);border-color:var(--border);border-bottom-color:var(--white)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.subtabs{display:flex;gap:6px;margin-bottom:1rem}
+.stab{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;color:var(--muted);font-family:inherit}
+.stab.active{background:var(--navy2);color:#fff;border-color:var(--navy2)}
+
+/* Results table */
+.res-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:420px;overflow-y:auto;margin-bottom:1rem}
+.res-table-wrap table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.res-table-wrap th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:2}
+.res-table-wrap td{padding:7px 12px;border-bottom:1px solid var(--border)}
+.res-table-wrap tr:nth-child(even) td{background:#f7f9fc}
+.res-table-wrap tr:hover td{background:#eef3fb}
+
+/* Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:0.72rem;font-weight:800}
+.badge-red{background:#fef2f2;color:var(--red)}
+.badge-orange{background:#fff3e0;color:var(--orange)}
+.badge-yellow{background:#fffbea;color:var(--yellow)}
+.badge-green{background:#edf7f3;color:var(--green)}
+
+/* Charts */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:650px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1rem}
+.chart-card canvas{max-height:300px}
+.chart-title{font-size:0.85rem;font-weight:700;color:var(--navy);margin-bottom:0.6rem}
+
+/* Summary text */
+.summary-text{background:#f0f6ff;border:1px solid #c0d8f5;border-radius:10px;padding:1rem 1.2rem;font-size:0.88rem;line-height:1.7;color:var(--navy)}
+.summary-text strong{color:var(--navy2)}
+
+/* Gaps display */
+.gap-meta{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.gap-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 16px;text-align:center;min-width:120px}
+.gap-item-val{font-weight:900;font-size:1.4rem;color:var(--navy)}
+.gap-item-lbl{font-size:0.73rem;color:var(--muted);margin-top:2px}
+.missing-list{background:#fffbea;border:1px solid #f5d48a;border-radius:10px;padding:1rem;font-size:0.85rem;line-height:1.9;word-break:break-all;max-height:200px;overflow-y:auto;direction:ltr;text-align:left}
+.repeated-list{background:#fef2f2;border:1px solid #f5a0a0;border-radius:10px;padding:1rem;font-size:0.85rem;line-height:1.9;margin-top:0.8rem}
+
+/* Report tab */
+.report-content{background:#fff;border:1px solid var(--border);border-radius:12px;padding:2rem;font-size:0.9rem;line-height:1.8}
+.report-content h2{font-size:1.3rem;font-weight:900;color:var(--navy);border-bottom:3px solid var(--accent);padding-bottom:6px;margin-bottom:1rem;margin-top:1.5rem}
+.report-content h2:first-child{margin-top:0}
+.report-content h3{font-size:1rem;font-weight:800;color:var(--navy2);margin-top:1.2rem;margin-bottom:0.5rem}
+.report-content table{width:100%;border-collapse:collapse;margin-bottom:1rem}
+.report-content th{background:var(--navy);color:#fff;padding:8px 12px;text-align:right;font-weight:700}
+.report-content td{padding:7px 12px;border-bottom:1px solid var(--border)}
+.report-content tr:nth-child(even) td{background:#f7f9fc}
+.report-content ul{padding-right:1.2rem;margin-top:0.5rem}
+.report-content li{margin-bottom:0.3rem}
+.report-actions{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem}
+
+/* Instruction box */
+.instructions{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:14px;padding:1.5rem;margin-bottom:2rem;color:#fff}
+.inst-title{font-weight:800;font-size:1rem;margin-bottom:0.8rem;color:var(--accent)}
+.inst-steps{display:flex;flex-direction:column;gap:6px}
+.inst-step{display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:rgba(255,255,255,0.85)}
+.inst-num{background:var(--accent);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0;margin-top:1px}
+
+@media(max-width:600px){
+  .kpi-row{flex-direction:column}
+  .map-grid{grid-template-columns:1fr}
+  .tabs{gap:2px}
+  .tab-btn{padding:6px 10px;font-size:0.78rem}
+}
+
+@media print{
+  nav,#qa-banner,.no-print,#step1,#step2,#stepper,#kpi-row,.tabs,.btn-primary,.btn-export,.btn-export-csv,.btn-print,.report-actions{display:none!important}
+  body{background:#fff}
+  .report-content{border:none;padding:0;box-shadow:none}
+  main{padding:0}
+}
+</style>
+</head>
+<body>
+<nav id="main-nav" style="position:fixed;top:0;right:0;left:0;z-index:1001;background:#0d1f3c;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:0 2px 20px rgba(0,0,0,0.25);font-family:'Heebo',sans-serif">
+  <a href="index.html" style="font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none;letter-spacing:-0.5px">קנדל <span style="color:#f0a500">BI</span></a>
+  <ul style="list-style:none;display:flex;gap:0.1rem;margin:0;padding:0;flex-wrap:nowrap">
+    <li><a href="index.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">בית</a></li>
+    <li><a href="tools.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">כלים לשימוש</a></li>
+    <li><a href="services.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">שירותים</a></li>
+    <li><a href="about.html" style="color:rgba(255,255,255,0.82);text-decoration:none;font-size:0.88rem;font-weight:500;padding:0.45rem 0.75rem;border-radius:6px;transition:all 0.2s;white-space:nowrap;display:block">אודות</a></li>
+    <li><a href="contact.html" style="background:#f0a500;color:#0d1f3c;text-decoration:none;font-size:0.88rem;font-weight:800;padding:0.45rem 1rem;border-radius:6px;white-space:nowrap;display:block">צרו קשר</a></li>
+  </ul>
+</nav>
+<div style="height:64px"></div>
+<div id="qa-banner" style="background:#fffbeb;border-bottom:2px solid #f5d48a;padding:8px 5vw;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-family:'Heebo',sans-serif;direction:rtl">
+  <span>⚠️</span>
+  <span style="font-size:0.85rem;color:#7a5200;flex:1;line-height:1.5"><strong>כלי זה לא עבר עדיין בקרת איכות מלאה</strong> — יש לבדוק ולאמת את התוצאות לפני הסתמכות עליהם. נתקלתם בבעיה? נשמח לשמוע: <a href="tel:050-6914898" style="color:#b87400;font-weight:700;text-decoration:none">050-6914898</a></span>
+  <button onclick="document.getElementById('qa-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#b87400;font-size:1.1rem;padding:0;line-height:1;flex-shrink:0">✕</button>
+</div>
+
+<main>
+<div class="tool-title">🔍 זיהוי פערים וכפילויות במסמכים</div>
+<div class="tool-sub">זהה כפילויות ומספרים חסרים ברצף חשבוניות, הזמנות ושיקים — ניתוח מקומי מלא, ללא שליחת נתונים לשרת</div>
+
+<div class="instructions">
+  <div class="inst-title">📖 הוראות שימוש</div>
+  <div class="inst-steps">
+    <div class="inst-step"><div class="inst-num">1</div><span>העלה קובץ Excel או CSV המכיל נתוני מסמכים (חשבוניות, הזמנות, שיקים)</span></div>
+    <div class="inst-step"><div class="inst-num">2</div><span>מפה את העמודות — לפחות עמודת מספר מסמך — ובחר אופן חילוץ המספר מהשדה</span></div>
+    <div class="inst-step"><div class="inst-num">3</div><span>לחץ "הרץ זיהוי" וקבל דוח מפורט של כפילויות, פערים ומספרים חסרים</span></div>
+  </div>
+</div>
+
+<!-- Stepper -->
+<div class="stepper" id="stepper">
+  <div class="step active" id="stp1">
+    <div class="step-circle">1</div>
+    <div class="step-label">העלאת קובץ</div>
+  </div>
+  <div class="step" id="stp2">
+    <div class="step-circle">2</div>
+    <div class="step-label">מיפוי עמודות</div>
+  </div>
+  <div class="step" id="stp3">
+    <div class="step-circle">3</div>
+    <div class="step-label">תוצאות</div>
+  </div>
+</div>
+
+<!-- ====== STEP 1: UPLOAD ====== -->
+<div id="step1" class="card">
+  <div class="card-title">שלב 1 — העלאת קובץ</div>
+  <div class="upload-zone" id="upload-zone">
+    <div class="uz-icon">📂</div>
+    <div class="uz-text">גרור קובץ לכאן, או לחץ לבחירה</div>
+    <div class="uz-sub">Excel (.xlsx, .xls) או CSV — הקובץ נשאר אצלך בלבד</div>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none">
+  </div>
+  <div class="privacy-note">
+    🔒 <span><strong>פרטיות:</strong> הקובץ מעובד באופן מקומי בדפדפן בלבד ואינו נשלח לשרת.</span>
+  </div>
+  <div class="progress-wrap hidden" id="upload-progress">
+    <div class="progress-label" id="upload-progress-label">טוען קובץ...</div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="upload-bar"></div></div>
+  </div>
+  <div id="file-info" class="hidden" style="margin-top:0.8rem;font-size:0.85rem;color:var(--muted)"></div>
+</div>
+
+<!-- ====== STEP 2: MAPPING ====== -->
+<div id="step2" class="card hidden">
+  <div class="card-title">שלב 2 — מיפוי עמודות</div>
+  <div class="preview-wrap" id="preview-wrap"></div>
+  <div class="map-grid" id="map-grid">
+    <div class="form-group">
+      <label>מספר מסמך / חשבונית <span class="req">*</span></label>
+      <select id="map-docNo"><option value="-1">— לא קיים —</option></select>
+    </div>
+    <div class="form-group">
+      <label>סכום</label>
+      <select id="map-amount"><option value="-1">— לא קיים —</option></select>
+    </div>
+    <div class="form-group">
+      <label>ספק / צד-ג'</label>
+      <select id="map-vendor"><option value="-1">— לא קיים —</option></select>
+    </div>
+    <div class="form-group">
+      <label>תאריך</label>
+      <select id="map-date"><option value="-1">— לא קיים —</option></select>
+    </div>
+    <div class="form-group">
+      <label>מספר הזמנה</label>
+      <select id="map-orderNo"><option value="-1">— לא קיים —</option></select>
+    </div>
+    <div class="form-group">
+      <label>מספר שיק</label>
+      <select id="map-checkNo"><option value="-1">— לא קיים —</option></select>
+    </div>
+  </div>
+  <div style="margin-bottom:1.2rem">
+    <div style="font-size:0.85rem;font-weight:700;color:var(--navy);margin-bottom:8px">אופן חילוץ מספר רצף (לאיתור פערים):</div>
+    <div class="radio-group">
+      <label><input type="radio" name="numMode" value="full" id="mode-full"> ערך שלם (parseInt)</label>
+      <label><input type="radio" name="numMode" value="suffix" id="mode-suffix" checked> מספר בסיומת</label>
+      <label><input type="radio" name="numMode" value="prefix" id="mode-prefix"> מספר בתחילה</label>
+    </div>
+  </div>
+  <button class="btn-primary" id="run-btn" disabled onclick="runDetection()">
+    🔍 הרץ זיהוי
+  </button>
+  <div class="progress-wrap hidden" id="run-progress" style="margin-top:1rem">
+    <div class="progress-label" id="run-progress-label">מנתח נתונים...</div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="run-bar"></div></div>
+  </div>
+</div>
+
+<!-- ====== STEP 3: RESULTS ====== -->
+<div id="step3" class="hidden">
+  <div class="card no-print">
+    <div class="card-title">שלב 3 — תוצאות ניתוח</div>
+    <!-- KPI row -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi"><span class="kpi-val" id="kpi-total">0</span><div class="kpi-lbl">סה"כ מסמכים</div></div>
+      <div class="kpi red"><span class="kpi-val" id="kpi-full-dup">0</span><div class="kpi-lbl">כפילויות מלאות</div></div>
+      <div class="kpi orange"><span class="kpi-val" id="kpi-part-dup">0</span><div class="kpi-lbl">כפילויות חלקיות</div></div>
+      <div class="kpi yellow"><span class="kpi-val" id="kpi-gaps">0</span><div class="kpi-lbl">מספרים חסרים</div></div>
+    </div>
+    <!-- Tabs -->
+    <div class="tabs no-print">
+      <button class="tab-btn active" onclick="switchTab('tab-dash',this)">📊 לוח בקרה</button>
+      <button class="tab-btn" onclick="switchTab('tab-dup-full',this)">🔴 כפילויות מלאות</button>
+      <button class="tab-btn" onclick="switchTab('tab-dup-partial',this)">🟠 כפילויות חלקיות</button>
+      <button class="tab-btn" onclick="switchTab('tab-gaps',this)">🟡 מספרים חסרים</button>
+      <button class="tab-btn" onclick="switchTab('tab-report',this)">📄 דוח מסודר</button>
+    </div>
+
+    <!-- Tab: Dashboard -->
+    <div class="tab-pane active" id="tab-dash">
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">סיכום ממצאים לפי קטגוריה</div>
+          <canvas id="chart-anomaly"></canvas>
+        </div>
+        <div class="chart-card" id="vendor-chart-wrap">
+          <div class="chart-title">10 ספקים מובילים לפי כמות מסמכים</div>
+          <canvas id="chart-vendor"></canvas>
+        </div>
+      </div>
+      <div class="summary-text" id="summary-text">...</div>
+    </div>
+
+    <!-- Tab: Full Duplicates -->
+    <div class="tab-pane" id="tab-dup-full">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0.8rem">
+        <div style="font-size:0.9rem;font-weight:700;color:var(--navy)" id="full-dup-title">כפילויות מלאות</div>
+        <div>
+          <button class="btn-sm btn-export-csv" onclick="exportDupFullCSV()">ייצוא CSV</button>
+          <button class="btn-sm btn-export" onclick="exportDupFullXLSX()">ייצוא XLSX</button>
+        </div>
+      </div>
+      <div class="res-table-wrap" id="full-dup-table"></div>
+    </div>
+
+    <!-- Tab: Partial Duplicates -->
+    <div class="tab-pane" id="tab-dup-partial">
+      <div class="subtabs">
+        <button class="stab active" id="stab-a" onclick="switchSubTab('a',this)">מסמך + סכום</button>
+        <button class="stab" id="stab-b" onclick="switchSubTab('b',this)">ספק + סכום + תאריך</button>
+      </div>
+      <div id="subtab-pane-a">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0.8rem">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--navy)">כפילויות לפי מסמך + סכום</div>
+          <div>
+            <button class="btn-sm btn-export-csv" onclick="exportPartACSV()">ייצוא CSV</button>
+            <button class="btn-sm btn-export" onclick="exportPartAXLSX()">ייצוא XLSX</button>
+          </div>
+        </div>
+        <div class="res-table-wrap" id="part-a-table"></div>
+      </div>
+      <div id="subtab-pane-b" class="hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0.8rem">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--navy)">כפילויות לפי ספק + סכום + תאריך</div>
+          <div>
+            <button class="btn-sm btn-export-csv" onclick="exportPartBCSV()">ייצוא CSV</button>
+            <button class="btn-sm btn-export" onclick="exportPartBXLSX()">ייצוא XLSX</button>
+          </div>
+        </div>
+        <div class="res-table-wrap" id="part-b-table"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Gaps -->
+    <div class="tab-pane" id="tab-gaps">
+      <div class="gap-meta" id="gap-meta"></div>
+      <div id="gap-missing-block"></div>
+      <div id="gap-repeated-block"></div>
+      <div style="margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-sm btn-export-csv" onclick="exportGapsCSV()">ייצוא מספרים חסרים — CSV</button>
+        <button class="btn-sm btn-export" onclick="exportGapsXLSX()">ייצוא מספרים חסרים — XLSX</button>
+      </div>
+    </div>
+
+    <!-- Tab: Report -->
+    <div class="tab-pane" id="tab-report">
+      <div class="report-actions no-print">
+        <button class="btn-print" onclick="window.print()">🖨️ הדפס דוח</button>
+        <button class="btn-sm btn-export" onclick="exportReportXLSX()">📊 ייצוא דוח ל-XLSX</button>
+      </div>
+      <div class="report-content" id="report-content"></div>
+    </div>
+
+  </div><!-- /card -->
+</div><!-- /step3 -->
+
+</main>
+
+<script>
+// ===================== STATE =====================
+const G = {
+  wb: null,
+  headers: [],
+  allRows: [],
+  rows: [],
+  map: { docNo:-1, amount:-1, vendor:-1, date:-1, orderNo:-1, checkNo:-1 },
+  numMode: 'suffix',
+  charts: {},
+  results: {
+    fullDups: null,
+    partialA: null,
+    partialB: null,
+    gaps: null
+  }
+};
+
+// ===================== UTILITIES =====================
+function parseAmt(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return v;
+  let s = String(v).trim();
+  const neg = s.startsWith('(') && s.endsWith(')');
+  s = s.replace(/[()₪$€,\s]/g, '');
+  const n = parseFloat(s);
+  if (isNaN(n)) return null;
+  return neg ? -n : n;
+}
+
+function parseDt(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    return v.toISOString().slice(0,10);
+  }
+  const s = String(v).trim();
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m1) {
+    const y = m1[3].length === 2 ? '20' + m1[3] : m1[3];
+    return `${y}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+  }
+  // ISO
+  const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m2) return s.slice(0,10);
+  // Excel serial
+  const num = Number(s);
+  if (!isNaN(num) && num > 1000 && num < 100000) {
+    const d = XLSX.SSF.parse_date_code(num);
+    if (d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+  return s;
+}
+
+function extractNum(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim();
+  if (G.numMode === 'full') {
+    const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
+    return isNaN(n) ? null : n;
+  } else if (G.numMode === 'suffix') {
+    const m = s.match(/(\d+)\D*$/);
+    return m ? parseInt(m[1], 10) : null;
+  } else { // prefix
+    const m = s.match(/^[^\d]*(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+}
+
+function fmtNum(n) { return n == null ? '' : n.toLocaleString('he-IL'); }
+function todayStr() { return new Date().toLocaleDateString('he-IL'); }
+
+// ===================== UI HELPERS =====================
+function setStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    const c = document.getElementById('stp' + i);
+    c.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+  document.getElementById('step1').classList.toggle('hidden', n !== 1);
+  document.getElementById('step2').classList.toggle('hidden', n !== 2);
+  document.getElementById('step3').classList.toggle('hidden', n !== 3);
+}
+
+function setProgress(barId, pct) {
+  document.getElementById(barId).style.width = pct + '%';
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function switchSubTab(which, btn) {
+  document.getElementById('subtab-pane-a').classList.toggle('hidden', which !== 'a');
+  document.getElementById('subtab-pane-b').classList.toggle('hidden', which !== 'b');
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ===================== FILE UPLOAD =====================
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  const allowed = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel', 'text/csv', 'application/csv'];
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls','csv'].includes(ext)) {
+    alert('יש לבחור קובץ Excel (.xlsx, .xls) או CSV.');
+    return;
+  }
+  const prog = document.getElementById('upload-progress');
+  const bar = document.getElementById('upload-bar');
+  const lbl = document.getElementById('upload-progress-label');
+  prog.classList.remove('hidden');
+  bar.style.width = '10%';
+  lbl.textContent = 'קורא קובץ...';
+
+  const reader = new FileReader();
+  reader.onprogress = e => {
+    if (e.lengthComputable) bar.style.width = (10 + 60 * e.loaded / e.total) + '%';
+  };
+  reader.onload = e => {
+    bar.style.width = '80%';
+    lbl.textContent = 'מפענח נתונים...';
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      G.wb = wb;
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      if (!json || json.length < 2) { alert('הקובץ ריק או שאין שורות נתונים.'); prog.classList.add('hidden'); return; }
+      G.headers = json[0].map(h => String(h));
+      G.allRows = json.slice(1).filter(r => r.some(c => c !== ''));
+      bar.style.width = '100%';
+      lbl.textContent = 'הושלם!';
+      setTimeout(() => prog.classList.add('hidden'), 600);
+      document.getElementById('file-info').textContent = `📁 ${file.name} — ${fmtNum(G.allRows.length)} שורות, ${G.headers.length} עמודות`;
+      document.getElementById('file-info').classList.remove('hidden');
+      uploadZone.classList.add('loaded');
+      buildMappingUI();
+      setStep(2);
+    } catch(err) {
+      alert('שגיאה בקריאת הקובץ: ' + err.message);
+      prog.classList.add('hidden');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===================== MAPPING UI =====================
+function buildMappingUI() {
+  const selIds = ['map-docNo','map-amount','map-vendor','map-date','map-orderNo','map-checkNo'];
+  selIds.forEach(id => {
+    const sel = document.getElementById(id);
+    // keep first option "— לא קיים —"
+    while (sel.options.length > 1) sel.remove(1);
+    G.headers.forEach((h, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = h || `עמודה ${i+1}`;
+      sel.appendChild(opt);
+    });
+  });
+
+  // Auto-guess
+  const guessMap = {
+    'map-docNo': ['חשבונית','מסמך','invoice','doc','number','מספר'],
+    'map-amount': ['סכום','amount','total','סה"כ','שקל','כסף'],
+    'map-vendor': ['ספק','vendor','supplier','שם','name'],
+    'map-date': ['תאריך','date','time'],
+    'map-orderNo': ['הזמנה','order','po'],
+    'map-checkNo': ['שיק','check','cheque']
+  };
+  G.headers.forEach((h, i) => {
+    const hl = h.toLowerCase();
+    for (const [selId, keywords] of Object.entries(guessMap)) {
+      if (keywords.some(k => hl.includes(k.toLowerCase()))) {
+        const sel = document.getElementById(selId);
+        if (sel.value === '-1') sel.value = String(i);
+      }
+    }
+  });
+
+  // Preview table
+  const preview = document.getElementById('preview-wrap');
+  const previewRows = G.allRows.slice(0, 5);
+  let html = '<table><tr>';
+  G.headers.forEach(h => { html += `<th>${escHtml(h)}</th>`; });
+  html += '</tr>';
+  previewRows.forEach(row => {
+    html += '<tr>';
+    G.headers.forEach((_, ci) => { html += `<td>${escHtml(String(row[ci] ?? ''))}</td>`; });
+    html += '</tr>';
+  });
+  html += '</table>';
+  preview.innerHTML = html;
+
+  // Enable run button when docNo changes
+  const docSel = document.getElementById('map-docNo');
+  docSel.addEventListener('change', updateRunBtn);
+  updateRunBtn();
+}
+
+function updateRunBtn() {
+  const v = document.getElementById('map-docNo').value;
+  document.getElementById('run-btn').disabled = (v === '-1');
+}
+
+document.querySelectorAll('input[name=numMode]').forEach(r => {
+  r.addEventListener('change', () => { G.numMode = r.value; });
+});
+
+function readMap() {
+  G.map.docNo   = parseInt(document.getElementById('map-docNo').value);
+  G.map.amount  = parseInt(document.getElementById('map-amount').value);
+  G.map.vendor  = parseInt(document.getElementById('map-vendor').value);
+  G.map.date    = parseInt(document.getElementById('map-date').value);
+  G.map.orderNo = parseInt(document.getElementById('map-orderNo').value);
+  G.map.checkNo = parseInt(document.getElementById('map-checkNo').value);
+  G.numMode = document.querySelector('input[name=numMode]:checked').value;
+}
+
+// ===================== DETECTION =====================
+async function runDetection() {
+  readMap();
+  if (G.map.docNo < 0) { alert('יש לבחור עמודת מספר מסמך.'); return; }
+
+  if (typeof logToolRun === 'function') logToolRun('tool-gap-detector');
+
+  const prog = document.getElementById('run-progress');
+  const bar = document.getElementById('run-bar');
+  const lbl = document.getElementById('run-progress-label');
+  prog.classList.remove('hidden');
+  bar.style.width = '5%';
+  lbl.textContent = 'מכין נתונים...';
+  document.getElementById('run-btn').disabled = true;
+
+  await tick();
+
+  // Build rows array in chunks
+  const CHUNK = 2000;
+  G.rows = [];
+  const total = G.allRows.length;
+  for (let i = 0; i < total; i += CHUNK) {
+    const chunk = G.allRows.slice(i, Math.min(i + CHUNK, total));
+    chunk.forEach((raw, ci) => {
+      const rowIdx = i + ci + 2; // 1-based, header=1
+      G.rows.push({
+        _idx: rowIdx,
+        docNo: String(raw[G.map.docNo] ?? '').trim(),
+        amount: G.map.amount >= 0 ? parseAmt(raw[G.map.amount]) : null,
+        vendor: G.map.vendor >= 0 ? String(raw[G.map.vendor] ?? '').trim() : '',
+        date:   G.map.date   >= 0 ? parseDt(raw[G.map.date]) : '',
+        orderNo: G.map.orderNo >= 0 ? String(raw[G.map.orderNo] ?? '').trim() : '',
+        checkNo: G.map.checkNo >= 0 ? String(raw[G.map.checkNo] ?? '').trim() : '',
+      });
+    });
+    bar.style.width = (5 + 25 * Math.min((i + CHUNK) / total, 1)) + '%';
+    lbl.textContent = `מכין נתונים (${Math.min(i+CHUNK, total)} / ${total})...`;
+    await tick();
+  }
+
+  bar.style.width = '35%'; lbl.textContent = 'מחפש כפילויות מלאות...'; await tick();
+  G.results.fullDups = findFullDups();
+
+  bar.style.width = '55%'; lbl.textContent = 'מחפש כפילויות חלקיות...'; await tick();
+  G.results.partialA = findPartialDups(r => {
+    const amt = r.amount != null ? String(r.amount) : '__null__';
+    return r.docNo + '||' + amt;
+  });
+  G.results.partialB = (G.map.vendor >= 0 && G.map.amount >= 0)
+    ? findPartialDups(r => {
+        const amt = r.amount != null ? String(r.amount) : '__null__';
+        return r.vendor + '||' + amt + '||' + r.date;
+      })
+    : new Map();
+
+  bar.style.width = '75%'; lbl.textContent = 'מחפש פערים ברצף...'; await tick();
+  G.results.gaps = findGaps();
+
+  bar.style.width = '90%'; lbl.textContent = 'בונה תוצאות...'; await tick();
+
+  renderResults();
+
+  bar.style.width = '100%'; lbl.textContent = 'הושלם!';
+  setTimeout(() => { prog.classList.add('hidden'); }, 700);
+  document.getElementById('run-btn').disabled = false;
+  setStep(3);
+  document.getElementById('step3').classList.remove('hidden');
+}
+
+function tick() { return new Promise(r => setTimeout(r, 0)); }
+
+// ===================== ANALYSIS =====================
+function findFullDups() {
+  const map = new Map();
+  G.rows.forEach(r => {
+    if (!r.docNo) return;
+    if (!map.has(r.docNo)) map.set(r.docNo, []);
+    map.get(r.docNo).push(r._idx);
+  });
+  // keep only dups
+  for (const [k, v] of map) { if (v.length < 2) map.delete(k); }
+  return map;
+}
+
+function findPartialDups(keyFn) {
+  const map = new Map();
+  G.rows.forEach(r => {
+    const k = keyFn(r);
+    if (!map.has(k)) map.set(k, { rows: [], key: k });
+    map.get(k).rows.push(r);
+  });
+  const result = new Map();
+  for (const [k, v] of map) {
+    if (v.rows.length >= 2) result.set(k, v.rows);
+  }
+  return result;
+}
+
+function findGaps() {
+  const nums = [];
+  G.rows.forEach(r => {
+    const n = extractNum(r.docNo);
+    if (n != null && n >= 0) nums.push({ n, idx: r._idx, docNo: r.docNo });
+  });
+  if (nums.length === 0) return { nums: [], missing: [], repeated: [] };
+  nums.sort((a,b) => a.n - b.n);
+  const min = nums[0].n, max = nums[nums.length-1].n;
+  const seen = new Map();
+  nums.forEach(item => {
+    if (!seen.has(item.n)) seen.set(item.n, []);
+    seen.get(item.n).push(item.idx);
+  });
+  const missing = [];
+  for (let i = min; i <= max; i++) { if (!seen.has(i)) missing.push(i); }
+  const repeated = [];
+  for (const [n, rows] of seen) { if (rows.length >= 2) repeated.push({ n, rows }); }
+  return { nums, missing, repeated, min, max, seen };
+}
+
+// ===================== RENDER RESULTS =====================
+function renderResults() {
+  const fullDupCount = countDupRows(G.results.fullDups);
+  const partACount   = countDupRows(G.results.partialA);
+  const partBCount   = countDupRows(G.results.partialB);
+  const missingCount = G.results.gaps.missing ? G.results.gaps.missing.length : 0;
+
+  document.getElementById('kpi-total').textContent    = fmtNum(G.rows.length);
+  document.getElementById('kpi-full-dup').textContent = fmtNum(fullDupCount);
+  document.getElementById('kpi-part-dup').textContent = fmtNum(partACount + partBCount);
+  document.getElementById('kpi-gaps').textContent     = fmtNum(missingCount);
+
+  renderFullDupTable();
+  renderPartialATable();
+  renderPartialBTable();
+  renderGapsTab();
+  renderDashboard(fullDupCount, partACount, partBCount, missingCount);
+  renderReport(fullDupCount, partACount, partBCount, missingCount);
+}
+
+function countDupRows(map) {
+  let n = 0;
+  for (const v of map.values()) n += v.length || (v.rows ? v.rows.length : 0);
+  return n;
+}
+
+// ---- Full Dups Table ----
+function renderFullDupTable() {
+  const map = G.results.fullDups;
+  document.getElementById('full-dup-title').textContent =
+    `כפילויות מלאות — ${map.size} קבוצות (${countDupRows(map)} שורות)`;
+  const rows = [];
+  for (const [doc, idxArr] of map) {
+    rows.push([doc, idxArr.length, idxArr.join(', ')]);
+  }
+  rows.sort((a,b) => b[1] - a[1]);
+  const html = buildTable(['מספר מסמך','כמות','שורות בקובץ'], rows,
+    r => `<td>${escHtml(r[0])}</td><td><span class="badge badge-red">${r[1]}</span></td><td style="font-size:0.78rem;direction:ltr;text-align:left">${escHtml(r[2])}</td>`);
+  document.getElementById('full-dup-table').innerHTML = html || '<p style="padding:1rem;color:var(--muted)">לא נמצאו כפילויות מלאות.</p>';
+}
+
+// ---- Partial A Table ----
+function renderPartialATable() {
+  const map = G.results.partialA;
+  const rows = [];
+  for (const [key, arr] of map) {
+    const [doc, amt] = key.split('||');
+    rows.push([doc, amt === '__null__' ? '' : amt, arr.length, arr.map(r=>r._idx).join(', ')]);
+  }
+  rows.sort((a,b) => b[2]-a[2]);
+  const html = buildTable(['מספר מסמך','סכום','כמות','שורות'],
+    rows, r => `<td>${escHtml(r[0])}</td><td>${escHtml(r[1])}</td><td><span class="badge badge-orange">${r[2]}</span></td><td style="font-size:0.78rem;direction:ltr;text-align:left">${escHtml(r[3])}</td>`);
+  document.getElementById('part-a-table').innerHTML = html || '<p style="padding:1rem;color:var(--muted)">לא נמצאו כפילויות לפי מסמך + סכום.</p>';
+}
+
+// ---- Partial B Table ----
+function renderPartialBTable() {
+  const map = G.results.partialB;
+  if (map.size === 0) {
+    document.getElementById('part-b-table').innerHTML = '<p style="padding:1rem;color:var(--muted)">נדרש מיפוי עמודות ספק + סכום לחישוב זה.</p>';
+    return;
+  }
+  const rows = [];
+  for (const [key, arr] of map) {
+    const parts = key.split('||');
+    rows.push([parts[0], parts[1] === '__null__' ? '' : parts[1], parts[2] || '', arr.length, arr.map(r=>r._idx).join(', ')]);
+  }
+  rows.sort((a,b) => b[3]-a[3]);
+  const html = buildTable(['ספק','סכום','תאריך','כמות','שורות'],
+    rows, r => `<td>${escHtml(r[0])}</td><td>${escHtml(r[1])}</td><td>${escHtml(r[2])}</td><td><span class="badge badge-orange">${r[3]}</span></td><td style="font-size:0.78rem;direction:ltr;text-align:left">${escHtml(r[4])}</td>`);
+  document.getElementById('part-b-table').innerHTML = html;
+}
+
+// ---- Gaps Tab ----
+function renderGapsTab() {
+  const g = G.results.gaps;
+  const metaEl = document.getElementById('gap-meta');
+  const missingEl = document.getElementById('gap-missing-block');
+  const repeatedEl = document.getElementById('gap-repeated-block');
+
+  if (!g.nums || g.nums.length === 0) {
+    metaEl.innerHTML = '<p style="color:var(--muted)">לא ניתן לחלץ מספרים רצופים מהעמודה שנבחרה.</p>';
+    missingEl.innerHTML = ''; repeatedEl.innerHTML = '';
+    return;
+  }
+
+  const range = g.max - g.min + 1;
+  metaEl.innerHTML = `
+    <div class="gap-item"><div class="gap-item-val">${fmtNum(g.min)}</div><div class="gap-item-lbl">מספר ראשון</div></div>
+    <div class="gap-item"><div class="gap-item-val">${fmtNum(g.max)}</div><div class="gap-item-lbl">מספר אחרון</div></div>
+    <div class="gap-item"><div class="gap-item-val">${fmtNum(range)}</div><div class="gap-item-lbl">טווח כולל</div></div>
+    <div class="gap-item"><div class="gap-item-val" style="color:var(--yellow)">${fmtNum(g.missing.length)}</div><div class="gap-item-lbl">מספרים חסרים</div></div>
+    <div class="gap-item"><div class="gap-item-val" style="color:var(--red)">${fmtNum(g.repeated.length)}</div><div class="gap-item-lbl">מספרים חוזרים</div></div>
+  `;
+
+  if (g.missing.length === 0) {
+    missingEl.innerHTML = '<div style="background:#edf7f3;border:1px solid #a0d9c0;border-radius:10px;padding:1rem;color:var(--green);font-weight:700;margin-bottom:1rem">✅ לא נמצאו מספרים חסרים — הרצף רציף לחלוטין!</div>';
+  } else {
+    const MAX_SHOW = 200;
+    const shown = g.missing.slice(0, MAX_SHOW);
+    const extra = g.missing.length - shown.length;
+    missingEl.innerHTML = `
+      <div style="font-weight:700;color:var(--navy);margin-bottom:6px">רשימת המספרים החסרים (${fmtNum(g.missing.length)} סה"כ):</div>
+      <div class="missing-list">${shown.join(', ')}${extra > 0 ? ` ...ועוד ${fmtNum(extra)}` : ''}</div>
+    `;
+  }
+
+  if (g.repeated.length > 0) {
+    const top = g.repeated.slice(0,30);
+    let html = `<div style="font-weight:700;color:var(--red);margin-bottom:6px;margin-top:0.8rem">⚠️ מספרים המופיעים יותר מפעם אחת (${fmtNum(g.repeated.length)}):</div>
+      <div class="repeated-list">`;
+    top.forEach(item => {
+      html += `<div>מספר <strong>${item.n}</strong> — שורות: ${item.rows.join(', ')}</div>`;
+    });
+    if (g.repeated.length > 30) html += `<div style="color:var(--muted)">...ועוד ${fmtNum(g.repeated.length - 30)}</div>`;
+    html += '</div>';
+    repeatedEl.innerHTML = html;
+  } else {
+    repeatedEl.innerHTML = '';
+  }
+}
+
+// ---- Dashboard ----
+function renderDashboard(fullDupCount, partACount, partBCount, missingCount) {
+  // Destroy existing charts
+  for (const k of Object.keys(G.charts)) {
+    if (G.charts[k]) { G.charts[k].destroy(); G.charts[k] = null; }
+  }
+
+  // Chart 1: Anomaly bar chart
+  const ctx1 = document.getElementById('chart-anomaly').getContext('2d');
+  G.charts.anomaly = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: ['כפילויות מלאות', 'כפילויות חלקיות\n(מסמך+סכום)', 'כפילויות חלקיות\n(ספק+סכום+תאריך)', 'מספרים חסרים'],
+      datasets: [{
+        label: 'כמות שורות',
+        data: [fullDupCount, partACount, partBCount, missingCount],
+        backgroundColor: ['#d93025cc','#e67e22cc','#f0a500cc','#c49a00cc'],
+        borderColor: ['#d93025','#e67e22','#f0a500','#c49a00'],
+        borderWidth: 1.5,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: { ticks: { font: { family: 'Heebo', size: 11 } } }
+      }
+    }
+  });
+
+  // Chart 2: Top vendors (if mapped)
+  const vendorChartWrap = document.getElementById('vendor-chart-wrap');
+  if (G.map.vendor >= 0) {
+    vendorChartWrap.style.display = '';
+    const vendorCount = new Map();
+    G.rows.forEach(r => {
+      if (r.vendor) {
+        vendorCount.set(r.vendor, (vendorCount.get(r.vendor) || 0) + 1);
+      }
+    });
+    const sorted = [...vendorCount.entries()].sort((a,b) => b[1]-a[1]).slice(0,10);
+    const ctx2 = document.getElementById('chart-vendor').getContext('2d');
+    G.charts.vendor = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(([v]) => v.length > 18 ? v.slice(0,18)+'…' : v),
+        datasets: [{
+          label: 'מסמכים',
+          data: sorted.map(([,c]) => c),
+          backgroundColor: '#1a3561cc',
+          borderColor: '#1a3561',
+          borderWidth: 1.5,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } },
+          y: { ticks: { font: { family: 'Heebo', size: 10 } } }
+        }
+      }
+    });
+  } else {
+    vendorChartWrap.style.display = 'none';
+  }
+
+  // Summary text
+  const lines = [];
+  lines.push(`<strong>סה"כ ${fmtNum(G.rows.length)} מסמכים</strong> עובדו.`);
+  if (fullDupCount > 0) lines.push(`🔴 נמצאו <strong>${fmtNum(G.results.fullDups.size)} קבוצות כפילויות מלאות</strong> (${fmtNum(fullDupCount)} שורות) — מספרי מסמכים זהים.`);
+  else lines.push(`✅ לא נמצאו כפילויות מלאות.`);
+  if (partACount > 0) lines.push(`🟠 נמצאו <strong>${fmtNum(G.results.partialA.size)} קבוצות כפילויות חלקיות</strong> לפי מסמך + סכום (${fmtNum(partACount)} שורות).`);
+  if (partBCount > 0) lines.push(`🟠 נמצאו <strong>${fmtNum(G.results.partialB.size)} קבוצות כפילויות חלקיות</strong> לפי ספק + סכום + תאריך (${fmtNum(partBCount)} שורות).`);
+  if (G.results.gaps.missing && G.results.gaps.missing.length > 0)
+    lines.push(`🟡 <strong>${fmtNum(G.results.gaps.missing.length)} מספרים חסרים</strong> ברצף ${fmtNum(G.results.gaps.min)}–${fmtNum(G.results.gaps.max)}.`);
+  else if (G.results.gaps.nums && G.results.gaps.nums.length > 0)
+    lines.push(`✅ הרצף רציף לחלוטין (${fmtNum(G.results.gaps.min)}–${fmtNum(G.results.gaps.max)}).`);
+  if (G.results.gaps.repeated && G.results.gaps.repeated.length > 0)
+    lines.push(`⚠️ <strong>${fmtNum(G.results.gaps.repeated.length)} מספרים חוזרים</strong> — אותו מספר מסמך עם ערכים שונים.`);
+  document.getElementById('summary-text').innerHTML = lines.join('<br>');
+}
+
+// ---- Report ----
+function renderReport(fullDupCount, partACount, partBCount, missingCount) {
+  const g = G.results.gaps;
+  const today = todayStr();
+  const riskBadge = (level, text) => {
+    const cls = level === 'high' ? 'badge-red' : level === 'med' ? 'badge-orange' : 'badge-yellow';
+    const emoji = level === 'high' ? '🔴' : level === 'med' ? '🟠' : '🟡';
+    return `<span class="badge ${cls}">${emoji} ${text}</span>`;
+  };
+
+  let html = `
+    <h2>דוח ביקורת — זיהוי כפילויות ורצפים חסרים</h2>
+    <div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">תאריך הפקה: <strong>${today}</strong> | סה"כ מסמכים: <strong>${fmtNum(G.rows.length)}</strong></div>
+    <h3>סיכום ממצאים</h3>
+    <table>
+      <tr><th>קטגוריה</th><th>כמות</th><th>רמת סיכון</th></tr>
+      <tr><td>כפילויות מלאות</td><td>${fmtNum(fullDupCount)}</td><td>${riskBadge('high','גבוה')}</td></tr>
+      <tr><td>כפילויות חלקיות (מסמך+סכום)</td><td>${fmtNum(partACount)}</td><td>${riskBadge('med','בינוני')}</td></tr>
+      <tr><td>כפילויות חלקיות (ספק+סכום+תאריך)</td><td>${fmtNum(partBCount)}</td><td>${riskBadge('med','בינוני')}</td></tr>
+      <tr><td>מספרים חסרים ברצף</td><td>${fmtNum(missingCount)}</td><td>${riskBadge('low','נמוך')}</td></tr>
+    </table>
+  `;
+
+  // Full dups detail
+  html += `<h3>כפילויות מלאות (${fmtNum(G.results.fullDups.size)} קבוצות)</h3>`;
+  if (G.results.fullDups.size === 0) {
+    html += '<p>לא נמצאו כפילויות מלאות.</p>';
+  } else {
+    const entries = [...G.results.fullDups.entries()].sort((a,b)=>b[1].length-a[1].length);
+    const shown = entries.slice(0, 30);
+    html += '<table><tr><th>מספר מסמך</th><th>כמות</th><th>שורות</th></tr>';
+    shown.forEach(([doc, idxArr]) => {
+      html += `<tr><td>${escHtml(doc)}</td><td>${idxArr.length}</td><td style="direction:ltr;text-align:left;font-size:0.78rem">${idxArr.join(', ')}</td></tr>`;
+    });
+    html += '</table>';
+    if (entries.length > 30) html += `<p style="color:var(--muted);font-size:0.82rem">...ועוד ${fmtNum(entries.length - 30)} קבוצות נוספות. לפרטים מלאים, ראה לשונית "כפילויות מלאות".</p>`;
+  }
+
+  // Partial dups
+  html += `<h3>כפילויות חלקיות — מסמך + סכום (${fmtNum(G.results.partialA.size)} קבוצות)</h3>`;
+  if (G.results.partialA.size === 0) {
+    html += '<p>לא נמצאו.</p>';
+  } else {
+    const entries = [...G.results.partialA.entries()].sort((a,b)=>b[1].length-a[1].length).slice(0,30);
+    html += '<table><tr><th>מסמך</th><th>סכום</th><th>כמות</th><th>שורות</th></tr>';
+    entries.forEach(([key, arr]) => {
+      const [doc, amt] = key.split('||');
+      html += `<tr><td>${escHtml(doc)}</td><td>${escHtml(amt === '__null__' ? '' : amt)}</td><td>${arr.length}</td><td style="direction:ltr;text-align:left;font-size:0.78rem">${arr.map(r=>r._idx).join(', ')}</td></tr>`;
+    });
+    html += '</table>';
+    if (G.results.partialA.size > 30) html += `<p style="color:var(--muted);font-size:0.82rem">...ועוד ${fmtNum(G.results.partialA.size - 30)} נוספות.</p>`;
+  }
+
+  // Missing numbers
+  html += `<h3>מספרים חסרים ברצף (${fmtNum(missingCount)})</h3>`;
+  if (missingCount === 0) {
+    html += '<p>הרצף רציף — לא נמצאו פערים.</p>';
+  } else {
+    const shown = G.results.gaps.missing.slice(0, 50);
+    const extra = G.results.gaps.missing.length - shown.length;
+    html += `<p>טווח: ${fmtNum(g.min)}–${fmtNum(g.max)} | מספרים חסרים:</p>
+      <div style="background:#fffbea;border:1px solid #f5d48a;border-radius:8px;padding:0.8rem;font-size:0.82rem;direction:ltr;text-align:left;margin:0.5rem 0;word-break:break-all">
+        ${shown.join(', ')}${extra > 0 ? ` ...ועוד ${fmtNum(extra)}` : ''}
+      </div>`;
+  }
+
+  // Recommendations
+  html += `<h3>המלצות</h3><ul>`;
+  if (fullDupCount > 0) {
+    html += `<li>יש לבדוק את ${fmtNum(G.results.fullDups.size)} הכפילויות המלאות שאותרו — ייתכן שחשבוניות שולמו פעמיים.</li>`;
+  } else {
+    html += `<li>לא אותרו כפילויות מלאות — הנתונים נקיים בממד זה.</li>`;
+  }
+  if (partACount > 0 || partBCount > 0) {
+    html += `<li>הכפילויות החלקיות (${fmtNum(partACount + partBCount)} שורות) דורשות בדיקה ידנית — ייתכנו עסקאות חוזרות שגויות.</li>`;
+  } else {
+    html += `<li>לא אותרו כפילויות חלקיות חשודות.</li>`;
+  }
+  if (missingCount > 0) {
+    html += `<li>קיימים ${fmtNum(missingCount)} מספרי מסמכים חסרים בטווח — יש לוודא אם המסמכים בוטלו, נמחקו, או חסרים בנתונים.</li>`;
+  } else {
+    html += `<li>הרצף רציף לחלוטין — לא זוהו פערים.</li>`;
+  }
+  html += '</ul>';
+
+  document.getElementById('report-content').innerHTML = html;
+}
+
+// ===================== EXPORT =====================
+function buildXLSXWorkbook(headers, dataRows, sheetName) {
+  const wb = XLSX.utils.book_new();
+  const wsData = [headers, ...dataRows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!views'] = [{ rightToLeft: true }];
+  // Style header row
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c });
+    if (!ws[addr]) continue;
+    ws[addr].s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0D1F3C' } }, alignment: { horizontal: 'right' } };
+  }
+  // Zebra rows
+  for (let r = 1; r <= range.e.r; r++) {
+    if (r % 2 === 0) {
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+        ws[addr].s = { fill: { fgColor: { rgb: 'F7F9FC' } }, alignment: { horizontal: 'right' } };
+      }
+    }
+  }
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || 'תוצאות');
+  return wb;
+}
+
+function exportDupFullXLSX() {
+  const headers = ['מספר מסמך', 'כמות הופעות', 'שורות בקובץ'];
+  const rows = [];
+  for (const [doc, idxArr] of G.results.fullDups) {
+    rows.push([doc, idxArr.length, idxArr.join(', ')]);
+  }
+  rows.sort((a,b)=>b[1]-a[1]);
+  XLSX.writeFile(buildXLSXWorkbook(headers, rows, 'כפילויות מלאות'), 'כפילויות-מלאות.xlsx', { cellStyles: true });
+}
+function exportDupFullCSV() {
+  const rows = [['מספר מסמך','כמות הופעות','שורות בקובץ']];
+  for (const [doc, idxArr] of G.results.fullDups) rows.push([doc, idxArr.length, idxArr.join(' ')]);
+  downloadCSV(rows, 'כפילויות-מלאות.csv');
+}
+
+function exportPartAXLSX() {
+  const headers = ['מספר מסמך','סכום','כמות','שורות'];
+  const rows = [];
+  for (const [key, arr] of G.results.partialA) {
+    const [doc, amt] = key.split('||');
+    rows.push([doc, amt === '__null__' ? '' : amt, arr.length, arr.map(r=>r._idx).join(', ')]);
+  }
+  rows.sort((a,b)=>b[2]-a[2]);
+  XLSX.writeFile(buildXLSXWorkbook(headers, rows, 'כפילויות-חלקיות-א'), 'כפילויות-חלקיות-א.xlsx', { cellStyles: true });
+}
+function exportPartACSV() {
+  const rows = [['מספר מסמך','סכום','כמות','שורות']];
+  for (const [key, arr] of G.results.partialA) {
+    const [doc, amt] = key.split('||');
+    rows.push([doc, amt === '__null__' ? '' : amt, arr.length, arr.map(r=>r._idx).join(' ')]);
+  }
+  downloadCSV(rows, 'כפילויות-חלקיות-א.csv');
+}
+
+function exportPartBXLSX() {
+  const headers = ['ספק','סכום','תאריך','כמות','שורות'];
+  const rows = [];
+  for (const [key, arr] of G.results.partialB) {
+    const p = key.split('||');
+    rows.push([p[0], p[1] === '__null__' ? '' : p[1], p[2] || '', arr.length, arr.map(r=>r._idx).join(', ')]);
+  }
+  rows.sort((a,b)=>b[3]-a[3]);
+  XLSX.writeFile(buildXLSXWorkbook(headers, rows, 'כפילויות-חלקיות-ב'), 'כפילויות-חלקיות-ב.xlsx', { cellStyles: true });
+}
+function exportPartBCSV() {
+  const rows = [['ספק','סכום','תאריך','כמות','שורות']];
+  for (const [key, arr] of G.results.partialB) {
+    const p = key.split('||');
+    rows.push([p[0], p[1] === '__null__' ? '' : p[1], p[2] || '', arr.length, arr.map(r=>r._idx).join(' ')]);
+  }
+  downloadCSV(rows, 'כפילויות-חלקיות-ב.csv');
+}
+
+function exportGapsXLSX() {
+  const g = G.results.gaps;
+  if (!g.missing) return;
+  const rows = g.missing.map(n => [n]);
+  XLSX.writeFile(buildXLSXWorkbook(['מספר חסר'], rows, 'מספרים-חסרים'), 'מספרים-חסרים.xlsx', { cellStyles: true });
+}
+function exportGapsCSV() {
+  const g = G.results.gaps;
+  if (!g.missing) return;
+  const rows = [['מספר חסר'], ...g.missing.map(n=>[n])];
+  downloadCSV(rows, 'מספרים-חסרים.csv');
+}
+
+function exportReportXLSX() {
+  const g = G.results.gaps;
+  const today = todayStr();
+  const wb = XLSX.utils.book_new();
+  // Summary sheet
+  const summaryData = [
+    ['דוח ביקורת — זיהוי כפילויות ורצפים חסרים'],
+    ['תאריך הפקה:', today],
+    ['סה"כ מסמכים:', G.rows.length],
+    [],
+    ['קטגוריה', 'כמות', 'רמת סיכון'],
+    ['כפילויות מלאות', countDupRows(G.results.fullDups), 'גבוה'],
+    ['כפילויות חלקיות (מסמך+סכום)', countDupRows(G.results.partialA), 'בינוני'],
+    ['כפילויות חלקיות (ספק+סכום+תאריך)', countDupRows(G.results.partialB), 'בינוני'],
+    ['מספרים חסרים ברצף', g.missing ? g.missing.length : 0, 'נמוך'],
+  ];
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  wsSummary['!views'] = [{ rightToLeft: true }];
+  wsSummary['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:2} }];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'סיכום');
+
+  // Full dups sheet
+  if (G.results.fullDups.size > 0) {
+    const fdRows = [['מספר מסמך','כמות','שורות']];
+    for (const [doc, idxArr] of G.results.fullDups) fdRows.push([doc, idxArr.length, idxArr.join(', ')]);
+    const ws2 = XLSX.utils.aoa_to_sheet(fdRows);
+    ws2['!views'] = [{ rightToLeft: true }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'כפילויות-מלאות');
+  }
+
+  // Gaps sheet
+  if (g.missing && g.missing.length > 0) {
+    const gRows = [['מספר חסר'], ...g.missing.map(n=>[n])];
+    const ws3 = XLSX.utils.aoa_to_sheet(gRows);
+    ws3['!views'] = [{ rightToLeft: true }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'מספרים-חסרים');
+  }
+
+  XLSX.writeFile(wb, 'דוח-ביקורת.xlsx', { cellStyles: true });
+}
+
+function downloadCSV(rows, filename) {
+  const bom = '﻿';
+  const content = bom + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ===================== TABLE BUILDER =====================
+function buildTable(headers, rows, rowFn) {
+  if (rows.length === 0) return '';
+  let html = '<table><tr>';
+  headers.forEach(h => { html += `<th>${escHtml(h)}</th>`; });
+  html += '</tr>';
+  rows.forEach((r, i) => {
+    html += `<tr style="${i%2===1?'background:#f7f9fc':''}">` + rowFn(r) + '</tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
