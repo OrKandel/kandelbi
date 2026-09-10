@@ -1311,6 +1311,7 @@ function updateEstRows() {
 
 // ══ PROCESS ══
 async function processFile() {
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-excel-splitter');
   outputFiles = [];
 

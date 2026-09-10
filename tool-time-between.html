@@ -334,7 +334,8 @@ function fmtDuration(ms){
   return Math.floor(sec/3600)+'ש\' '+Math.floor((sec%3600)/60)+'ד\'';
 }
 
-function runAnalysis(){
+async function runAnalysis(){
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-time-between');
   const ci=parseInt(document.getElementById('col-emp').value);
   const ct=parseInt(document.getElementById('col-ts').value);

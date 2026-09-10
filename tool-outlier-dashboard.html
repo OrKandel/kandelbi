@@ -266,8 +266,9 @@ function wsToRowsTimeAware(ws) {
   }
   return rows;
 }
-function loadFile(file) {
+async function loadFile(file) {
   if (!file) return;
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-outlier-dashboard');
   dz.classList.remove('drag','loaded');
   dz.querySelector('.uz-icon').innerHTML='<div style="display:inline-block;width:28px;height:28px;border:3px solid #dce3ef;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite"></div>';

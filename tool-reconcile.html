@@ -561,7 +561,8 @@ function fmtNum(v){
 }
 
 // ── RUN ──
-function runComparison(){
+async function runComparison(){
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-reconcile');
   lastEffectiveCols=getEffectiveGroupCols();
   if(lastEffectiveCols.length===0){alert('יש לבחור לפחות עמודת קיבוץ אחת');return;}

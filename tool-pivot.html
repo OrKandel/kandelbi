@@ -436,7 +436,8 @@ function fmtNum(v, fn) {
 
 // ── PIVOT COMPUTATION ──
 
-function runPivot() {
+async function runPivot() {
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-pivot');
   if (!rawData.length || !rowColDefs.length) return;
 

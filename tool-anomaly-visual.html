@@ -960,35 +960,59 @@ document.getElementById('btn-run-analysis').onclick = () => {
 };
 
 async function runFullAnalysis() {
-  logToolRun('tool-anomaly-visual');
-  chartInstances.forEach(c => c.destroy());
-  chartInstances = [];
-  document.getElementById('results-container').innerHTML = '';
+  try {
+    if (!(await requireAuthToRun())) return;
+    logToolRun('tool-anomaly-visual');
+    chartInstances.forEach(c => c.destroy());
+    chartInstances = [];
+    document.getElementById('results-container').innerHTML = '';
 
-  const pairs = [...selectedPairs];
-  const progFill  = document.getElementById('prog-fill');
-  const progLabel = document.getElementById('prog-label');
+    const pairs = [...selectedPairs];
+    const progFill  = document.getElementById('prog-fill');
+    const progLabel = document.getElementById('prog-label');
 
-  const results = [];
-  for (let i = 0; i < pairs.length; i++) {
-    const p = pairs[i];
-    progLabel.textContent = `מנתח זוג ${i + 1} מתוך ${pairs.length}: ${p.colA.label} ↔ ${p.colB.label}`;
-    progFill.style.width = ((i / pairs.length) * 100) + '%';
+    const results = [];
+    for (let i = 0; i < pairs.length; i++) {
+      const p = pairs[i];
+      progLabel.textContent = `מנתח זוג ${i + 1} מתוך ${pairs.length}: ${p.colA.label} ↔ ${p.colB.label}`;
+      progFill.style.width = ((i / pairs.length) * 100) + '%';
+      await tick();
+
+      let res = null;
+      try {
+        res = analyzeOnePair(p.colA, p.colB, p.manual, p.weakWarn);
+      } catch (pairErr) {
+        console.error(`[tool-anomaly-visual] שגיאה בניתוח זוג ${p.colA.label} ↔ ${p.colB.label}:`, pairErr);
+      }
+      if (res) results.push(res);
+    }
+
+    progFill.style.width = '100%';
+    progLabel.textContent = 'מציג תוצאות...';
     await tick();
 
-    const res = analyzeOnePair(p.colA, p.colB, p.manual, p.weakWarn);
-    if (res) results.push(res);
+    setStep(5);
+
+    if (!results.length) {
+      document.getElementById('results-container').innerHTML =
+        '<div class="card"><p class="desc">לא נמצאו תוצאות תקינות לניתוח. ייתכן שאין מספיק נתונים מספריים תקינים בעמודות שנבחרו, או שהקשר הלינארי אינו מחושב (סטיית תקן אפסית).</p></div>';
+      return;
+    }
+
+    results.forEach(r => {
+      const card = renderResultCard(r);
+      document.getElementById('results-container').appendChild(card);
+    });
+  } catch (err) {
+    console.error('[tool-anomaly-visual] שגיאה כללית בניתוח:', err);
+    setStep(5);
+    document.getElementById('results-container').innerHTML =
+      `<div class="card" style="border-color:var(--red)">
+        <div class="card-title" style="color:var(--red)">⚠ שגיאה בניתוח</div>
+        <p class="desc">${esc(String(err.message || err))}</p>
+        <p class="desc" style="margin-top:.5rem">פרטים נוספים זמינים בקונסול הדפדפן (F12 ← Console).</p>
+      </div>`;
   }
-
-  progFill.style.width = '100%';
-  progLabel.textContent = 'מציג תוצאות...';
-  await tick();
-
-  setStep(5);
-  results.forEach(r => {
-    const card = renderResultCard(r);
-    document.getElementById('results-container').appendChild(card);
-  });
 }
 
 function tick() {
@@ -1299,12 +1323,6 @@ function drawChart(canvas, res, xLabel, yLabel) {
 // ═══════════════════════════════════════════════════════
 Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
 Chart.defaults.font.size   = 11;
-
-document.getElementById('btn-run-analysis').addEventListener('click', () => {
-  if (!selectedPairs.length) return;
-  setStep(4);
-  runFullAnalysis();
-});
 </script>
 </body>
 </html>

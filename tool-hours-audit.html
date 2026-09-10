@@ -1309,7 +1309,8 @@ function rowComputedHours(row, aStart, aEnd) {
   return Math.max(0, (eFinal - s) / 60);
 }
 
-function runFullAudit() {
+async function runFullAudit() {
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-hours-audit');
   const sheetNameMode = getSheetNameMode();
   const aEmp   = sheetNameMode ? '_sheetEmp' : +document.getElementById('col-att-emp').value;

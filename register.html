@@ -49,13 +49,23 @@ input:focus{outline:none;border-color:var(--blue)}
     <input type="password" id="password" placeholder="••••••••" autocomplete="new-password"/>
     <button class="btn" id="btn-register">יצירת חשבון</button>
     <p class="terms">בהרשמה אתה מסכים ל<a href="terms.html" target="_blank">תנאי השימוש</a></p>
-    <div class="links" style="margin-top:16px">כבר יש לך חשבון? <a href="login.html">כניסה</a></div>
+    <div class="links" id="login-link" style="margin-top:16px">כבר יש לך חשבון? <a href="login.html">כניסה</a></div>
   </div>
 </div>
 <script>
 const SUPABASE_URL='https://jixaskajgkorrjhxiflc.supabase.co';
 const SUPABASE_KEY='sb_publishable_5XGh3wyz-KPDh9Zl6liAsQ_yaB8F96X';
 const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// קריאת פרמטר return מה-URL
+const _returnParam = new URLSearchParams(window.location.search).get('return');
+const _loginHref = _returnParam
+  ? `login.html?return=${encodeURIComponent(_returnParam)}`
+  : 'login.html';
+
+// עדכון קישור הכניסה כך שישמור את כתובת החזרה
+document.getElementById('login-link').innerHTML =
+  `כבר יש לך חשבון? <a href="${_loginHref}">כניסה</a>`;
 
 function showMsg(text,type){
   const el=document.getElementById('msg');
@@ -79,8 +89,13 @@ document.getElementById('btn-register').addEventListener('click',async()=>{
   });
 
   if(error){
-    const msgs={'User already registered':'כתובת המייל כבר רשומה במערכת — <a href="login.html">להתחברות</a>'};
-    showMsg(msgs[error.message]||error.message,'error');
+    const msgs={'User already registered':'כתובת המייל כבר רשומה במערכת'};
+    const errText=msgs[error.message]||error.message;
+    showMsg(errText,'error');
+    // אם כבר רשום — שלח ל-login עם return
+    if(error.message==='User already registered'){
+      setTimeout(()=>{ window.location.href=_loginHref; },1800);
+    }
     btn.disabled=false;btn.textContent='יצירת חשבון';
     return;
   }
@@ -90,8 +105,11 @@ document.getElementById('btn-register').addEventListener('click',async()=>{
     await _sb.from('profiles').update({name}).eq('id',data.user.id);
   }
 
-  showMsg('✅ נשלח אליך מייל אימות — בדוק את תיבת הדואר ולחץ על הקישור כדי להפעיל את החשבון','success');
+  showMsg('✅ נשלח אליך מייל אימות — לחץ על הקישור במייל ואז התחבר כדי להמשיך','success');
   btn.textContent='נשלח מייל אימות';
+
+  // לאחר 3 שניות — ניתוב לדף הכניסה (עם return אם קיים)
+  setTimeout(()=>{ window.location.href=_loginHref; }, 3000);
 });
 </script>
 </body>

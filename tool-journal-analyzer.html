@@ -492,6 +492,7 @@ function checkRun() {
 
 // ─── ANALYSIS ─────────────────────────────────────────────────────────────────
 async function runAnalysis() {
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-journal-analyzer');
   G.h0 = parseInt(document.getElementById('h0').value) || 8;
   G.h1 = parseInt(document.getElementById('h1').value) || 18;

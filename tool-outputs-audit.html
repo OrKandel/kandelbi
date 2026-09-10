@@ -652,7 +652,8 @@ function updateManualSvcSelects(){
 }
 
 // ── MAIN AUDIT ──
-function runFullAudit(){
+async function runFullAudit(){
+  if (!(await requireAuthToRun())) return;
   logToolRun('tool-outputs-audit');
   const acsvc=+document.getElementById('col-act-svc').value;
   const acdate=+document.getElementById('col-act-date').value;

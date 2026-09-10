@@ -17,7 +17,12 @@ const PUBLIC_PAGES = [
   'article-sla-contract.html','article-tender-controls.html',
   'article-vendor-transparency.html',
   'login.html','register.html','reset-password.html','verify-email.html',
-  'tool-anomaly-visual.html','tool-list-compare.html','tool-advisor.html'
+  'tool-anomaly-visual.html','tool-list-compare.html','tool-advisor.html',
+  'tool-hours-audit.html','tool-journal-analyzer.html','tool-gap-detector.html',
+  'tool-dashboard.html','tool-excel-splitter.html','tool-fci.html',
+  'tool-hours-overlap.html','tool-merge-files.html','tool-ml-predict.html',
+  'tool-outlier-dashboard.html','tool-outputs-audit.html','tool-pivot.html',
+  'tool-reconcile.html','tool-time-between.html'
 ];
 
 function _currentPage() {
@@ -122,6 +127,37 @@ async function logToolRun(toolKey) {
       action:     toolKey
     });
   } catch(e) {}
+}
+
+// ── Gate לכפתורי "הרץ" — מחזיר true אם מותר להמשיך, אחרת מנתב ומחזיר false ──
+async function requireAuthToRun() {
+  const { data: { session } } = await _sb.auth.getSession();
+
+  if (!session) {
+    const returnTo = encodeURIComponent(window.location.href);
+    window.location.href = `register.html?return=${returnTo}`;
+    return false;
+  }
+
+  if (!session.user.email_confirmed_at) {
+    window.location.href = 'verify-email.html';
+    return false;
+  }
+
+  const profile = await _getProfile(session.user.id);
+
+  if (profile?.account_status === 'suspended') {
+    _showBlockScreen('חשבונך הושהה. לפרטים פנה לתמיכה.');
+    return false;
+  }
+
+  if (profile && !_isSubscriptionActive(profile)) {
+    const returnTo = encodeURIComponent(window.location.href);
+    window.location.href = `subscribe.html?return=${returnTo}`;
+    return false;
+  }
+
+  return true;
 }
 
 async function signOut() {

@@ -639,6 +639,7 @@ async function runDetection() {
   readMap();
   if (G.map.docNo < 0) { alert('יש לבחור עמודת מספר מסמך.'); return; }
 
+  if (!(await requireAuthToRun())) return;
   if (typeof logToolRun === 'function') logToolRun('tool-gap-detector');
 
   const prog = document.getElementById('run-progress');
